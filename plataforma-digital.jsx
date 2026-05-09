@@ -1,0 +1,1049 @@
+import { useState, useEffect, useContext, createContext, useCallback } from "react";
+import {
+  AreaChart, Area, BarChart, Bar, LineChart, Line,
+  PieChart, Pie, Cell, RadarChart, Radar, PolarGrid,
+  PolarAngleAxis, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  LayoutDashboard, FolderKanban, BarChart3, Settings, Bell,
+  Search, ChevronRight, TrendingUp, AlertTriangle, CheckCircle2,
+  Zap, Shield, Target, Activity, Package, ArrowUpRight,
+  ArrowDownRight, MoreHorizontal, Plus, Filter, Layers, Globe,
+  Sun, Moon, FlaskConical, Star, Clock, Award, Users,
+  ThumbsUp, ThumbsDown, FileSearch, Microscope, CircleDot,
+  ChevronDown, Download, RefreshCw, Eye,
+} from "lucide-react";
+
+// ─── THEME CONTEXT ────────────────────────────────────────────────────────────
+const ThemeCtx = createContext({ dark: true, toggle: () => {} });
+const useTheme = () => useContext(ThemeCtx);
+
+const getC = (dark) => dark ? {
+  // Dark: Grafite + Azul Petróleo + Roxo Suave
+  bg0: "#070C17", bg1: "#0B1120", bg2: "#0F1729", bg3: "#162035",
+  bg4: "#1C2940",
+  card: "rgba(255,255,255,0.030)",
+  cardHov: "rgba(255,255,255,0.055)",
+  surface: "rgba(255,255,255,0.045)",
+  border: "rgba(255,255,255,0.07)",
+  borderHov: "rgba(255,255,255,0.14)",
+  borderStrong: "rgba(255,255,255,0.18)",
+  blue: "#4F8EF7", blueD: "#2563EB", blueGlow: "rgba(79,142,247,0.14)",
+  emerald: "#10B981", emeraldGlow: "rgba(16,185,129,0.13)",
+  amber: "#F59E0B", amberGlow: "rgba(245,158,11,0.13)",
+  rose: "#F43F5E", roseGlow: "rgba(244,63,94,0.12)",
+  violet: "#9B7FFF", violetGlow: "rgba(155,127,255,0.13)",
+  cyan: "#22D3EE", cyanGlow: "rgba(34,211,238,0.12)",
+  t1: "#EFF3FC", t2: "#8DA3C0", t3: "#4A637F", t4: "#1D2E42",
+  sidebarW: 248,
+  scrollbar: "#1C2940",
+} : {
+  // Light: Branco Gelo + Cinza Premium + Azul Discreto
+  bg0: "#F0F3FA", bg1: "#FFFFFF", bg2: "#F5F7FD", bg3: "#E8EDF8",
+  bg4: "#DDE4F0",
+  card: "rgba(255,255,255,0.92)",
+  cardHov: "rgba(255,255,255,1)",
+  surface: "rgba(240,243,250,0.8)",
+  border: "rgba(0,0,0,0.075)",
+  borderHov: "rgba(0,0,0,0.15)",
+  borderStrong: "rgba(0,0,0,0.20)",
+  blue: "#2563EB", blueD: "#1D4ED8", blueGlow: "rgba(37,99,235,0.10)",
+  emerald: "#059669", emeraldGlow: "rgba(5,150,105,0.10)",
+  amber: "#D97706", amberGlow: "rgba(217,119,6,0.10)",
+  rose: "#E11D48", roseGlow: "rgba(225,29,72,0.09)",
+  violet: "#7C3AED", violetGlow: "rgba(124,58,237,0.09)",
+  cyan: "#0891B2", cyanGlow: "rgba(8,145,178,0.09)",
+  t1: "#0E1726", t2: "#3D556F", t3: "#7A93AD", t4: "#B8CBDF",
+  sidebarW: 248,
+  scrollbar: "#E8EDF8",
+};
+
+// ─── DATA ──────────────────────────────────────────────────────────────────────
+const roiData = [
+  { m:"Jan", roi:12, meta:10 }, { m:"Fev", roi:19, meta:12 },
+  { m:"Mar", roi:15, meta:13 }, { m:"Abr", roi:28, meta:15 },
+  { m:"Mai", roi:24, meta:16 }, { m:"Jun", roi:32, meta:18 },
+  { m:"Jul", roi:38, meta:20 }, { m:"Ago", roi:35, meta:22 },
+  { m:"Set", roi:42, meta:24 }, { m:"Out", roi:48, meta:26 },
+  { m:"Nov", roi:52, meta:28 }, { m:"Dez", roi:61, meta:30 },
+];
+const prodData = [
+  { m:"Jan", prod:74 }, { m:"Fev", prod:78 }, { m:"Mar", prod:72 },
+  { m:"Abr", prod:83 }, { m:"Mai", prod:87 }, { m:"Jun", prod:85 },
+  { m:"Jul", prod:91 }, { m:"Ago", prod:89 }, { m:"Set", prod:93 },
+  { m:"Out", prod:96 }, { m:"Nov", prod:94 }, { m:"Dez", prod:97 },
+];
+const deliveryData = [
+  { m:"Jan", ok:18, atr:4 }, { m:"Fev", ok:22, atr:3 }, { m:"Mar", ok:20, atr:6 },
+  { m:"Abr", ok:26, atr:2 }, { m:"Mai", ok:24, atr:4 }, { m:"Jun", ok:30, atr:2 },
+  { m:"Jul", ok:28, atr:3 }, { m:"Ago", ok:32, atr:1 }, { m:"Set", ok:35, atr:2 },
+  { m:"Out", ok:38, atr:1 }, { m:"Nov", ok:36, atr:3 }, { m:"Dez", ok:40, atr:1 },
+];
+const slaData = [
+  { name:"Conformidade", value:94, fill:"#10B981" },
+  { name:"Violações",    value:6,  fill:"#F43F5E" },
+];
+const projects = [
+  { id:"BP-001", name:"Migração Cloud AWS",       status:"Em Andamento", prog:72,  resp:"Ana Lima",      prazo:"28/02/25", prioridade:"Alta",    orcamento:"R$ 1.2M", risco:"Médio" },
+  { id:"BP-002", name:"ERP SAP S/4HANA",          status:"Em Andamento", prog:48,  resp:"Carlos Melo",   prazo:"30/06/25", prioridade:"Crítica", orcamento:"R$ 4.8M", risco:"Alto"  },
+  { id:"BP-003", name:"BI & Analytics Platform",  status:"Concluído",    prog:100, resp:"Marina Costa",  prazo:"15/01/25", prioridade:"Alta",    orcamento:"R$ 780K", risco:"Baixo" },
+  { id:"BP-004", name:"Automação RPA Financeiro", status:"Em Andamento", prog:31,  resp:"Pedro Rocha",   prazo:"15/04/25", prioridade:"Média",   orcamento:"R$ 320K", risco:"Baixo" },
+  { id:"BP-005", name:"Portal do Colaborador",    status:"Planejamento", prog:8,   resp:"Juliana Dias",  prazo:"31/08/25", prioridade:"Média",   orcamento:"R$ 560K", risco:"Baixo" },
+  { id:"BP-006", name:"Cibersegurança ZeroTrust", status:"Em Andamento", prog:55,  resp:"Rafael Nunes",  prazo:"30/05/25", prioridade:"Crítica", orcamento:"R$ 2.1M", risco:"Alto"  },
+];
+const kanbanCols = [
+  { id:"backlog",  label:"Backlog",       color:"#4A637F", items:[
+    { id:"k1", title:"Integração API Legado",    tag:"Backend", p:"Média" },
+    { id:"k2", title:"Plano DR & BCP",           tag:"Infra",   p:"Alta"  },
+  ]},
+  { id:"progress", label:"Em Progresso",  color:"#4F8EF7", items:[
+    { id:"k3", title:"Dashboard Executivo BI",   tag:"Analytics", p:"Alta"    },
+    { id:"k4", title:"Migração Banco de Dados",  tag:"Infra",     p:"Crítica" },
+    { id:"k5", title:"Treinamento Change Mgmt",  tag:"People",    p:"Média"   },
+  ]},
+  { id:"review",   label:"Em Revisão",    color:"#F59E0B", items:[
+    { id:"k6", title:"Documentação Técnica SAP", tag:"ERP", p:"Alta"    },
+    { id:"k7", title:"UAT Módulo Financeiro",    tag:"QA",  p:"Crítica" },
+  ]},
+  { id:"done",     label:"Concluído",     color:"#10B981", items:[
+    { id:"k8", title:"Arquitetura Cloud Definida", tag:"Infra",    p:"Alta" },
+    { id:"k9", title:"Contrato AWS Enterprise",    tag:"Compras",  p:"Alta" },
+  ]},
+];
+const suppliers = [
+  { name:"AWS Amazon",        cat:"Cloud",       sla:99.9, score:98, contrato:"R$ 1.8M/ano", status:"Ativo", venc:"Dez/25" },
+  { name:"SAP Brasil",        cat:"ERP",         sla:97.2, score:91, contrato:"R$ 2.4M/ano", status:"Ativo", venc:"Jun/26" },
+  { name:"Deloitte Tech",     cat:"Consultoria", sla:95.5, score:88, contrato:"R$ 960K/ano", status:"Ativo", venc:"Mar/25" },
+  { name:"Palo Alto Networks",cat:"Segurança",   sla:99.5, score:96, contrato:"R$ 480K/ano", status:"Ativo", venc:"Out/25" },
+  { name:"UiPath",            cat:"RPA",         sla:98.1, score:92, contrato:"R$ 220K/ano", status:"Ativo", venc:"Abr/26" },
+  { name:"Power BI Premium",  cat:"Analytics",   sla:99.0, score:94, contrato:"R$ 180K/ano", status:"Ativo", venc:"Jan/26" },
+];
+const activities = [
+  { time:"Agora", icon:CheckCircle2, color:"#10B981", text:"Entrega concluída: Módulo BI Analytics v2.3" },
+  { time:"2h",    icon:AlertTriangle,color:"#F59E0B", text:"Alerta: SLA SAP abaixo de 98% no período"    },
+  { time:"4h",    icon:Zap,          color:"#4F8EF7", text:"Deploy realizado: Portal Colaborador — Homologação" },
+  { time:"6h",    icon:Shield,       color:"#9B7FFF", text:"Relatório de segurança ZeroTrust gerado"     },
+  { time:"8h",    icon:Target,       color:"#22D3EE", text:"OKR Q1/2025 atualizado — 87% de aderência"  },
+  { time:"1d",    icon:Users,        color:"#F43F5E", text:"Reunião Steering Committee agendada"         },
+  { time:"2d",    icon:Package,      color:"#10B981", text:"Contrato Deloitte renovado com novos SLA"    },
+];
+
+// ─── POC DATA ─────────────────────────────────────────────────────────────────
+const pocs = [
+  {
+    id:"POC-001", name:"Snowflake Data Cloud", supplier:"Snowflake Inc.",
+    resp:"Marina Costa", cat:"Analytics", start:"02/01/25", end:"31/01/25",
+    status:"Aprovado", roiEsp:180, score:94,
+    tecnico:92, funcional:95, financeiro:88, estrategico:96,
+    orcamento:"R$ 48K", result:"Excelente performance em queries complexas. Integração nativa com AWS aprovada.",
+    criterios:["Performance", "Escalabilidade", "Custo-benefício", "Integração"],
+  },
+  {
+    id:"POC-002", name:"ServiceNow ITSM", supplier:"ServiceNow",
+    resp:"Rafael Nunes", cat:"ITSM", start:"05/01/25", end:"20/02/25",
+    status:"Em Avaliação", roiEsp:140, score:78,
+    tecnico:82, funcional:75, financeiro:70, estrategico:84,
+    orcamento:"R$ 32K", result:"Customizações avançadas em análise. Dependência de módulos adicionais identificada.",
+    criterios:["Automação", "Relatórios", "Integrações", "UX"],
+  },
+  {
+    id:"POC-003", name:"Databricks Lakehouse", supplier:"Databricks",
+    resp:"Carlos Melo", cat:"Data Eng.", start:"10/01/25", end:"28/02/25",
+    status:"Em Teste", roiEsp:220, score:81,
+    tecnico:88, funcional:80, financeiro:72, estrategico:82,
+    orcamento:"R$ 55K", result:"Testes de carga em andamento. Pipeline de dados 40% mais eficiente.",
+    criterios:["Processamento", "ML/IA", "Custo compute", "Governança"],
+  },
+  {
+    id:"POC-004", name:"CrowdStrike Falcon", supplier:"CrowdStrike",
+    resp:"Ana Lima", cat:"Segurança", start:"08/12/24", end:"07/01/25",
+    status:"Aprovado", roiEsp:310, score:97,
+    tecnico:98, funcional:96, financeiro:94, estrategico:99,
+    orcamento:"R$ 28K", result:"Zero falsos positivos em 30 dias. Detection rate de 99,98%. Aprovado sem ressalvas.",
+    criterios:["Detecção", "Response", "Falsos positivos", "Cobertura"],
+  },
+  {
+    id:"POC-005", name:"Workday HCM", supplier:"Workday",
+    resp:"Juliana Dias", cat:"RH Digital", start:"15/11/24", end:"15/12/24",
+    status:"Reprovado", roiEsp:90, score:52,
+    tecnico:60, funcional:48, financeiro:44, estrategico:56,
+    orcamento:"R$ 40K", result:"Custo de implementação 3x acima do estimado. Customização limitada para legislação BR.",
+    criterios:["Aderência BR", "Customização", "TCO", "Suporte local"],
+  },
+  {
+    id:"POC-006", name:"Mulesoft Integration", supplier:"Salesforce",
+    resp:"Pedro Rocha", cat:"Integration", start:"20/01/25", end:"28/02/25",
+    status:"Em Teste", roiEsp:165, score:71,
+    tecnico:75, funcional:72, financeiro:65, estrategico:70,
+    orcamento:"R$ 36K", result:"APIs críticas mapeadas. Latência dentro do SLA. Documentação em elaboração.",
+    criterios:["APIs", "Latência", "Monitoramento", "Escalabilidade"],
+  },
+];
+
+const pocAprovData = [
+  { m:"Out/24", total:2, aprov:1 }, { m:"Nov/24", total:3, aprov:2 },
+  { m:"Dez/24", total:4, aprov:3 }, { m:"Jan/25", total:6, aprov:4 },
+];
+const pocRoiData = pocs.filter(p => p.status === "Aprovado" || p.status === "Em Avaliação").map(p => ({
+  name: p.supplier.split(" ")[0], roi: p.roiEsp, score: p.score,
+}));
+const pocPerfData = pocs.map(p => ({
+  name: p.supplier.split(" ")[0],
+  Técnico: p.tecnico, Funcional: p.funcional,
+  Financeiro: p.financeiro, Estratégico: p.estrategico,
+}));
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+const scoreColor = (s, C) => s >= 90 ? C.emerald : s >= 70 ? C.amber : C.rose;
+const pocStatusConf = (C) => ({
+  "Aprovado":    { color: C.emerald, bg: C.emeraldGlow },
+  "Reprovado":   { color: C.rose,    bg: C.roseGlow    },
+  "Em Teste":    { color: C.blue,    bg: C.blueGlow    },
+  "Em Avaliação":{ color: C.amber,   bg: C.amberGlow   },
+});
+const projStatusConf = (C) => ({
+  "Em Andamento": { color: C.blue,   bg: C.blueGlow   },
+  "Concluído":    { color: C.emerald,bg: C.emeraldGlow },
+  "Planejamento": { color: C.violet, bg: C.violetGlow  },
+  "Ativo":        { color: C.emerald,bg: C.emeraldGlow },
+  "Pausado":      { color: C.amber,  bg: C.amberGlow   },
+});
+const priConf = (C) => ({
+  "Crítica": { c: C.rose,   b: C.roseGlow   },
+  "Alta":    { c: C.amber,  b: C.amberGlow  },
+  "Média":   { c: C.blue,   b: C.blueGlow   },
+  "Baixa":   { c: C.t3,     b: C.card       },
+});
+
+// ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
+const Chip = ({ label, color, bg, border }) => (
+  <span style={{
+    display:"inline-flex", alignItems:"center", padding:"3px 10px",
+    borderRadius:6, fontSize:11, fontWeight:600, letterSpacing:"0.04em",
+    color, background: bg, border:`1px solid ${border || color + "33"}`,
+  }}>{label}</span>
+);
+
+const ProgressBar = ({ val, color, C }) => (
+  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+    <div style={{ flex:1, height:4, background:C.bg3, borderRadius:99, overflow:"hidden" }}>
+      <div style={{ width:`${val}%`, height:"100%", background:color, borderRadius:99, transition:"width 0.9s ease" }} />
+    </div>
+    <span style={{ fontSize:12, color:C.t2, minWidth:32, textAlign:"right" }}>{val}%</span>
+  </div>
+);
+
+const ScoreRing = ({ val, C, size = 56 }) => {
+  const r = (size / 2) - 5;
+  const circ = 2 * Math.PI * r;
+  const dash = (val / 100) * circ;
+  const col = scoreColor(val, C);
+  return (
+    <div style={{ position:"relative", width:size, height:size }}>
+      <svg width={size} height={size} style={{ transform:"rotate(-90deg)" }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={C.bg3} strokeWidth={4} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={col} strokeWidth={4}
+          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" style={{ transition:"stroke-dasharray 1s ease" }} />
+      </svg>
+      <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, color:col }}>{val}</div>
+    </div>
+  );
+};
+
+const KPICard = ({ icon: Icon, label, value, sub, trend, trendVal, color, glow, C }) => (
+  <div style={{
+    background:C.card, border:`1px solid ${C.border}`, borderRadius:12,
+    padding:"20px 22px", display:"flex", flexDirection:"column", gap:14,
+    position:"relative", overflow:"hidden", transition:"border-color 0.2s, background 0.2s",
+    backdropFilter:"blur(8px)",
+  }}
+    onMouseEnter={e => { e.currentTarget.style.borderColor = C.borderHov; e.currentTarget.style.background = C.cardHov; }}
+    onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = C.card; }}
+  >
+    <div style={{ position:"absolute", top:-20, right:-20, width:100, height:100, borderRadius:"50%", background:glow, filter:"blur(32px)", pointerEvents:"none" }} />
+    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+      <div style={{ padding:9, borderRadius:10, background:glow, border:`1px solid ${color}28` }}>
+        <Icon size={17} color={color} />
+      </div>
+      {trendVal && (
+        <div style={{ display:"flex", alignItems:"center", gap:4, fontSize:12, fontWeight:600, color:trend==="up"?C.emerald:C.rose }}>
+          {trend==="up" ? <ArrowUpRight size={13}/> : <ArrowDownRight size={13}/>} {trendVal}
+        </div>
+      )}
+    </div>
+    <div>
+      <div style={{ fontSize:26, fontWeight:700, color:C.t1, letterSpacing:"-0.02em", lineHeight:1.1 }}>{value}</div>
+      <div style={{ fontSize:13, color:C.t2, marginTop:4 }}>{label}</div>
+      {sub && <div style={{ fontSize:11, color:C.t3, marginTop:3 }}>{sub}</div>}
+    </div>
+  </div>
+);
+
+const CT = ({ active, payload, label, C }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{ background:C.bg2, border:`1px solid ${C.border}`, borderRadius:8, padding:"10px 14px", backdropFilter:"blur(12px)" }}>
+      <div style={{ fontSize:12, color:C.t3, marginBottom:6 }}>{label}</div>
+      {payload.map((p, i) => (
+        <div key={i} style={{ fontSize:13, color:C.t1, display:"flex", gap:8, alignItems:"center", marginBottom:2 }}>
+          <span style={{ width:8, height:8, borderRadius:"50%", background:p.color }} />
+          <span style={{ color:C.t2 }}>{p.name}:</span>
+          <span style={{ fontWeight:600 }}>{p.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const SectionHeader = ({ title, sub, actions, C }) => (
+  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+    <div>
+      <div style={{ fontSize:22, fontWeight:700, color:C.t1, letterSpacing:"-0.025em" }}>{title}</div>
+      {sub && <div style={{ fontSize:13, color:C.t3, marginTop:3 }}>{sub}</div>}
+    </div>
+    {actions && <div style={{ display:"flex", gap:10 }}>{actions}</div>}
+  </div>
+);
+
+const Btn = ({ label, icon: Icon, primary, onClick, C }) => (
+  <button onClick={onClick} style={{
+    display:"flex", alignItems:"center", gap:6, padding:"8px 16px",
+    borderRadius:8, border:`1px solid ${primary ? "transparent" : C.border}`,
+    background:primary ? C.blue : C.card, color:primary ? "#fff" : C.t2,
+    fontSize:13, fontWeight:primary ? 600 : 400, cursor:"pointer",
+    transition:"opacity 0.15s",
+  }}
+    onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+    onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+  >
+    {Icon && <Icon size={14}/>} {label}
+  </button>
+);
+
+const card = (C) => ({
+  background:C.card, border:`1px solid ${C.border}`,
+  borderRadius:12, backdropFilter:"blur(8px)",
+});
+
+// ─── VIEWS ────────────────────────────────────────────────────────────────────
+function Dashboard({ C }) {
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
+      <SectionHeader title="Painel Executivo" sub="Transformação Digital — Visão Consolidada · Q4 2024" C={C} />
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16 }}>
+        <KPICard icon={FolderKanban} label="Projetos Ativos"   value="12"    sub="2 críticos em atenção"       trend="up" trendVal="+3 vs Q3" color={C.blue}   glow={C.blueGlow}   C={C} />
+        <KPICard icon={TrendingUp}   label="ROI Acumulado"     value="61%"   sub="Meta: 30% — superada"        trend="up" trendVal="+103%"    color={C.emerald} glow={C.emeraldGlow} C={C} />
+        <KPICard icon={Shield}       label="SLA Compliance"    value="94.2%" sub="↑ 2.1pp vs mês anterior"    trend="up" trendVal="+2.1pp"   color={C.violet}  glow={C.violetGlow}  C={C} />
+        <KPICard icon={Activity}     label="Produtividade"     value="97%"   sub="Índice equipe técnica"       trend="up" trendVal="+4%"      color={C.cyan}    glow={C.cyanGlow}    C={C} />
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16 }}>
+        <KPICard icon={CheckCircle2} label="Entregas no Prazo" value="89.3%" sub="338 de 379 entregas"         trend="up" trendVal="+3.7%"    color={C.emerald} glow={C.emeraldGlow} C={C} />
+        <KPICard icon={AlertTriangle}label="Incidentes Abertos"value="7"     sub="3 críticos, 4 médios"        trend="down" trendVal="-5"     color={C.amber}   glow={C.amberGlow}   C={C} />
+        <KPICard icon={Target}       label="Budget Utilizado"  value="68%"   sub="R$ 12.4M de R$ 18.2M"                                      color={C.blue}    glow={C.blueGlow}    C={C} />
+        <KPICard icon={Users}        label="Fornecedores"      value="6"     sub="SLA médio: 98.2%"                                           color={C.violet}  glow={C.violetGlow}  C={C} />
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+        <div style={{ ...card(C), padding:"22px 24px" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
+            <div><div style={{ fontSize:14, fontWeight:600, color:C.t1 }}>Evolução do ROI</div><div style={{ fontSize:12, color:C.t3 }}>Real vs Meta — 2024</div></div>
+            <Chip label="↑ 103% vs meta" color={C.emerald} bg={C.emeraldGlow} />
+          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={roiData}>
+              <defs>
+                <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor={C.emerald} stopOpacity={0.18}/>
+                  <stop offset="95%" stopColor={C.emerald} stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor={C.blue} stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor={C.blue} stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
+              <XAxis dataKey="m" tick={{ fill:C.t3, fontSize:11 }} axisLine={false} tickLine={false}/>
+              <YAxis tick={{ fill:C.t3, fontSize:11 }} axisLine={false} tickLine={false} unit="%"/>
+              <Tooltip content={<CT C={C}/>}/>
+              <Area type="monotone" dataKey="meta" name="Meta" stroke={C.blue}   strokeWidth={1.5} fill="url(#g2)" strokeDasharray="4 2"/>
+              <Area type="monotone" dataKey="roi"  name="ROI"  stroke={C.emerald} strokeWidth={2}  fill="url(#g1)"/>
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{ ...card(C), padding:"22px 24px" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
+            <div><div style={{ fontSize:14, fontWeight:600, color:C.t1 }}>Entregas Mensais</div><div style={{ fontSize:12, color:C.t3 }}>No prazo vs Atrasadas</div></div>
+            <Chip label="378 total" color={C.t2} bg={C.surface} />
+          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={deliveryData} barGap={2}>
+              <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
+              <XAxis dataKey="m" tick={{ fill:C.t3, fontSize:11 }} axisLine={false} tickLine={false}/>
+              <YAxis tick={{ fill:C.t3, fontSize:11 }} axisLine={false} tickLine={false}/>
+              <Tooltip content={<CT C={C}/>}/>
+              <Bar dataKey="ok"  name="No Prazo"  fill={C.emerald} radius={[3,3,0,0]}/>
+              <Bar dataKey="atr" name="Atrasadas" fill={C.rose}    radius={[3,3,0,0]}/>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16 }}>
+        <div style={{ ...card(C), padding:"22px 24px" }}>
+          <div style={{ marginBottom:16 }}><div style={{ fontSize:14, fontWeight:600, color:C.t1 }}>Produtividade</div><div style={{ fontSize:12, color:C.t3 }}>Índice mensal</div></div>
+          <ResponsiveContainer width="100%" height={160}>
+            <LineChart data={prodData}>
+              <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
+              <XAxis dataKey="m" tick={{ fill:C.t3, fontSize:10 }} axisLine={false} tickLine={false}/>
+              <YAxis domain={[60,100]} tick={{ fill:C.t3, fontSize:10 }} axisLine={false} tickLine={false} unit="%"/>
+              <Tooltip content={<CT C={C}/>}/>
+              <Line type="monotone" dataKey="prod" name="Prod" stroke={C.cyan} strokeWidth={2} dot={false}/>
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{ ...card(C), padding:"22px 24px" }}>
+          <div style={{ marginBottom:8 }}><div style={{ fontSize:14, fontWeight:600, color:C.t1 }}>SLA Compliance</div><div style={{ fontSize:12, color:C.t3 }}>Conformidade geral</div></div>
+          <div style={{ position:"relative", display:"flex", justifyContent:"center" }}>
+            <ResponsiveContainer width="100%" height={160}>
+              <PieChart>
+                <Pie data={slaData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} dataKey="value" startAngle={90} endAngle={-270} strokeWidth={0}>
+                  {slaData.map((d,i) => <Cell key={i} fill={d.fill}/>)}
+                </Pie>
+                <Tooltip formatter={(v) => `${v}%`}/>
+              </PieChart>
+            </ResponsiveContainer>
+            <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", textAlign:"center" }}>
+              <div style={{ fontSize:22, fontWeight:700, color:C.emerald }}>94%</div>
+              <div style={{ fontSize:10, color:C.t3 }}>conformidade</div>
+            </div>
+          </div>
+          <div style={{ display:"flex", justifyContent:"center", gap:16, marginTop:4 }}>
+            {slaData.map((d,i)=>(
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:C.t2 }}>
+                <span style={{ width:8, height:8, borderRadius:2, background:d.fill }}/>{d.name}: {d.value}%
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ ...card(C), padding:"20px" }}>
+          <div style={{ marginBottom:14 }}><div style={{ fontSize:14, fontWeight:600, color:C.t1 }}>Atividades Recentes</div><div style={{ fontSize:12, color:C.t3 }}>Últimas 48h</div></div>
+          <div style={{ display:"flex", flexDirection:"column", gap:11 }}>
+            {activities.slice(0,5).map((a,i)=>(
+              <div key={i} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
+                <div style={{ padding:5, borderRadius:7, background:`${a.color}18`, flexShrink:0 }}><a.icon size={12} color={a.color}/></div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:11, color:C.t2, lineHeight:1.4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{a.text}</div>
+                  <div style={{ fontSize:10, color:C.t3, marginTop:1 }}>{a.time} atrás</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProjectsView({ C }) {
+  const [filter, setFilter] = useState("Todos");
+  const filters = ["Todos","Em Andamento","Concluído","Planejamento"];
+  const filtered = filter==="Todos" ? projects : projects.filter(p=>p.status===filter);
+  const sc = projStatusConf(C); const pc = priConf(C);
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+      <SectionHeader title="Gestão de Projetos" sub={`${filtered.length} projetos · Portfólio Transformação Digital`}
+        actions={[<Btn key="f" label="Filtros" icon={Filter} C={C}/>, <Btn key="n" label="Novo Projeto" icon={Plus} primary C={C}/>]} C={C}/>
+      <div style={{ display:"flex", gap:8 }}>
+        {filters.map(f=>(
+          <button key={f} onClick={()=>setFilter(f)} style={{
+            padding:"6px 14px", borderRadius:8, border:`1px solid ${filter===f?C.blue:C.border}`,
+            background:filter===f?C.blueGlow:"transparent", color:filter===f?C.blue:C.t2,
+            fontSize:12, cursor:"pointer", fontWeight:filter===f?600:400,
+          }}>{f}</button>
+        ))}
+      </div>
+      <div style={{ ...card(C), padding:0, overflow:"hidden" }}>
+        <table style={{ width:"100%", borderCollapse:"collapse" }}>
+          <thead>
+            <tr style={{ borderBottom:`1px solid ${C.border}` }}>
+              {["ID","Projeto","Responsável","Progresso","Prazo","Prioridade","Orçamento","Status",""].map((h,i)=>(
+                <th key={i} style={{ padding:"13px 16px", fontSize:10, fontWeight:700, color:C.t3, textAlign:"left", letterSpacing:"0.07em", textTransform:"uppercase" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((p)=>{
+              const st = sc[p.status]||sc["Em Andamento"]; const pr = pc[p.prioridade]||pc["Média"];
+              return (
+                <tr key={p.id} style={{ borderBottom:`1px solid ${C.border}`, transition:"background 0.15s" }}
+                  onMouseEnter={e=>e.currentTarget.style.background=C.cardHov}
+                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                  <td style={{ padding:"13px 16px", fontSize:11, color:C.t3, fontFamily:"monospace" }}>{p.id}</td>
+                  <td style={{ padding:"13px 16px", fontSize:13, color:C.t1, fontWeight:600, maxWidth:190 }}>{p.name}</td>
+                  <td style={{ padding:"13px 16px", fontSize:12, color:C.t2 }}>{p.resp}</td>
+                  <td style={{ padding:"13px 16px", minWidth:140 }}><ProgressBar val={p.prog} color={p.prog===100?C.emerald:C.blue} C={C}/></td>
+                  <td style={{ padding:"13px 16px", fontSize:12, color:C.t2 }}>{p.prazo}</td>
+                  <td style={{ padding:"13px 16px" }}><Chip label={p.prioridade} color={pr.c} bg={pr.b}/></td>
+                  <td style={{ padding:"13px 16px", fontSize:12, color:C.t1, fontWeight:500 }}>{p.orcamento}</td>
+                  <td style={{ padding:"13px 16px" }}><Chip label={p.status} color={st.color} bg={st.bg}/></td>
+                  <td style={{ padding:"13px 16px" }}><button style={{ background:"none", border:"none", cursor:"pointer", color:C.t3 }}><MoreHorizontal size={15}/></button></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function KanbanView({ C }) {
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+      <SectionHeader title="Kanban" sub="Tarefas e entregas em tempo real"
+        actions={[<Btn key="n" label="Nova Tarefa" icon={Plus} primary C={C}/>]} C={C}/>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, alignItems:"start" }}>
+        {kanbanCols.map(col=>(
+          <div key={col.id} style={{ display:"flex", flexDirection:"column", gap:9 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 12px", borderRadius:8, background:C.surface, border:`1px solid ${C.border}` }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <span style={{ width:7, height:7, borderRadius:"50%", background:col.color }}/>
+                <span style={{ fontSize:11, fontWeight:700, color:C.t2, letterSpacing:"0.04em" }}>{col.label}</span>
+              </div>
+              <span style={{ fontSize:10, color:C.t3, background:C.bg3, padding:"2px 7px", borderRadius:10 }}>{col.items.length}</span>
+            </div>
+            {col.items.map(item=>(
+              <div key={item.id} style={{ ...card(C), padding:"13px 15px", cursor:"grab", transition:"border-color 0.2s, transform 0.15s" }}
+                onMouseEnter={e=>{ e.currentTarget.style.borderColor=col.color+"66"; e.currentTarget.style.transform="translateY(-2px)"; }}
+                onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.border; e.currentTarget.style.transform="translateY(0)"; }}>
+                <div style={{ fontSize:13, color:C.t1, fontWeight:500, marginBottom:10, lineHeight:1.4 }}>{item.title}</div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <span style={{ fontSize:10, padding:"2px 8px", borderRadius:5, background:C.bg3, color:C.t3 }}>{item.tag}</span>
+                  <Chip label={item.p} color={(priConf(C)[item.p]||priConf(C)["Média"]).c} bg={(priConf(C)[item.p]||priConf(C)["Média"]).b}/>
+                </div>
+              </div>
+            ))}
+            <button style={{ padding:"9px", borderRadius:8, border:`1px dashed ${C.border}`, background:"transparent", color:C.t3, cursor:"pointer", fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+              <Plus size={12}/> Adicionar
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SuppliersView({ C }) {
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+      <SectionHeader title="Gestão de Fornecedores" sub="6 fornecedores ativos · SLA médio 98.2%"
+        actions={[<Btn key="n" label="Novo Fornecedor" icon={Plus} primary C={C}/>]} C={C}/>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16 }}>
+        {suppliers.map((s,i)=>(
+          <div key={i} style={{ ...card(C), padding:"20px 22px", transition:"border-color 0.2s, transform 0.2s" }}
+            onMouseEnter={e=>{ e.currentTarget.style.borderColor=C.borderHov; e.currentTarget.style.transform="translateY(-2px)"; }}
+            onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.border; e.currentTarget.style.transform="translateY(0)"; }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
+              <div>
+                <div style={{ fontSize:15, fontWeight:700, color:C.t1 }}>{s.name}</div>
+                <div style={{ fontSize:11, color:C.t3, marginTop:2 }}>{s.cat}</div>
+              </div>
+              <Chip label={s.status} color={C.emerald} bg={C.emeraldGlow}/>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+              <div style={{ background:C.bg3, borderRadius:8, padding:"10px 12px" }}>
+                <div style={{ fontSize:18, fontWeight:700, color:s.sla>=99?C.emerald:s.sla>=97?C.amber:C.rose }}>{s.sla}%</div>
+                <div style={{ fontSize:10, color:C.t3, marginTop:2 }}>SLA Real</div>
+              </div>
+              <div style={{ background:C.bg3, borderRadius:8, padding:"10px 12px" }}>
+                <div style={{ fontSize:18, fontWeight:700, color:C.blue }}>{s.score}</div>
+                <div style={{ fontSize:10, color:C.t3, marginTop:2 }}>Score</div>
+              </div>
+            </div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:12, borderTop:`1px solid ${C.border}` }}>
+              <span style={{ fontSize:12, color:C.t2, fontWeight:500 }}>{s.contrato}</span>
+              <span style={{ fontSize:11, color:C.t3 }}>Vence {s.venc}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function IndicatorsView({ C }) {
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
+      <SectionHeader title="Indicadores Executivos" sub="OKRs e métricas estratégicas — Q4 2024" C={C}/>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+        <div style={{ ...card(C), padding:"22px 24px", gridColumn:"span 2" }}>
+          <div style={{ fontSize:14, fontWeight:600, color:C.t1, marginBottom:18 }}>OKRs Estratégicos 2024</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+            {[
+              { ok:"Digitalizar 100% dos processos core",     meta:100, atual:78,   c:C.blue },
+              { ok:"Reduzir custos operacionais em 25%",      meta:25,  atual:19.2, c:C.emerald },
+              { ok:"Atingir NPS interno ≥ 75",                meta:75,  atual:82,   c:C.violet },
+              { ok:"Zero incidentes críticos de segurança",   meta:0,   atual:2,    c:C.rose, inv:true },
+              { ok:"Time-to-market < 30 dias",                meta:30,  atual:22,   c:C.amber, inv:true },
+            ].map((o,i)=>(
+              <div key={i} style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                <div style={{ display:"flex", justifyContent:"space-between" }}>
+                  <span style={{ fontSize:13, color:C.t2 }}>{o.ok}</span>
+                  <span style={{ fontSize:12, fontWeight:700, color:o.c }}>{o.atual} / meta {o.meta}</span>
+                </div>
+                <ProgressBar val={Math.min(100, o.inv?(o.meta===0?(o.atual===0?100:20):Math.round((1-o.atual/o.meta)*100)):Math.round((o.atual/o.meta)*100))} color={o.c} C={C}/>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ ...card(C), padding:"22px 24px" }}>
+          <div style={{ fontSize:14, fontWeight:600, color:C.t1, marginBottom:16 }}>ROI por Projeto</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {[{ n:"BI & Analytics",v:320,c:C.emerald },{ n:"Cloud Migration",v:185,c:C.blue },{ n:"RPA Financeiro",v:142,c:C.cyan },{ n:"ZeroTrust Sec",v:98,c:C.violet },{ n:"ERP SAP",v:67,c:C.amber }]
+              .map((r,i)=>(
+                <div key={i} style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", fontSize:12 }}>
+                    <span style={{ color:C.t2 }}>{r.n}</span><span style={{ color:r.c, fontWeight:700 }}>{r.v}%</span>
+                  </div>
+                  <ProgressBar val={Math.min(100,Math.round(r.v/3.2))} color={r.c} C={C}/>
+                </div>
+              ))}
+          </div>
+        </div>
+        <div style={{ ...card(C), padding:"22px 24px" }}>
+          <div style={{ fontSize:14, fontWeight:600, color:C.t1, marginBottom:16 }}>Maturidade Digital</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+            {[{ d:"Infraestrutura Cloud",n:88 },{ d:"Automação de Processos",n:62 },{ d:"Analytics & BI",n:91 },{ d:"Segurança",n:74 },{ d:"Exp. do Colaborador",n:55 },{ d:"Governança de Dados",n:69 }]
+              .map((d,i)=>(
+                <div key={i} style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", fontSize:12 }}>
+                    <span style={{ color:C.t2 }}>{d.d}</span>
+                    <span style={{ color:d.n>=80?C.emerald:d.n>=65?C.amber:C.rose, fontWeight:700 }}>{d.n}%</span>
+                  </div>
+                  <ProgressBar val={d.n} color={d.n>=80?C.emerald:d.n>=65?C.amber:C.rose} C={C}/>
+                </div>
+              ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── POC VIEW ─────────────────────────────────────────────────────────────────
+function PocDetail({ poc, C, onClose }) {
+  const sc = pocStatusConf(C);
+  const st = sc[poc.status] || sc["Em Teste"];
+  const criteriaScores = [
+    { label:"Técnico",    val:poc.tecnico,    col:C.blue   },
+    { label:"Funcional",  val:poc.funcional,  col:C.violet },
+    { label:"Financeiro", val:poc.financeiro, col:C.amber  },
+    { label:"Estratégico",val:poc.estrategico,col:C.cyan   },
+  ];
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", backdropFilter:"blur(6px)", zIndex:50, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}>
+      <div style={{ width:"100%", maxWidth:660, background:C.bg1, border:`1px solid ${C.borderStrong}`, borderRadius:16, overflow:"hidden", maxHeight:"90vh", overflowY:"auto" }}>
+        <div style={{ padding:"22px 24px", borderBottom:`1px solid ${C.border}`, display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+          <div>
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
+              <span style={{ fontSize:11, color:C.t3, fontFamily:"monospace" }}>{poc.id}</span>
+              <Chip label={poc.status} color={st.color} bg={st.bg}/>
+            </div>
+            <div style={{ fontSize:18, fontWeight:700, color:C.t1 }}>{poc.name}</div>
+            <div style={{ fontSize:12, color:C.t3, marginTop:3 }}>{poc.supplier} · {poc.cat}</div>
+          </div>
+          <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", color:C.t2, padding:4 }}>✕</button>
+        </div>
+        <div style={{ padding:"22px 24px", display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }}>
+            {[
+              { l:"Responsável", v:poc.resp       },
+              { l:"Início",      v:poc.start       },
+              { l:"Término",     v:poc.end         },
+              { l:"Orçamento POC",v:poc.orcamento  },
+              { l:"ROI Esperado",v:`${poc.roiEsp}%`},
+              { l:"Score Final", v:poc.score       },
+            ].map((f,i)=>(
+              <div key={i} style={{ background:C.bg3, borderRadius:8, padding:"10px 14px" }}>
+                <div style={{ fontSize:10, color:C.t3, marginBottom:4, textTransform:"uppercase", letterSpacing:"0.06em" }}>{f.l}</div>
+                <div style={{ fontSize:14, fontWeight:700, color:i===5?scoreColor(f.v,C):C.t1 }}>{f.v}</div>
+              </div>
+            ))}
+          </div>
+          <div>
+            <div style={{ fontSize:13, fontWeight:600, color:C.t1, marginBottom:12 }}>Critérios de Avaliação</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              {criteriaScores.map((c,i)=>(
+                <div key={i}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5, fontSize:12 }}>
+                    <span style={{ color:C.t2 }}>{c.label}</span>
+                    <span style={{ color:c.col, fontWeight:700 }}>{c.val}/100</span>
+                  </div>
+                  <ProgressBar val={c.val} color={c.col} C={C}/>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize:13, fontWeight:600, color:C.t1, marginBottom:8 }}>Critérios Avaliados</div>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+              {poc.criterios.map((cr,i)=>(
+                <div key={i} style={{ padding:"5px 12px", borderRadius:20, background:C.blueGlow, border:`1px solid ${C.blue}33`, fontSize:12, color:C.blue }}>{cr}</div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize:13, fontWeight:600, color:C.t1, marginBottom:8 }}>Resultado / Análise Técnica</div>
+            <div style={{ background:C.bg3, borderRadius:10, padding:"14px 16px", fontSize:13, color:C.t2, lineHeight:1.7 }}>{poc.result}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PocView({ C }) {
+  const [filter, setFilter] = useState("Todos");
+  const [detail, setDetail] = useState(null);
+  const filters = ["Todos","Em Teste","Em Avaliação","Aprovado","Reprovado"];
+  const filtered = filter==="Todos" ? pocs : pocs.filter(p=>p.status===filter);
+  const sc = pocStatusConf(C);
+  const total = pocs.length;
+  const aprov = pocs.filter(p=>p.status==="Aprovado").length;
+  const reprov = pocs.filter(p=>p.status==="Reprovado").length;
+  const avgRoi = Math.round(pocs.reduce((a,p)=>a+p.roiEsp,0)/pocs.length);
+  const avgScore = Math.round(pocs.reduce((a,p)=>a+p.score,0)/pocs.length);
+  const txAprov = Math.round((aprov/total)*100);
+
+  const approvalPieData = [
+    { name:"Aprovado",    value:aprov,              fill:C.emerald },
+    { name:"Reprovado",   value:reprov,             fill:C.rose    },
+    { name:"Em Processo", value:total-aprov-reprov, fill:C.blue    },
+  ];
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:22 }}>
+      {detail && <PocDetail poc={detail} C={C} onClose={()=>setDetail(null)}/>}
+
+      <SectionHeader title="POCs — Proof of Concept"
+        sub={`Validação de fornecedores pré-contratação · ${total} POCs registradas`}
+        actions={[<Btn key="d" label="Exportar" icon={Download} C={C}/>, <Btn key="n" label="Nova POC" icon={Plus} primary C={C}/>]}
+        C={C}/>
+
+      {/* KPIs */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14 }}>
+        <KPICard icon={FlaskConical}  label="Total de POCs"    value={total}     sub="Portfólio completo"      color={C.blue}   glow={C.blueGlow}    C={C}/>
+        <KPICard icon={ThumbsUp}      label="Taxa de Aprovação" value={`${txAprov}%`} sub={`${aprov} aprovadas`} trend="up" trendVal="+8% vs Q3" color={C.emerald} glow={C.emeraldGlow} C={C}/>
+        <KPICard icon={TrendingUp}    label="ROI Médio Esperado" value={`${avgRoi}%`} sub="Média do portfólio" trend="up" trendVal="+22%" color={C.violet} glow={C.violetGlow} C={C}/>
+        <KPICard icon={Award}         label="Score Médio"      value={avgScore}  sub="0–100 pontos"            trend="up" trendVal="+6pts"   color={C.amber}  glow={C.amberGlow}  C={C}/>
+      </div>
+
+      {/* Charts */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14 }}>
+        {/* Pie */}
+        <div style={{ ...card(C), padding:"20px 22px" }}>
+          <div style={{ fontSize:14, fontWeight:600, color:C.t1, marginBottom:4 }}>Taxa de Aprovação</div>
+          <div style={{ fontSize:12, color:C.t3, marginBottom:12 }}>Resultado das POCs finalizadas</div>
+          <div style={{ position:"relative", display:"flex", justifyContent:"center" }}>
+            <ResponsiveContainer width="100%" height={150}>
+              <PieChart>
+                <Pie data={approvalPieData} cx="50%" cy="50%" innerRadius={46} outerRadius={64} dataKey="value" strokeWidth={0}>
+                  {approvalPieData.map((d,i)=><Cell key={i} fill={d.fill}/>)}
+                </Pie>
+                <Tooltip formatter={(v,n)=>[`${v} POCs`,n]}/>
+              </PieChart>
+            </ResponsiveContainer>
+            <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", textAlign:"center" }}>
+              <div style={{ fontSize:20, fontWeight:700, color:C.emerald }}>{txAprov}%</div>
+              <div style={{ fontSize:9, color:C.t3 }}>aprovação</div>
+            </div>
+          </div>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8, justifyContent:"center", marginTop:8 }}>
+            {approvalPieData.map((d,i)=>(
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:C.t2 }}>
+                <span style={{ width:7, height:7, borderRadius:2, background:d.fill }}/>{d.name}: {d.value}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ROI Bar */}
+        <div style={{ ...card(C), padding:"20px 22px" }}>
+          <div style={{ fontSize:14, fontWeight:600, color:C.t1, marginBottom:4 }}>ROI Esperado por POC</div>
+          <div style={{ fontSize:12, color:C.t3, marginBottom:12 }}>Retorno projetado (%)</div>
+          <ResponsiveContainer width="100%" height={170}>
+            <BarChart data={pocRoiData} layout="vertical" barSize={12}>
+              <CartesianGrid strokeDasharray="3 3" stroke={C.border} horizontal={false}/>
+              <XAxis type="number" tick={{ fill:C.t3, fontSize:10 }} axisLine={false} tickLine={false} unit="%"/>
+              <YAxis type="category" dataKey="name" tick={{ fill:C.t2, fontSize:11 }} axisLine={false} tickLine={false} width={80}/>
+              <Tooltip content={<CT C={C}/>}/>
+              <Bar dataKey="roi" name="ROI Esperado" fill={C.violet} radius={[0,4,4,0]}>
+                {pocRoiData.map((d,i)=><Cell key={i} fill={[C.emerald,C.blue,C.violet,C.cyan][i%4]}/>)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Score Line */}
+        <div style={{ ...card(C), padding:"20px 22px" }}>
+          <div style={{ fontSize:14, fontWeight:600, color:C.t1, marginBottom:4 }}>Score por Fornecedor</div>
+          <div style={{ fontSize:12, color:C.t3, marginBottom:12 }}>Performance técnica</div>
+          <ResponsiveContainer width="100%" height={170}>
+            <BarChart data={pocs.map(p=>({ name:p.supplier.split(" ")[0], score:p.score }))} barSize={18}>
+              <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
+              <XAxis dataKey="name" tick={{ fill:C.t3, fontSize:9 }} axisLine={false} tickLine={false}/>
+              <YAxis domain={[0,100]} tick={{ fill:C.t3, fontSize:10 }} axisLine={false} tickLine={false}/>
+              <Tooltip content={<CT C={C}/>}/>
+              <Bar dataKey="score" name="Score" radius={[4,4,0,0]}>
+                {pocs.map((p,i)=><Cell key={i} fill={p.score>=90?C.emerald:p.score>=70?C.amber:C.rose}/>)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div style={{ display:"flex", gap:8 }}>
+        {filters.map(f=>{
+          const conf = sc[f]||{ color:C.t2, bg:"transparent" };
+          const isA = filter===f;
+          return (
+            <button key={f} onClick={()=>setFilter(f)} style={{
+              padding:"6px 14px", borderRadius:8,
+              border:`1px solid ${isA?(f==="Todos"?C.blue:conf.color):C.border}`,
+              background:isA?(f==="Todos"?C.blueGlow:conf.bg):"transparent",
+              color:isA?(f==="Todos"?C.blue:conf.color):C.t2,
+              fontSize:12, cursor:"pointer", fontWeight:isA?700:400,
+            }}>{f}</button>
+          );
+        })}
+      </div>
+
+      {/* Table */}
+      <div style={{ ...card(C), padding:0, overflow:"hidden" }}>
+        <table style={{ width:"100%", borderCollapse:"collapse" }}>
+          <thead>
+            <tr style={{ borderBottom:`1px solid ${C.border}` }}>
+              {["ID","POC / Solução","Fornecedor","Resp.","Período","ROI Esp.","Score","Critérios","Status",""].map((h,i)=>(
+                <th key={i} style={{ padding:"12px 14px", fontSize:10, fontWeight:700, color:C.t3, textAlign:"left", letterSpacing:"0.07em", textTransform:"uppercase", whiteSpace:"nowrap" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(p=>{
+              const st = sc[p.status]||sc["Em Teste"];
+              return (
+                <tr key={p.id} style={{ borderBottom:`1px solid ${C.border}`, transition:"background 0.15s", cursor:"pointer" }}
+                  onMouseEnter={e=>e.currentTarget.style.background=C.cardHov}
+                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                  onClick={()=>setDetail(p)}>
+                  <td style={{ padding:"13px 14px", fontSize:11, color:C.t3, fontFamily:"monospace" }}>{p.id}</td>
+                  <td style={{ padding:"13px 14px", minWidth:170 }}>
+                    <div style={{ fontSize:13, color:C.t1, fontWeight:600 }}>{p.name}</div>
+                    <div style={{ fontSize:11, color:C.t3, marginTop:2 }}>{p.cat}</div>
+                  </td>
+                  <td style={{ padding:"13px 14px", fontSize:12, color:C.t2 }}>{p.supplier}</td>
+                  <td style={{ padding:"13px 14px", fontSize:12, color:C.t2 }}>{p.resp}</td>
+                  <td style={{ padding:"13px 14px", fontSize:11, color:C.t3, whiteSpace:"nowrap" }}>{p.start} → {p.end}</td>
+                  <td style={{ padding:"13px 14px" }}>
+                    <span style={{ fontSize:14, fontWeight:700, color:p.roiEsp>=200?C.emerald:p.roiEsp>=120?C.blue:C.amber }}>{p.roiEsp}%</span>
+                  </td>
+                  <td style={{ padding:"13px 14px" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                      <ScoreRing val={p.score} C={C} size={44}/>
+                    </div>
+                  </td>
+                  <td style={{ padding:"13px 14px" }}>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
+                      {p.criterios.slice(0,2).map((cr,i)=>(
+                        <span key={i} style={{ fontSize:9, padding:"2px 6px", borderRadius:4, background:C.bg3, color:C.t3 }}>{cr}</span>
+                      ))}
+                      {p.criterios.length>2 && <span style={{ fontSize:9, color:C.t3 }}>+{p.criterios.length-2}</span>}
+                    </div>
+                  </td>
+                  <td style={{ padding:"13px 14px" }}><Chip label={p.status} color={st.color} bg={st.bg}/></td>
+                  <td style={{ padding:"13px 14px" }}>
+                    <button onClick={e=>{e.stopPropagation();setDetail(p);}} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:6, cursor:"pointer", color:C.t2, padding:"4px 8px", fontSize:11 }}>
+                      <Eye size={13}/>
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Radar chart */}
+      <div style={{ ...card(C), padding:"22px 24px" }}>
+        <div style={{ fontSize:14, fontWeight:600, color:C.t1, marginBottom:4 }}>Performance por Dimensão — Todos os Fornecedores</div>
+        <div style={{ fontSize:12, color:C.t3, marginBottom:16 }}>Técnico · Funcional · Financeiro · Estratégico</div>
+        <ResponsiveContainer width="100%" height={280}>
+          <RadarChart data={pocPerfData}>
+            <PolarGrid stroke={C.border}/>
+            <PolarAngleAxis dataKey="name" tick={{ fill:C.t2, fontSize:10 }}/>
+            <Radar name="Técnico"    dataKey="Técnico"    stroke={C.blue}   fill={C.blue}   fillOpacity={0.08} strokeWidth={1.5}/>
+            <Radar name="Funcional"  dataKey="Funcional"  stroke={C.violet} fill={C.violet} fillOpacity={0.08} strokeWidth={1.5}/>
+            <Radar name="Financeiro" dataKey="Financeiro" stroke={C.amber}  fill={C.amber}  fillOpacity={0.08} strokeWidth={1.5}/>
+            <Radar name="Estratégico"dataKey="Estratégico"stroke={C.cyan}   fill={C.cyan}   fillOpacity={0.08} strokeWidth={1.5}/>
+            <Tooltip content={<CT C={C}/>}/>
+          </RadarChart>
+        </ResponsiveContainer>
+        <div style={{ display:"flex", justifyContent:"center", gap:20, marginTop:4 }}>
+          {[["Técnico",C.blue],["Funcional",C.violet],["Financeiro",C.amber],["Estratégico",C.cyan]].map(([l,c],i)=>(
+            <div key={i} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:C.t2 }}>
+              <span style={{ width:10, height:3, borderRadius:99, background:c }}/>{l}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SIDEBAR ──────────────────────────────────────────────────────────────────
+const navItems = [
+  { id:"dashboard",  label:"Dashboard",   icon:LayoutDashboard },
+  { id:"projects",   label:"Projetos",    icon:FolderKanban    },
+  { id:"kanban",     label:"Kanban",      icon:Layers          },
+  { id:"poc",        label:"POCs",        icon:FlaskConical, badge:"Novo" },
+  { id:"suppliers",  label:"Fornecedores",icon:Globe           },
+  { id:"indicators", label:"Indicadores", icon:BarChart3       },
+];
+
+function Sidebar({ active, setActive, C }) {
+  return (
+    <div style={{ width:C.sidebarW, flexShrink:0, background:C.bg1, borderRight:`1px solid ${C.border}`, display:"flex", flexDirection:"column", height:"100vh", position:"sticky", top:0, transition:"background 0.3s, border-color 0.3s" }}>
+      <div style={{ padding:"22px 18px 18px", borderBottom:`1px solid ${C.border}` }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ width:33, height:33, borderRadius:9, background:`linear-gradient(135deg,${C.blue},${C.violet})`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+            <Zap size={16} color="#fff"/>
+          </div>
+          <div>
+            <div style={{ fontSize:12, fontWeight:800, color:C.t1, lineHeight:1.2, letterSpacing:"-0.01em" }}>Bellinati Perez</div>
+            <div style={{ fontSize:9, color:C.t3, letterSpacing:"0.07em", textTransform:"uppercase" }}>Transformação Digital</div>
+          </div>
+        </div>
+      </div>
+      <nav style={{ flex:1, padding:"10px 10px", overflowY:"auto" }}>
+        <div style={{ fontSize:9, color:C.t3, letterSpacing:"0.09em", padding:"8px 10px 6px", textTransform:"uppercase" }}>Principal</div>
+        {navItems.map(item=>{
+          const isA = active===item.id;
+          return (
+            <button key={item.id} onClick={()=>setActive(item.id)} style={{
+              width:"100%", display:"flex", alignItems:"center", gap:9,
+              padding:"9px 10px", borderRadius:8, border:"none", cursor:"pointer",
+              background:isA?C.blueGlow:"transparent",
+              color:isA?C.blue:C.t2, fontSize:13, fontWeight:isA?700:400,
+              marginBottom:2, transition:"all 0.15s",
+              borderLeft:isA?`2px solid ${C.blue}`:"2px solid transparent",
+            }}
+              onMouseEnter={e=>{ if(!isA){ e.currentTarget.style.background=C.surface; e.currentTarget.style.color=C.t1; } }}
+              onMouseLeave={e=>{ if(!isA){ e.currentTarget.style.background="transparent"; e.currentTarget.style.color=C.t2; } }}
+            >
+              <item.icon size={15}/>
+              <span style={{ flex:1, textAlign:"left" }}>{item.label}</span>
+              {item.badge && <span style={{ fontSize:9, padding:"1px 6px", borderRadius:10, background:C.blueGlow, color:C.blue, fontWeight:700, border:`1px solid ${C.blue}33` }}>{item.badge}</span>}
+            </button>
+          );
+        })}
+      </nav>
+      <div style={{ padding:"12px 18px", borderTop:`1px solid ${C.border}` }}>
+        <div style={{ padding:"9px 12px", borderRadius:8, background:C.emeraldGlow, border:`1px solid ${C.emerald}28`, display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
+          <span style={{ width:7, height:7, borderRadius:"50%", background:C.emerald, boxShadow:`0 0 6px ${C.emerald}` }}/>
+          <span style={{ fontSize:11, color:C.emerald, fontWeight:700 }}>Todos os sistemas OK</span>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ width:30, height:30, borderRadius:"50%", background:`linear-gradient(135deg,${C.blue},${C.violet})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:"#fff" }}>EP</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:C.t1 }}>Equipe Projetos</div>
+            <div style={{ fontSize:10, color:C.t3 }}>Administrador</div>
+          </div>
+          <Settings size={13} color={C.t3} style={{ cursor:"pointer" }}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── TOPBAR ───────────────────────────────────────────────────────────────────
+function Topbar({ page, C, dark, toggleTheme }) {
+  const now = new Date().toLocaleDateString("pt-BR",{ day:"2-digit", month:"long", year:"numeric" });
+  return (
+    <div style={{
+      height:54, display:"flex", alignItems:"center", justifyContent:"space-between",
+      padding:"0 26px", borderBottom:`1px solid ${C.border}`,
+      background:C.bg1, position:"sticky", top:0, zIndex:20,
+      transition:"background 0.3s, border-color 0.3s",
+    }}>
+      <div style={{ display:"flex", alignItems:"center", gap:7, fontSize:13, color:C.t3 }}>
+        <span style={{ fontWeight:600 }}>Bellinati Perez</span>
+        <ChevronRight size={13}/>
+        <span style={{ color:C.t1, fontWeight:500 }}>{navItems.find(n=>n.id===page)?.label||"Dashboard"}</span>
+      </div>
+      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+        <span style={{ fontSize:11, color:C.t3 }}>{now}</span>
+        <div style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 12px", borderRadius:8, background:C.surface, border:`1px solid ${C.border}`, cursor:"text" }}>
+          <Search size={12} color={C.t3}/>
+          <span style={{ fontSize:12, color:C.t3 }}>Buscar...</span>
+          <span style={{ fontSize:9, color:C.t4, padding:"1px 5px", borderRadius:4, background:C.bg3, marginLeft:18 }}>⌘K</span>
+        </div>
+        {/* THEME TOGGLE */}
+        <button onClick={toggleTheme} style={{
+          display:"flex", alignItems:"center", gap:6, padding:"6px 12px", borderRadius:20,
+          border:`1px solid ${C.border}`, background:C.surface, cursor:"pointer",
+          color:C.t2, fontSize:12, transition:"all 0.2s",
+        }}
+          onMouseEnter={e=>{ e.currentTarget.style.borderColor=C.borderHov; e.currentTarget.style.color=C.t1; }}
+          onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.t2; }}
+        >
+          {dark ? <Sun size={14} color={C.amber}/> : <Moon size={14} color={C.blue}/>}
+          <span style={{ fontWeight:500 }}>{dark?"Light":"Dark"}</span>
+        </button>
+        <div style={{ position:"relative" }}>
+          <Bell size={17} color={C.t2} style={{ cursor:"pointer" }}/>
+          <span style={{ position:"absolute", top:-3, right:-3, width:7, height:7, borderRadius:"50%", background:C.rose, border:`2px solid ${C.bg1}` }}/>
+        </div>
+        <div style={{ width:30, height:30, borderRadius:"50%", background:`linear-gradient(135deg,${C.blue},${C.violet})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:"#fff", cursor:"pointer" }}>EP</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── APP ─────────────────────────────────────────────────────────────────────
+export default function App() {
+  const [dark, setDark] = useState(true);
+  const [active, setActive] = useState("dashboard");
+  const C = getC(dark);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await window.storage.get("bp-theme");
+        if (res) setDark(res.value === "dark");
+      } catch {}
+    })();
+  }, []);
+
+  const toggleTheme = useCallback(async () => {
+    const next = !dark;
+    setDark(next);
+    try { await window.storage.set("bp-theme", next ? "dark" : "light"); } catch {}
+  }, [dark]);
+
+  const views = { dashboard:Dashboard, projects:ProjectsView, kanban:KanbanView, poc:PocView, suppliers:SuppliersView, indicators:IndicatorsView };
+  const View = views[active] || Dashboard;
+
+  return (
+    <ThemeCtx.Provider value={{ dark, toggle: toggleTheme }}>
+      <div style={{ display:"flex", background:C.bg0, minHeight:"100vh", fontFamily:"'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", color:C.t1, transition:"background 0.3s" }}>
+        <Sidebar active={active} setActive={setActive} C={C}/>
+        <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0 }}>
+          <Topbar page={active} C={C} dark={dark} toggleTheme={toggleTheme}/>
+          <main style={{ flex:1, padding:26, overflowY:"auto" }}>
+            <View C={C}/>
+          </main>
+        </div>
+      </div>
+    </ThemeCtx.Provider>
+  );
+}
