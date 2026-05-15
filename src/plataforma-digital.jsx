@@ -1,10 +1,11 @@
-import { useState, useEffect, useContext, createContext, useCallback } from "react";
+import React, { useState, useEffect, useContext, createContext, useCallback } from "react";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   PieChart, Pie, Cell, RadarChart, Radar, PolarGrid,
   PolarAngleAxis, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { supabase } from "./lib/supabase";
 import {
   LayoutDashboard, FolderKanban, BarChart3, Settings, Bell,
   Search, ChevronRight, TrendingUp, AlertTriangle, CheckCircle2,
@@ -325,7 +326,16 @@ const card = (C) => ({
   background:C.card, border:`1px solid ${C.border}`,
   borderRadius:12, backdropFilter:"blur(8px)",
 });
-
+const inputStyle = (C) => ({
+  width: "100%",
+  background: C.bg3,
+  border: `1px solid ${C.border}`,
+  color: C.t1,
+  borderRadius: 10,
+  padding: "11px 13px",
+  fontSize: 13,
+  outline: "none",
+});
 // ─── VIEWS ────────────────────────────────────────────────────────────────────
 function Dashboard({ C }) {
   return (
@@ -445,50 +455,423 @@ function Dashboard({ C }) {
 
 function ProjectsView({ C }) {
   const [filter, setFilter] = useState("Todos");
-  const filters = ["Todos","Em Andamento","Concluído","Planejamento"];
-  const filtered = filter==="Todos" ? projects : projects.filter(p=>p.status===filter);
-  const sc = projStatusConf(C); const pc = priConf(C);
+  const [showForm, setShowForm] = useState(false);
+  const [dbProjects, setDbProjects] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+
+  const [form, setForm] = useState({
+    nome: "",
+    responsavel: "",
+    fornecedor: "",
+    canal: "",
+    prioridade: "",
+    status: "",
+    etapa: "Início",
+    descricao: "",
+  });
+
+  const filters = ["Todos", "Em Andamento", "Concluído", "Planejamento"];
+
+  function calcularProgressoPorEtapa(etapa) {
+    const etapas = {
+      "Início": 10,
+      "Planejamento": 30,
+      "Execução": 60,
+      "Monitoramento": 85,
+      "Encerramento": 100,
+    };
+
+    return etapas[etapa] || 0;
+  }
+
+  function handleChange(campo, valor) {
+    setForm((prev) => ({
+      ...prev,
+      [campo]: valor,
+    }));
+  }
+
+  async function carregarProjetos() {
+    setLoadingProjects(true);
+
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.log("Erro ao carregar projetos:", error);
+      setLoadingProjects(false);
+      return;
+    }
+
+    const projetosFormatados = data.map((p, index) => {
+      let statusFormatado = p.status || "Planejamento";
+      const statusLower = statusFormatado.toLowerCase();
+
+      if (statusLower.includes("andamento")) {
+        statusFormatado = "Em Andamento";
+      } else if (statusLower.includes("concl")) {
+        statusFormatado = "Concluído";
+      } else if (statusLower.includes("plane")) {
+        statusFormatado = "Planejamento";
+      } else if (statusLower.includes("início") || statusLower.includes("inicio")) {
+        statusFormatado = "Planejamento";
+      }
+
+      const etapaAtual = p.current_stage || "Início";
+
+      return {
+        id: `BP-${String(index + 1).padStart(3, "0")}`,
+        name: p.name || "-",
+        resp: p.responsible || "-",
+        etapa: etapaAtual,
+        prog: calcularProgressoPorEtapa(etapaAtual),
+        prazo: p.end_date ? p.end_date.split("-").reverse().join("/") : "-",
+        prioridade: p.priority || "Média",
+        orcamento: "-",
+        status: statusFormatado,
+      };
+    });
+
+    setDbProjects(projetosFormatados);
+    setLoadingProjects(false);
+  }
+
+  useEffect(() => {
+    carregarProjetos();
+  }, []);
+
+  async function salvarProjeto() {
+    const { data, error } = await supabase
+      .from("projects")
+      .insert([
+        {
+          name: form.nome,
+          description: form.descricao,
+          responsible: form.responsavel,
+          supplier: form.fornecedor,
+          channel: form.canal,
+          priority: form.prioridade,
+          status: form.status || "Início",
+          current_stage: form.etapa || "Início",
+        },
+      ])
+      .select();
+
+    if (error) {
+      console.log("Erro ao salvar projeto:", error);
+      alert("Erro ao salvar projeto. Veja o console.");
+      return;
+    }
+
+    console.log("Projeto salvo:", data);
+    alert("Projeto salvo com sucesso!");
+
+    setForm({
+      nome: "",
+      responsavel: "",
+      fornecedor: "",
+      canal: "",
+      prioridade: "",
+      status: "",
+      etapa: "Início",
+      descricao: "",
+    });
+
+    setShowForm(false);
+    await carregarProjetos();
+  }
+
+  const sourceProjects = dbProjects.length > 0 ? dbProjects : projects;
+
+  const filtered =
+    filter === "Todos"
+      ? sourceProjects
+      : sourceProjects.filter((p) => p.status === filter);
+
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-      <SectionHeader title="Gestão de Projetos" sub={`${filtered.length} projetos · Portfólio Transformação Digital`}
-        actions={[<Btn key="f" label="Filtros" icon={Filter} C={C}/>, <Btn key="n" label="Novo Projeto" icon={Plus} primary C={C}/>]} C={C}/>
-      <div style={{ display:"flex", gap:8 }}>
-        {filters.map(f=>(
-          <button key={f} onClick={()=>setFilter(f)} style={{
-            padding:"6px 14px", borderRadius:8, border:`1px solid ${filter===f?C.blue:C.border}`,
-            background:filter===f?C.blueGlow:"transparent", color:filter===f?C.blue:C.t2,
-            fontSize:12, cursor:"pointer", fontWeight:filter===f?600:400,
-          }}>{f}</button>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: C.t1 }}>
+            Gestão de Projetos
+          </div>
+          <div style={{ fontSize: 13, color: C.t3, marginTop: 4 }}>
+            {loadingProjects
+              ? "Carregando projetos..."
+              : `${filtered.length} projetos · Portfólio Transformação Digital`}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 14px",
+              borderRadius: 8,
+              background: C.surface,
+              border: `1px solid ${C.border}`,
+              color: C.t2,
+              cursor: "pointer",
+              fontSize: 13,
+            }}
+          >
+            Filtros
+          </button>
+
+          <button
+            onClick={() => setShowForm(true)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 14px",
+              borderRadius: 8,
+              background: C.blue,
+              border: "none",
+              color: "#fff",
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            Novo Projeto
+          </button>
+        </div>
+      </div>
+
+      {showForm && (
+        <div
+          style={{
+            background: C.card,
+            border: `1px solid ${C.border}`,
+            borderRadius: 16,
+            padding: 22,
+            display: "flex",
+            flexDirection: "column",
+            gap: 14,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: C.t1 }}>
+                Novo Projeto
+              </div>
+              <div style={{ fontSize: 12, color: C.t3 }}>
+                Cadastre um novo projeto da Transformação Digital
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowForm(false)}
+              style={{
+                background: "transparent",
+                border: `1px solid ${C.border}`,
+                color: C.t2,
+                borderRadius: 8,
+                padding: "6px 10px",
+                cursor: "pointer",
+              }}
+            >
+              Fechar
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+            <input
+              placeholder="Nome do projeto"
+              value={form.nome}
+              onChange={(e) => handleChange("nome", e.target.value)}
+              style={inputStyle(C)}
+            />
+
+            <input
+              placeholder="Responsável"
+              value={form.responsavel}
+              onChange={(e) => handleChange("responsavel", e.target.value)}
+              style={inputStyle(C)}
+            />
+
+            <input
+              placeholder="Fornecedor"
+              value={form.fornecedor}
+              onChange={(e) => handleChange("fornecedor", e.target.value)}
+              style={inputStyle(C)}
+            />
+
+            <input
+              placeholder="Canal: WhatsApp, RCS, SMS, E-mail..."
+              value={form.canal}
+              onChange={(e) => handleChange("canal", e.target.value)}
+              style={inputStyle(C)}
+            />
+
+            <input
+              placeholder="Prioridade"
+              value={form.prioridade}
+              onChange={(e) => handleChange("prioridade", e.target.value)}
+              style={inputStyle(C)}
+            />
+
+            <input
+              placeholder="Status"
+              value={form.status}
+              onChange={(e) => handleChange("status", e.target.value)}
+              style={inputStyle(C)}
+            />
+
+            <select
+              value={form.etapa}
+              onChange={(e) => handleChange("etapa", e.target.value)}
+              style={inputStyle(C)}
+            >
+              <option value="Início">Início</option>
+              <option value="Planejamento">Planejamento</option>
+              <option value="Execução">Execução</option>
+              <option value="Monitoramento">Monitoramento</option>
+              <option value="Encerramento">Encerramento</option>
+            </select>
+          </div>
+
+          <textarea
+            placeholder="Descrição do projeto"
+            value={form.descricao}
+            onChange={(e) => handleChange("descricao", e.target.value)}
+            style={{
+              ...inputStyle(C),
+              minHeight: 90,
+              resize: "vertical",
+            }}
+          />
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <button
+              onClick={() => setShowForm(false)}
+              style={{
+                background: C.surface,
+                border: `1px solid ${C.border}`,
+                color: C.t2,
+                borderRadius: 8,
+                padding: "9px 14px",
+                cursor: "pointer",
+              }}
+            >
+              Cancelar
+            </button>
+
+            <button
+              onClick={salvarProjeto}
+              style={{
+                background: C.blue,
+                border: "none",
+                color: "#fff",
+                borderRadius: 8,
+                padding: "9px 14px",
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
+            >
+              Salvar Projeto
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8 }}>
+        {filters.map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            style={{
+              padding: "6px 14px",
+              borderRadius: 8,
+              border: `1px solid ${filter === f ? C.blue : C.border}`,
+              background: filter === f ? C.blueGlow : "transparent",
+              color: filter === f ? C.blue : C.t2,
+              fontSize: 12,
+              cursor: "pointer",
+              fontWeight: filter === f ? 700 : 400,
+            }}
+          >
+            {f}
+          </button>
         ))}
       </div>
-      <div style={{ ...card(C), padding:0, overflow:"hidden" }}>
-        <table style={{ width:"100%", borderCollapse:"collapse" }}>
+
+      <div style={{ ...card(C), padding: 0, overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ borderBottom:`1px solid ${C.border}` }}>
-              {["ID","Projeto","Responsável","Progresso","Prazo","Prioridade","Orçamento","Status",""].map((h,i)=>(
-                <th key={i} style={{ padding:"13px 16px", fontSize:10, fontWeight:700, color:C.t3, textAlign:"left", letterSpacing:"0.07em", textTransform:"uppercase" }}>{h}</th>
+            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+              {["ID", "Projeto", "Responsável", "Etapa", "Progresso", "Prazo", "Prioridade", "Orçamento", "Status", ""].map((h, i) => (
+                <th
+                  key={i}
+                  style={{
+                    padding: "14px 16px",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: C.t3,
+                    textAlign: "left",
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {h}
+                </th>
               ))}
             </tr>
           </thead>
+
           <tbody>
-            {filtered.map((p)=>{
-              const st = sc[p.status]||sc["Em Andamento"]; const pr = pc[p.prioridade]||pc["Média"];
-              return (
-                <tr key={p.id} style={{ borderBottom:`1px solid ${C.border}`, transition:"background 0.15s" }}
-                  onMouseEnter={e=>e.currentTarget.style.background=C.cardHov}
-                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                  <td style={{ padding:"13px 16px", fontSize:11, color:C.t3, fontFamily:"monospace" }}>{p.id}</td>
-                  <td style={{ padding:"13px 16px", fontSize:13, color:C.t1, fontWeight:600, maxWidth:190 }}>{p.name}</td>
-                  <td style={{ padding:"13px 16px", fontSize:12, color:C.t2 }}>{p.resp}</td>
-                  <td style={{ padding:"13px 16px", minWidth:140 }}><ProgressBar val={p.prog} color={p.prog===100?C.emerald:C.blue} C={C}/></td>
-                  <td style={{ padding:"13px 16px", fontSize:12, color:C.t2 }}>{p.prazo}</td>
-                  <td style={{ padding:"13px 16px" }}><Chip label={p.prioridade} color={pr.c} bg={pr.b}/></td>
-                  <td style={{ padding:"13px 16px", fontSize:12, color:C.t1, fontWeight:500 }}>{p.orcamento}</td>
-                  <td style={{ padding:"13px 16px" }}><Chip label={p.status} color={st.color} bg={st.bg}/></td>
-                  <td style={{ padding:"13px 16px" }}><button style={{ background:"none", border:"none", cursor:"pointer", color:C.t3 }}><MoreHorizontal size={15}/></button></td>
-                </tr>
-              );
-            })}
+            {filtered.map((p) => (
+              <tr key={p.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td style={{ padding: "14px 16px", fontSize: 12, color: C.t3 }}>
+                  {p.id}
+                </td>
+
+                <td style={{ padding: "14px 16px", fontSize: 13, color: C.t1, fontWeight: 600 }}>
+                  {p.name}
+                </td>
+
+                <td style={{ padding: "14px 16px", fontSize: 12, color: C.t2 }}>
+                  {p.resp}
+                </td>
+
+                <td style={{ padding: "14px 16px" }}>
+                  <Chip label={p.etapa || "Início"} color={C.violet} bg={C.violetGlow} />
+                </td>
+
+                <td style={{ padding: "14px 16px", minWidth: 140 }}>
+                  <ProgressBar
+                    val={p.prog}
+                    color={p.prog === 100 ? C.emerald : C.blue}
+                    C={C}
+                  />
+                </td>
+
+                <td style={{ padding: "14px 16px", fontSize: 12, color: C.t2 }}>
+                  {p.prazo}
+                </td>
+
+                <td style={{ padding: "14px 16px" }}>
+                  <Chip label={p.prioridade} color={C.amber} bg={C.amberGlow} />
+                </td>
+
+                <td style={{ padding: "14px 16px", fontSize: 12, color: C.t2 }}>
+                  {p.orcamento}
+                </td>
+
+                <td style={{ padding: "14px 16px" }}>
+                  <Chip label={p.status} color={C.blue} bg={C.blueGlow} />
+                </td>
+
+                <td style={{ padding: "14px 16px" }}>
+                  <MoreHorizontal size={16} color={C.t3} />
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -497,6 +880,7 @@ function ProjectsView({ C }) {
 }
 
 function KanbanView({ C }) {
+
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
       <SectionHeader title="Kanban" sub="Tarefas e entregas em tempo real"
@@ -1011,6 +1395,21 @@ function Topbar({ page, C, dark, toggleTheme }) {
 
 // ─── APP ─────────────────────────────────────────────────────────────────────
 export default function App() {
+  useEffect(() => {
+  async function testarConexao() {
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*");
+
+    if (error) {
+      console.log("Erro:", error);
+    } else {
+      console.log("Conectado Supabase:", data);
+    }
+  }
+
+  testarConexao();
+}, []);
   const [dark, setDark] = useState(true);
   const [active, setActive] = useState("dashboard");
   const C = getC(dark);
