@@ -492,54 +492,57 @@ function ProjectsView({ C }) {
   }
 
   async function carregarProjetos() {
-    setLoadingProjects(true);
+  setLoadingProjects(true);
 
-    const { data, error } = await supabase
-      .from("projects")
-      .select("*")
-      .order("created_at", { ascending: false });
+  const { data, error } = await supabase
+    .from("projects")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-    if (error) {
-      console.log("Erro ao carregar projetos:", error);
-      setLoadingProjects(false);
-      return;
-    }
-
-    const projetosFormatados = data.map((p, index) => {
-      let statusFormatado = p.status || "Planejamento";
-      const statusLower = statusFormatado.toLowerCase();
-
-      if (statusLower.includes("andamento")) {
-        statusFormatado = "Em Andamento";
-      } else if (statusLower.includes("concl")) {
-        statusFormatado = "Concluído";
-      } else if (statusLower.includes("plane")) {
-        statusFormatado = "Planejamento";
-      } else if (statusLower.includes("início") || statusLower.includes("inicio")) {
-        statusFormatado = "Planejamento";
-      }
-
-      const etapaAtual = p.current_stage || "Início";
-
-      return {
-        id: `BP-${String(index + 1).padStart(3, "0")}`,
-        name: p.name || "-",
-        resp: p.responsible || "-",
-        etapa: etapaAtual,
-        prog: calcularProgressoPorEtapa(etapaAtual),
-        prazo: p.end_date ? p.end_date.split("-").reverse().join("/") : "-",
-        prioridade: p.priority || "Média",
-        orcamento: "-",
-        status: statusFormatado,
-      };
-    });
-
-    setDbProjects(projetosFormatados);
+  if (error) {
+    console.log("Erro ao carregar projetos:", error);
     setLoadingProjects(false);
+    return;
   }
 
-  useEffect(() => {
-    carregarProjetos();
+  const projetosFormatados = data.map((p, index) => {
+    let statusFormatado = p.status || "Planejamento";
+    const statusLower = statusFormatado.toLowerCase();
+
+    if (statusLower.includes("andamento")) {
+      statusFormatado = "Em Andamento";
+    } else if (statusLower.includes("concl")) {
+      statusFormatado = "Concluído";
+    } else if (statusLower.includes("plane")) {
+      statusFormatado = "Planejamento";
+    } else if (
+      statusLower.includes("início") ||
+      statusLower.includes("inicio")
+    ) {
+      statusFormatado = "Planejamento";
+    }
+
+    const etapaAtual = p.current_stage || "Início";
+
+    return {
+      dbId: p.id,
+      id: `BP-${String(index + 1).padStart(3, "0")}`,
+      name: p.name || "-",
+      resp: p.responsible || "-",
+      etapa: etapaAtual,
+      prog: calcularProgressoPorEtapa(etapaAtual),
+      prazo: p.end_date ? p.end_date.split("-").reverse().join("/") : "-",
+      prioridade: p.priority || "Média",
+      orcamento: "-",
+      status: statusFormatado,
+    };
+  });
+
+  setDbProjects(projetosFormatados);
+  setLoadingProjects(false);
+}
+    useEffect(() => {
+  carregarProjetos();
   }, []);
 
   async function salvarProjeto() {
@@ -582,6 +585,32 @@ function ProjectsView({ C }) {
     setShowForm(false);
     await carregarProjetos();
   }
+
+  async function salvarProjeto() {
+  // todo o código que já existe aqui dentro
+}
+
+async function atualizarEtapaProjeto(dbId, novaEtapa) {
+  if (!dbId) {
+    alert("Este projeto ainda não possui ID do Supabase.");
+    return;
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update({
+      current_stage: novaEtapa,
+    })
+    .eq("id", dbId);
+
+  if (error) {
+    console.log("Erro ao atualizar etapa:", error);
+    alert("Erro ao atualizar etapa do projeto.");
+    return;
+  }
+
+  await carregarProjetos();
+}
 
   const sourceProjects = dbProjects.length > 0 ? dbProjects : projects;
 
@@ -840,8 +869,25 @@ function ProjectsView({ C }) {
                 </td>
 
                 <td style={{ padding: "14px 16px" }}>
-                  <Chip label={p.etapa || "Início"} color={C.violet} bg={C.violetGlow} />
-                </td>
+  <select
+    value={p.etapa || "Início"}
+    onChange={(e) => atualizarEtapaProjeto(p.dbId, e.target.value)}
+    style={{
+      ...inputStyle(C),
+      minWidth: 150,
+      padding: "8px 10px",
+      background: C.surface,
+      color: C.t1,
+      cursor: "pointer",
+    }}
+  >
+    <option value="Início">Início</option>
+    <option value="Planejamento">Planejamento</option>
+    <option value="Execução">Execução</option>
+    <option value="Monitoramento">Monitoramento</option>
+    <option value="Encerramento">Encerramento</option>
+  </select>
+</td>
 
                 <td style={{ padding: "14px 16px", minWidth: 140 }}>
                   <ProgressBar
