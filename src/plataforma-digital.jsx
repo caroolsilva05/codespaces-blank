@@ -1334,7 +1334,7 @@ function PocView({ C }) {
 const navItems = [
   { id:"dashboard",  label:"Dashboard",   icon:LayoutDashboard },
   { id:"projects",   label:"Projetos",    icon:FolderKanban    },
-  { id:"kanban",     label:"Kanban",      icon:Layers          },
+  { id:"scrum",      label:"Scrum",      icon:Layers          },
   { id:"poc",        label:"POCs",        icon:FlaskConical, badge:"Novo" },
   { id:"suppliers",  label:"Fornecedores",icon:Globe           },
   { id:"indicators", label:"Indicadores", icon:BarChart3       },
@@ -1475,7 +1475,7 @@ export default function App() {
     try { await window.storage.set("bp-theme", next ? "dark" : "light"); } catch {}
   }, [dark]);
 
-  const views = { dashboard:Dashboard, projects:ProjectsView, kanban:KanbanView, poc:PocView, suppliers:SuppliersView, indicators:IndicatorsView };
+  const views = { dashboard:Dashboard, projects:ProjectsView, scrum:KanbanView, poc:PocView, suppliers:SuppliersView, indicators:IndicatorsView };
   const View = views[active] || Dashboard;
 
   return (
