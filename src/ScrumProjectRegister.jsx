@@ -434,10 +434,9 @@ export default function ScrumProjectRegister() {
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
             {[
-              { label: flash === "saved" ? "✓  Salvo!" : "💾  Salvar projeto", fn: handleSave,         style: { background: flash === "saved" ? "#047857" : "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" } },
-              { label: "📄  Exportar PDF",                                      fn: () => window.print(), style: { background: "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" } },
-              { label: "＋  Novo projeto",                                       fn: () => setData(initialData), style: { background: theme.gold, color: theme.navyDark, border: "none", fontWeight: 800 } },
-            ].map(btn => (
+              { label: flash === "saved" ? "✓  Salvo!" : "Salvar projeto", fn: handleSave,         style: { background: flash === "saved" ? "#047857" : "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" } },
+              { label: "Exportar PDF",                                      fn: () => window.print(), style: { background: "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" } },
+                          ].map(btn => (
               <button key={btn.label} onClick={btn.fn} style={{
                 ...btn.style, padding: "9px 18px", borderRadius: 7,
                 fontSize: 13, fontWeight: 600, cursor: "pointer",
