@@ -6,6 +6,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { supabase } from "./lib/supabase";
+import ScrumProjectRegister from "./ScrumProjectRegister";
 import {
   LayoutDashboard, FolderKanban, BarChart3, Settings, Bell,
   Search, ChevronRight, TrendingUp, AlertTriangle, CheckCircle2,
@@ -925,12 +926,60 @@ async function atualizarEtapaProjeto(dbId, novaEtapa) {
   );
 }
 
-function KanbanView({ C }) {
+function ScrumView({ C }) {
+  const [showScrumRegister, setShowScrumRegister] = useState(false);
 
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-      <SectionHeader title="Kanban" sub="Tarefas e entregas em tempo real"
-        actions={[<Btn key="n" label="Nova Tarefa" icon={Plus} primary C={C}/>]} C={C}/>
+      {showScrumRegister && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      zIndex: 9999,
+      background: "#f0f4f8",
+      overflow: "auto",
+    }}
+  >
+    <button
+      onClick={() => setShowScrumRegister(false)}
+      style={{
+        position: "fixed",
+        top: 18,
+        right: 22,
+        zIndex: 10000,
+        background: "#0d1f3c",
+        color: "#ffffff",
+        border: "none",
+        borderRadius: 8,
+        padding: "10px 16px",
+        fontSize: 13,
+        fontWeight: 700,
+        cursor: "pointer",
+        boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
+      }}
+    >
+      Fechar Registro
+    </button>
+
+    <ScrumProjectRegister />
+  </div>
+)}
+      <SectionHeader
+  title="Scrum de Projetos"
+  sub="Ciclo de vida dos projetos · Backlog, Planejamento, Execução, Monitoramento e Encerramento"
+  actions={[
+    <Btn
+      key="n"
+      label="Novo Registro"
+      icon={Plus}
+      primary
+      C={C}
+      onClick={() => setShowScrumRegister(true)}
+    />
+  ]}
+  C={C}
+/>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, alignItems:"start" }}>
         {kanbanCols.map(col=>(
           <div key={col.id} style={{ display:"flex", flexDirection:"column", gap:9 }}>
@@ -1475,7 +1524,7 @@ export default function App() {
     try { await window.storage.set("bp-theme", next ? "dark" : "light"); } catch {}
   }, [dark]);
 
-  const views = { dashboard:Dashboard, projects:ProjectsView, scrum:KanbanView, poc:PocView, suppliers:SuppliersView, indicators:IndicatorsView };
+  const views = { dashboard:Dashboard, projects:ProjectsView, scrum:ScrumView, poc:PocView, suppliers:SuppliersView, indicators:IndicatorsView };
   const View = views[active] || Dashboard;
 
   return (
