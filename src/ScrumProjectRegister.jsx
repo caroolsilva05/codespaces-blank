@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { supabase } from "./lib/supabase";
 
 // ============================================================
 // THEME & CONSTANTS
@@ -362,10 +363,18 @@ const FieldRow = ({ label, children }) => (
 // ============================================================
 // MAIN COMPONENT
 // ============================================================
-export default function ScrumProjectRegister() {
-  const [data, setData]     = useState(initialData);
+export default function ScrumProjectRegister({ registroInicial = null, onSaved = null } = {}) {
+  const [data, setData] = useState(() => {
+    const dadosSalvos =
+      registroInicial?.dados_do_registro ||
+      registroInicial?.record_data ||
+      null;
+
+    return dadosSalvos || initialData;
+  });
   const [phases, setPhases] = useState({ 1: true, 2: true, 3: true, 4: true, 5: true });
   const [flash, setFlash]   = useState("");
+  const [saving, setSaving] = useState(false);
 
   const toggle = (n) => setPhases(p => ({ ...p, [n]: !p[n] }));
 
@@ -390,7 +399,73 @@ export default function ScrumProjectRegister() {
   const delRow = (phase, field, id) =>
     setData(d => ({ ...d, [phase]: { ...d[phase], [field]: d[phase][field].filter(r => r.id !== id) } }));
 
-  const handleSave = () => { setFlash("saved"); setTimeout(() => setFlash(""), 2000); };
+  const handleSave = async () => {
+  if (!data.projectInfo.nome || !data.projectInfo.nome.trim()) {
+    alert("Informe o nome do projeto antes de salvar.");
+    return;
+  }
+
+  setSaving(true);
+
+  const payloadBase = {
+    nome_do_projeto: data.projectInfo.nome,
+    fornecedor: data.projectInfo.fornecedor,
+    responsavel: data.projectInfo.responsavel,
+    fase_atual: data.projectInfo.faseAtual || "Backlog",
+    status_geral: data.projectInfo.status || "Em dia",
+    dados_do_registro: data,
+  };
+
+  const codigo = data.projectInfo.codigoId || "";
+
+  const tentativas = [
+    { ...payloadBase, codigo_do_projeto: codigo },
+    { ...payloadBase, "código_do_projeto": codigo },
+    payloadBase,
+  ];
+
+  let ultimoErro = null;
+
+  for (const payload of tentativas) {
+    let resposta;
+
+    if (registroInicial?.id) {
+      resposta = await supabase
+        .from("registros_do_projeto_scrum")
+        .update(payload)
+        .eq("id", registroInicial.id);
+    } else {
+      resposta = await supabase
+        .from("registros_do_projeto_scrum")
+        .insert([payload]);
+    }
+
+    if (!resposta.error) {
+      ultimoErro = null;
+      break;
+    }
+
+    ultimoErro = resposta.error;
+    console.log("Tentativa de salvar registro Scrum falhou:", resposta.error);
+  }
+
+  setSaving(false);
+
+  if (ultimoErro) {
+    console.log("Erro ao salvar registro Scrum:", ultimoErro);
+    alert("Erro ao salvar projeto. Veja o console.");
+    return;
+  }
+
+  setFlash("saved");
+  alert(registroInicial?.id ? "Projeto atualizado com sucesso!" : "Projeto salvo com sucesso!");
+
+  if (typeof onSaved === "function") {
+    await onSaved();
+  }
+
+  setTimeout(() => setFlash(""), 2000);
+};
 
   const { projectInfo: pi, phase1, phase2, phase3, phase4, phase5 } = data;
 
@@ -434,7 +509,7 @@ export default function ScrumProjectRegister() {
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
             {[
-              { label: flash === "saved" ? "✓  Salvo!" : "Salvar projeto", fn: handleSave,         style: { background: flash === "saved" ? "#047857" : "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" } },
+              { label: saving ? "⏳  Salvando..." : flash === "saved" ? "✓  Salvo!" : "Salvar projeto", fn: handleSave, style: { background: flash === "saved" ? "#047857" : "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" } },
               { label: "Exportar PDF",                                      fn: () => window.print(), style: { background: "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" } },
                           ].map(btn => (
               <button key={btn.label} onClick={btn.fn} style={{

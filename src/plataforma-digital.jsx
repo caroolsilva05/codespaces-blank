@@ -928,84 +928,365 @@ async function atualizarEtapaProjeto(dbId, novaEtapa) {
 
 function ScrumView({ C }) {
   const [showScrumRegister, setShowScrumRegister] = useState(false);
+  const [selectedScrumRecord, setSelectedScrumRecord] = useState(null);
+  const [scrumRecords, setScrumRecords] = useState([]);
+  const [loadingScrum, setLoadingScrum] = useState(false);
+
+  async function carregarRegistrosScrum() {
+    setLoadingScrum(true);
+
+    const { data, error } = await supabase
+      .from("registros_do_projeto_scrum")
+      .select("*");
+
+    setLoadingScrum(false);
+
+    if (error) {
+      console.log("Erro ao carregar registros Scrum:", error);
+      return;
+    }
+
+    const registrosOrdenados = [...(data || [])].sort((a, b) => {
+      const dataA = new Date(a.created_at || a.criado_em || a.updated_at || a.atualizado_em || 0).getTime();
+      const dataB = new Date(b.created_at || b.criado_em || b.updated_at || b.atualizado_em || 0).getTime();
+      return dataB - dataA;
+    });
+
+    setScrumRecords(registrosOrdenados);
+  }
+
+  useEffect(() => {
+    carregarRegistrosScrum();
+  }, []);
+
+  function abrirNovoRegistro() {
+    setSelectedScrumRecord(null);
+    setShowScrumRegister(true);
+  }
+
+  function abrirRegistroExistente(registro) {
+    setSelectedScrumRecord(registro);
+    setShowScrumRegister(true);
+  }
+
+  function fecharRegistro() {
+    setShowScrumRegister(false);
+    setSelectedScrumRecord(null);
+    carregarRegistrosScrum();
+  }
+
+  const fases = ["Backlog", "Planejamento", "Execução", "Monitoramento", "Encerramento"];
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {showScrumRegister && (
-  <div
-    style={{
-      position: "fixed",
-      inset: 0,
-      zIndex: 9999,
-      background: "#f0f4f8",
-      overflow: "auto",
-    }}
-  >
-    <button
-      onClick={() => setShowScrumRegister(false)}
-      style={{
-        position: "fixed",
-        top: 18,
-        right: 22,
-        zIndex: 10000,
-        background: "#0d1f3c",
-        color: "#ffffff",
-        border: "none",
-        borderRadius: 8,
-        padding: "10px 16px",
-        fontSize: 13,
-        fontWeight: 700,
-        cursor: "pointer",
-        boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
-      }}
-    >
-      Fechar Registro
-    </button>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "#f0f4f8",
+            overflow: "auto",
+          }}
+        >
+          <button
+            onClick={fecharRegistro}
+            style={{
+              position: "fixed",
+              top: 18,
+              right: 22,
+              zIndex: 10000,
+              background: "#0d1f3c",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: 8,
+              padding: "10px 16px",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
+            }}
+          >
+            Fechar Registro
+          </button>
 
-    <ScrumProjectRegister />
-  </div>
-)}
+          <ScrumProjectRegister
+            registroInicial={selectedScrumRecord}
+            onSaved={carregarRegistrosScrum}
+          />
+        </div>
+      )}
+
       <SectionHeader
-  title="Scrum de Projetos"
-  sub="Ciclo de vida dos projetos · Backlog, Planejamento, Execução, Monitoramento e Encerramento"
-  actions={[
-    <Btn
-      key="n"
-      label="Novo Registro"
-      icon={Plus}
-      primary
-      C={C}
-      onClick={() => setShowScrumRegister(true)}
-    />
-  ]}
-  C={C}
-/>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, alignItems:"start" }}>
-        {kanbanCols.map(col=>(
-          <div key={col.id} style={{ display:"flex", flexDirection:"column", gap:9 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 12px", borderRadius:8, background:C.surface, border:`1px solid ${C.border}` }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <span style={{ width:7, height:7, borderRadius:"50%", background:col.color }}/>
-                <span style={{ fontSize:11, fontWeight:700, color:C.t2, letterSpacing:"0.04em" }}>{col.label}</span>
-              </div>
-              <span style={{ fontSize:10, color:C.t3, background:C.bg3, padding:"2px 7px", borderRadius:10 }}>{col.items.length}</span>
-            </div>
-            {col.items.map(item=>(
-              <div key={item.id} style={{ ...card(C), padding:"13px 15px", cursor:"grab", transition:"border-color 0.2s, transform 0.15s" }}
-                onMouseEnter={e=>{ e.currentTarget.style.borderColor=col.color+"66"; e.currentTarget.style.transform="translateY(-2px)"; }}
-                onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.border; e.currentTarget.style.transform="translateY(0)"; }}>
-                <div style={{ fontSize:13, color:C.t1, fontWeight:500, marginBottom:10, lineHeight:1.4 }}>{item.title}</div>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                  <span style={{ fontSize:10, padding:"2px 8px", borderRadius:5, background:C.bg3, color:C.t3 }}>{item.tag}</span>
-                  <Chip label={item.p} color={(priConf(C)[item.p]||priConf(C)["Média"]).c} bg={(priConf(C)[item.p]||priConf(C)["Média"]).b}/>
+        title="Scrum de Projetos"
+        sub="Ciclo de vida dos projetos · Backlog, Planejamento, Execução, Monitoramento e Encerramento"
+        actions={[
+          <Btn
+            key="n"
+            label="Novo Registro"
+            icon={Plus}
+            primary
+            C={C}
+            onClick={abrirNovoRegistro}
+          />,
+        ]}
+        C={C}
+      />
+
+      {loadingScrum && (
+        <div style={{ ...card(C), padding: "16px", color: C.t2, fontSize: 13 }}>
+          Carregando registros Scrum...
+        </div>
+      )}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(5, minmax(220px, 1fr))",
+          gap: 14,
+          alignItems: "start",
+          overflowX: "auto",
+          paddingBottom: 8,
+        }}
+      >
+        {fases.map((fase) => {
+          const registrosDaFase = scrumRecords.filter((registro) => {
+            const dados = registro.dados_do_registro || registro.record_data || {};
+            const info = dados.projectInfo || {};
+
+            const faseAtual =
+              registro.fase_atual ||
+              registro.current_phase ||
+              info.faseAtual ||
+              "Backlog";
+
+            if (fase === "Backlog") {
+              return faseAtual === "Backlog" || faseAtual === "Início";
+            }
+
+            return faseAtual === fase;
+          });
+
+          const corFase =
+            fase === "Backlog"
+              ? C.t3
+              : fase === "Planejamento"
+              ? C.violet
+              : fase === "Execução"
+              ? C.blue
+              : fase === "Monitoramento"
+              ? C.amber
+              : C.emerald;
+
+          return (
+            <div
+              key={fase}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 9,
+                minWidth: 220,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "9px 12px",
+                  borderRadius: 8,
+                  background: C.surface,
+                  border: `1px solid ${C.border}`,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: "50%",
+                      background: corFase,
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: C.t2,
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    {fase}
+                  </span>
                 </div>
+
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: C.t3,
+                    background: C.bg3,
+                    padding: "2px 7px",
+                    borderRadius: 10,
+                  }}
+                >
+                  {registrosDaFase.length}
+                </span>
               </div>
-            ))}
-            <button style={{ padding:"9px", borderRadius:8, border:`1px dashed ${C.border}`, background:"transparent", color:C.t3, cursor:"pointer", fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
-              <Plus size={12}/> Adicionar
-            </button>
-          </div>
-        ))}
+
+              {registrosDaFase.length === 0 && (
+                <div
+                  style={{
+                    padding: "18px 14px",
+                    borderRadius: 10,
+                    border: `1px dashed ${C.border}`,
+                    color: C.t3,
+                    fontSize: 12,
+                    textAlign: "center",
+                  }}
+                >
+                  Nenhum registro
+                </div>
+              )}
+
+              {registrosDaFase.map((registro) => {
+                const dados = registro.dados_do_registro || registro.record_data || {};
+                const info = dados.projectInfo || {};
+
+                const nome =
+                  registro.nome_do_projeto ||
+                  registro.project_name ||
+                  info.nome ||
+                  "Projeto sem nome";
+
+                const codigo =
+                  registro.codigo_do_projeto ||
+                  registro["código_do_projeto"] ||
+                  registro.project_code ||
+                  info.codigoId ||
+                  "";
+
+                const fornecedor =
+                  registro.fornecedor ||
+                  registro.supplier ||
+                  info.fornecedor ||
+                  "-";
+
+                const responsavel =
+                  registro.responsavel ||
+                  registro.responsible ||
+                  info.responsavel ||
+                  "-";
+
+                const status =
+                  registro.status_geral ||
+                  registro.general_status ||
+                  info.status ||
+                  "Em dia";
+
+                return (
+                  <div
+                    key={registro.id}
+                    onClick={() => abrirRegistroExistente(registro)}
+                    style={{
+                      ...card(C),
+                      padding: "13px 15px",
+                      cursor: "pointer",
+                      transition: "border-color 0.2s, transform 0.15s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = corFase + "66";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = C.border;
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: C.t1,
+                        fontWeight: 600,
+                        marginBottom: 8,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {nome}
+                    </div>
+
+                    {codigo && (
+                      <div style={{ fontSize: 10, color: C.t3, marginBottom: 8 }}>
+                        {codigo}
+                      </div>
+                    )}
+
+                    <div style={{ fontSize: 11, color: C.t3, marginBottom: 10 }}>
+                      {fornecedor}
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 10,
+                          padding: "2px 8px",
+                          borderRadius: 5,
+                          background: C.bg3,
+                          color: C.t3,
+                        }}
+                      >
+                        {responsavel}
+                      </span>
+
+                      <Chip
+                        label={status}
+                        color={
+                          status === "Atrasado"
+                            ? C.rose
+                            : status === "Atenção"
+                            ? C.amber
+                            : C.emerald
+                        }
+                        bg={
+                          status === "Atrasado"
+                            ? C.roseGlow
+                            : status === "Atenção"
+                            ? C.amberGlow
+                            : C.emeraldGlow
+                        }
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+
+              <button
+                onClick={abrirNovoRegistro}
+                style={{
+                  padding: "9px",
+                  borderRadius: 8,
+                  border: `1px dashed ${C.border}`,
+                  background: "transparent",
+                  color: C.t3,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 5,
+                }}
+              >
+                <Plus size={12} /> Adicionar
+              </button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -1013,37 +1294,37 @@ function ScrumView({ C }) {
 
 function SuppliersView({ C }) {
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-      <SectionHeader title="Gestão de Fornecedores" sub="6 fornecedores ativos · SLA médio 98.2%"
-        actions={[<Btn key="n" label="Novo Fornecedor" icon={Plus} primary C={C}/>]} C={C}/>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16 }}>
-        {suppliers.map((s,i)=>(
-          <div key={i} style={{ ...card(C), padding:"20px 22px", transition:"border-color 0.2s, transform 0.2s" }}
-            onMouseEnter={e=>{ e.currentTarget.style.borderColor=C.borderHov; e.currentTarget.style.transform="translateY(-2px)"; }}
-            onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.border; e.currentTarget.style.transform="translateY(0)"; }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
-              <div>
-                <div style={{ fontSize:15, fontWeight:700, color:C.t1 }}>{s.name}</div>
-                <div style={{ fontSize:11, color:C.t3, marginTop:2 }}>{s.cat}</div>
-              </div>
-              <Chip label={s.status} color={C.emerald} bg={C.emeraldGlow}/>
-            </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
-              <div style={{ background:C.bg3, borderRadius:8, padding:"10px 12px" }}>
-                <div style={{ fontSize:18, fontWeight:700, color:s.sla>=99?C.emerald:s.sla>=97?C.amber:C.rose }}>{s.sla}%</div>
-                <div style={{ fontSize:10, color:C.t3, marginTop:2 }}>SLA Real</div>
-              </div>
-              <div style={{ background:C.bg3, borderRadius:8, padding:"10px 12px" }}>
-                <div style={{ fontSize:18, fontWeight:700, color:C.blue }}>{s.score}</div>
-                <div style={{ fontSize:10, color:C.t3, marginTop:2 }}>Score</div>
-              </div>
-            </div>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:12, borderTop:`1px solid ${C.border}` }}>
-              <span style={{ fontSize:12, color:C.t2, fontWeight:500 }}>{s.contrato}</span>
-              <span style={{ fontSize:11, color:C.t3 }}>Vence {s.venc}</span>
-            </div>
-          </div>
-        ))}
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <SectionHeader
+        title="Gestão de Fornecedores"
+        sub="Acompanhamento de fornecedores, SLA e performance"
+        actions={[
+          <Btn
+            key="n"
+            label="Novo Fornecedor"
+            icon={Plus}
+            primary
+            C={C}
+          />,
+        ]}
+        C={C}
+      />
+
+      <div
+        style={{
+          ...card(C),
+          padding: "24px",
+          color: C.t2,
+          fontSize: 13,
+        }}
+      >
+        <div style={{ fontSize: 16, fontWeight: 700, color: C.t1, marginBottom: 8 }}>
+          Fornecedores
+        </div>
+
+        <div style={{ color: C.t3 }}>
+          Tela de fornecedores carregada com sucesso. Depois ajustamos essa área com os dados reais e visual executivo.
+        </div>
       </div>
     </div>
   );
