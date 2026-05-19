@@ -7,6 +7,7 @@ import {
 } from "recharts";
 import { supabase } from "./lib/supabase";
 import ScrumProjectRegister from "./ScrumProjectRegister";
+import PocRegister from "./PocRegister";
 import {
   LayoutDashboard, FolderKanban, BarChart3, Settings, Bell,
   Search, ChevronRight, TrendingUp, AlertTriangle, CheckCircle2,
@@ -1559,275 +1560,228 @@ function IndicatorsView({ C }) {
 }
 
 // ─── POC VIEW ─────────────────────────────────────────────────────────────────
-function PocDetail({ poc, C, onClose }) {
-  const sc = pocStatusConf(C);
-  const st = sc[poc.status] || sc["Em Teste"];
-  const criteriaScores = [
-    { label:"Técnico",    val:poc.tecnico,    col:C.blue   },
-    { label:"Funcional",  val:poc.funcional,  col:C.violet },
-    { label:"Financeiro", val:poc.financeiro, col:C.amber  },
-    { label:"Estratégico",val:poc.estrategico,col:C.cyan   },
-  ];
-  return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", backdropFilter:"blur(6px)", zIndex:50, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}>
-      <div style={{ width:"100%", maxWidth:660, background:C.bg1, border:`1px solid ${C.borderStrong}`, borderRadius:16, overflow:"hidden", maxHeight:"90vh", overflowY:"auto" }}>
-        <div style={{ padding:"22px 24px", borderBottom:`1px solid ${C.border}`, display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-          <div>
-            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
-              <span style={{ fontSize:11, color:C.t3, fontFamily:"monospace" }}>{poc.id}</span>
-              <Chip label={poc.status} color={st.color} bg={st.bg}/>
-            </div>
-            <div style={{ fontSize:18, fontWeight:700, color:C.t1 }}>{poc.name}</div>
-            <div style={{ fontSize:12, color:C.t3, marginTop:3 }}>{poc.supplier} · {poc.cat}</div>
-          </div>
-          <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", color:C.t2, padding:4 }}>✕</button>
-        </div>
-        <div style={{ padding:"22px 24px", display:"flex", flexDirection:"column", gap:20 }}>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }}>
-            {[
-              { l:"Responsável", v:poc.resp       },
-              { l:"Início",      v:poc.start       },
-              { l:"Término",     v:poc.end         },
-              { l:"Orçamento POC",v:poc.orcamento  },
-              { l:"ROI Esperado",v:`${poc.roiEsp}%`},
-              { l:"Score Final", v:poc.score       },
-            ].map((f,i)=>(
-              <div key={i} style={{ background:C.bg3, borderRadius:8, padding:"10px 14px" }}>
-                <div style={{ fontSize:10, color:C.t3, marginBottom:4, textTransform:"uppercase", letterSpacing:"0.06em" }}>{f.l}</div>
-                <div style={{ fontSize:14, fontWeight:700, color:i===5?scoreColor(f.v,C):C.t1 }}>{f.v}</div>
-              </div>
-            ))}
-          </div>
-          <div>
-            <div style={{ fontSize:13, fontWeight:600, color:C.t1, marginBottom:12 }}>Critérios de Avaliação</div>
-            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-              {criteriaScores.map((c,i)=>(
-                <div key={i}>
-                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5, fontSize:12 }}>
-                    <span style={{ color:C.t2 }}>{c.label}</span>
-                    <span style={{ color:c.col, fontWeight:700 }}>{c.val}/100</span>
-                  </div>
-                  <ProgressBar val={c.val} color={c.col} C={C}/>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize:13, fontWeight:600, color:C.t1, marginBottom:8 }}>Critérios Avaliados</div>
-            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-              {poc.criterios.map((cr,i)=>(
-                <div key={i} style={{ padding:"5px 12px", borderRadius:20, background:C.blueGlow, border:`1px solid ${C.blue}33`, fontSize:12, color:C.blue }}>{cr}</div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize:13, fontWeight:600, color:C.t1, marginBottom:8 }}>Resultado / Análise Técnica</div>
-            <div style={{ background:C.bg3, borderRadius:10, padding:"14px 16px", fontSize:13, color:C.t2, lineHeight:1.7 }}>{poc.result}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function PocView({ C }) {
-  const [filter, setFilter] = useState("Todos");
-  const [detail, setDetail] = useState(null);
-  const filters = ["Todos","Em Teste","Em Avaliação","Aprovado","Reprovado"];
-  const filtered = filter==="Todos" ? pocs : pocs.filter(p=>p.status===filter);
-  const sc = pocStatusConf(C);
-  const total = pocs.length;
-  const aprov = pocs.filter(p=>p.status==="Aprovado").length;
-  const reprov = pocs.filter(p=>p.status==="Reprovado").length;
-  const avgRoi = Math.round(pocs.reduce((a,p)=>a+p.roiEsp,0)/pocs.length);
-  const avgScore = Math.round(pocs.reduce((a,p)=>a+p.score,0)/pocs.length);
-  const txAprov = Math.round((aprov/total)*100);
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
 
-  const approvalPieData = [
-    { name:"Aprovado",    value:aprov,              fill:C.emerald },
-    { name:"Reprovado",   value:reprov,             fill:C.rose    },
-    { name:"Em Processo", value:total-aprov-reprov, fill:C.blue    },
-  ];
+  function toNum(value) {
+    const parsed = Number(String(value || "0").replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function calc(record) {
+    const rows = record?.record_data?.analytics?.rows || [];
+    const totals = rows.reduce(
+      (acc, row) => {
+        acc.disparado += toNum(row.disparado);
+        acc.entregue += toNum(row.entregue);
+        acc.lido += toNum(row.lido);
+        acc.retorno += toNum(row.retornoCliente);
+        acc.acordos += toNum(row.acordos);
+        acc.totalMensagens += toNum(row.totalMensagens);
+        return acc;
+      },
+      { disparado: 0, entregue: 0, lido: 0, retorno: 0, acordos: 0, totalMensagens: 0 }
+    );
+
+    return {
+      ...totals,
+      entrega: totals.totalMensagens > 0 ? Math.round((totals.entregue / totals.totalMensagens) * 100) : 0,
+      leitura: totals.disparado > 0 ? Math.round((totals.lido / totals.disparado) * 100) : 0,
+      conversao: totals.disparado > 0 ? ((totals.acordos / totals.disparado) * 100).toFixed(2) : "0.00",
+    };
+  }
+
+  async function carregarPocs() {
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from("poc_records")
+      .select("*")
+      .order("updated_at", { ascending: false });
+
+    setLoading(false);
+
+    if (error) {
+      console.log("Erro ao carregar POCs:", error);
+      return;
+    }
+
+    setRecords(data || []);
+  }
+
+  useEffect(() => {
+    carregarPocs();
+  }, []);
+
+  function abrirNovaPoc() {
+    setSelectedRecord(null);
+    setShowRegister(true);
+  }
+
+  function abrirPoc(record) {
+    setSelectedRecord(record);
+    setShowRegister(true);
+  }
+
+  function fecharRegistro() {
+    setShowRegister(false);
+    setSelectedRecord(null);
+    carregarPocs();
+  }
+
+  const total = records.length;
+  const emExecucao = records.filter((r) => r.status === "Em Execução").length;
+  const encerradas = records.filter((r) => r.status === "Encerrada").length;
+  const comCondicoes = records.filter((r) => r.recommendation === "Aprovado com condições").length;
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:22 }}>
-      {detail && <PocDetail poc={detail} C={C} onClose={()=>setDetail(null)}/>}
+    <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+      {showRegister && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: C.bg0,
+            overflow: "auto",
+          }}
+        >
+          <PocRegister
+            C={C}
+            registroInicial={selectedRecord}
+            onSaved={carregarPocs}
+            onClose={fecharRegistro}
+          />
+        </div>
+      )}
 
-      <SectionHeader title="POCs — Proof of Concept"
-        sub={`Validação de fornecedores pré-contratação · ${total} POCs registradas`}
-        actions={[<Btn key="d" label="Exportar" icon={Download} C={C}/>, <Btn key="n" label="Nova POC" icon={Plus} primary C={C}/>]}
-        C={C}/>
+      <SectionHeader
+        title="POCs — Proof of Concept"
+        sub="Gestão de validações técnicas, fornecedores, incidentes e performance analítica"
+        actions={[
+          <Btn
+            key="n"
+            label="Nova POC"
+            icon={Plus}
+            primary
+            C={C}
+            onClick={abrirNovaPoc}
+          />,
+        ]}
+        C={C}
+      />
 
-      {/* KPIs */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14 }}>
-        <KPICard icon={FlaskConical}  label="Total de POCs"    value={total}     sub="Portfólio completo"      color={C.blue}   glow={C.blueGlow}    C={C}/>
-        <KPICard icon={ThumbsUp}      label="Taxa de Aprovação" value={`${txAprov}%`} sub={`${aprov} aprovadas`} trend="up" trendVal="+8% vs Q3" color={C.emerald} glow={C.emeraldGlow} C={C}/>
-        <KPICard icon={TrendingUp}    label="ROI Médio Esperado" value={`${avgRoi}%`} sub="Média do portfólio" trend="up" trendVal="+22%" color={C.violet} glow={C.violetGlow} C={C}/>
-        <KPICard icon={Award}         label="Score Médio"      value={avgScore}  sub="0–100 pontos"            trend="up" trendVal="+6pts"   color={C.amber}  glow={C.amberGlow}  C={C}/>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+        <KPICard icon={FlaskConical} label="POCs registradas" value={total} sub={loading ? "Carregando..." : "Portfólio de validações"} color={C.blue} glow={C.blueGlow} C={C} />
+        <KPICard icon={Activity} label="Em execução" value={emExecucao} sub="Testes ativos" color={C.emerald} glow={C.emeraldGlow} C={C} />
+        <KPICard icon={CheckCircle2} label="Encerradas" value={encerradas} sub="POCs finalizadas" color={C.violet} glow={C.violetGlow} C={C} />
+        <KPICard icon={AlertTriangle} label="Com condições" value={comCondicoes} sub="Atenção executiva" color={C.amber} glow={C.amberGlow} C={C} />
       </div>
 
-      {/* Charts */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14 }}>
-        {/* Pie */}
-        <div style={{ ...card(C), padding:"20px 22px" }}>
-          <div style={{ fontSize:14, fontWeight:600, color:C.t1, marginBottom:4 }}>Taxa de Aprovação</div>
-          <div style={{ fontSize:12, color:C.t3, marginBottom:12 }}>Resultado das POCs finalizadas</div>
-          <div style={{ position:"relative", display:"flex", justifyContent:"center" }}>
-            <ResponsiveContainer width="100%" height={150}>
-              <PieChart>
-                <Pie data={approvalPieData} cx="50%" cy="50%" innerRadius={46} outerRadius={64} dataKey="value" strokeWidth={0}>
-                  {approvalPieData.map((d,i)=><Cell key={i} fill={d.fill}/>)}
-                </Pie>
-                <Tooltip formatter={(v,n)=>[`${v} POCs`,n]}/>
-              </PieChart>
-            </ResponsiveContainer>
-            <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", textAlign:"center" }}>
-              <div style={{ fontSize:20, fontWeight:700, color:C.emerald }}>{txAprov}%</div>
-              <div style={{ fontSize:9, color:C.t3 }}>aprovação</div>
-            </div>
-          </div>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:8, justifyContent:"center", marginTop:8 }}>
-            {approvalPieData.map((d,i)=>(
-              <div key={i} style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:C.t2 }}>
-                <span style={{ width:7, height:7, borderRadius:2, background:d.fill }}/>{d.name}: {d.value}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ROI Bar */}
-        <div style={{ ...card(C), padding:"20px 22px" }}>
-          <div style={{ fontSize:14, fontWeight:600, color:C.t1, marginBottom:4 }}>ROI Esperado por POC</div>
-          <div style={{ fontSize:12, color:C.t3, marginBottom:12 }}>Retorno projetado (%)</div>
-          <ResponsiveContainer width="100%" height={170}>
-            <BarChart data={pocRoiData} layout="vertical" barSize={12}>
-              <CartesianGrid strokeDasharray="3 3" stroke={C.border} horizontal={false}/>
-              <XAxis type="number" tick={{ fill:C.t3, fontSize:10 }} axisLine={false} tickLine={false} unit="%"/>
-              <YAxis type="category" dataKey="name" tick={{ fill:C.t2, fontSize:11 }} axisLine={false} tickLine={false} width={80}/>
-              <Tooltip content={<CT C={C}/>}/>
-              <Bar dataKey="roi" name="ROI Esperado" fill={C.violet} radius={[0,4,4,0]}>
-                {pocRoiData.map((d,i)=><Cell key={i} fill={[C.emerald,C.blue,C.violet,C.cyan][i%4]}/>)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Score Line */}
-        <div style={{ ...card(C), padding:"20px 22px" }}>
-          <div style={{ fontSize:14, fontWeight:600, color:C.t1, marginBottom:4 }}>Score por Fornecedor</div>
-          <div style={{ fontSize:12, color:C.t3, marginBottom:12 }}>Performance técnica</div>
-          <ResponsiveContainer width="100%" height={170}>
-            <BarChart data={pocs.map(p=>({ name:p.supplier.split(" ")[0], score:p.score }))} barSize={18}>
-              <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
-              <XAxis dataKey="name" tick={{ fill:C.t3, fontSize:9 }} axisLine={false} tickLine={false}/>
-              <YAxis domain={[0,100]} tick={{ fill:C.t3, fontSize:10 }} axisLine={false} tickLine={false}/>
-              <Tooltip content={<CT C={C}/>}/>
-              <Bar dataKey="score" name="Score" radius={[4,4,0,0]}>
-                {pocs.map((p,i)=><Cell key={i} fill={p.score>=90?C.emerald:p.score>=70?C.amber:C.rose}/>)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div style={{ display:"flex", gap:8 }}>
-        {filters.map(f=>{
-          const conf = sc[f]||{ color:C.t2, bg:"transparent" };
-          const isA = filter===f;
-          return (
-            <button key={f} onClick={()=>setFilter(f)} style={{
-              padding:"6px 14px", borderRadius:8,
-              border:`1px solid ${isA?(f==="Todos"?C.blue:conf.color):C.border}`,
-              background:isA?(f==="Todos"?C.blueGlow:conf.bg):"transparent",
-              color:isA?(f==="Todos"?C.blue:conf.color):C.t2,
-              fontSize:12, cursor:"pointer", fontWeight:isA?700:400,
-            }}>{f}</button>
-          );
-        })}
-      </div>
-
-      {/* Table */}
-      <div style={{ ...card(C), padding:0, overflow:"hidden" }}>
-        <table style={{ width:"100%", borderCollapse:"collapse" }}>
+      <div style={{ ...card(C), padding: 0, overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ borderBottom:`1px solid ${C.border}` }}>
-              {["ID","POC / Solução","Fornecedor","Resp.","Período","ROI Esp.","Score","Critérios","Status",""].map((h,i)=>(
-                <th key={i} style={{ padding:"12px 14px", fontSize:10, fontWeight:700, color:C.t3, textAlign:"left", letterSpacing:"0.07em", textTransform:"uppercase", whiteSpace:"nowrap" }}>{h}</th>
+            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+              {["POC", "Fornecedor", "Responsável", "Status", "Entrega", "Leitura", "Conversão", "Recomendação"].map((h) => (
+                <th
+                  key={h}
+                  style={{
+                    padding: "14px 16px",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: C.t3,
+                    textAlign: "left",
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {h}
+                </th>
               ))}
             </tr>
           </thead>
+
           <tbody>
-            {filtered.map(p=>{
-              const st = sc[p.status]||sc["Em Teste"];
+            {records.map((record) => {
+              const m = calc(record);
+              const statusColor =
+                record.status === "Encerrada"
+                  ? C.violet
+                  : record.status === "Em Execução"
+                  ? C.emerald
+                  : record.status === "Em Monitoramento"
+                  ? C.amber
+                  : C.blue;
+
               return (
-                <tr key={p.id} style={{ borderBottom:`1px solid ${C.border}`, transition:"background 0.15s", cursor:"pointer" }}
-                  onMouseEnter={e=>e.currentTarget.style.background=C.cardHov}
-                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}
-                  onClick={()=>setDetail(p)}>
-                  <td style={{ padding:"13px 14px", fontSize:11, color:C.t3, fontFamily:"monospace" }}>{p.id}</td>
-                  <td style={{ padding:"13px 14px", minWidth:170 }}>
-                    <div style={{ fontSize:13, color:C.t1, fontWeight:600 }}>{p.name}</div>
-                    <div style={{ fontSize:11, color:C.t3, marginTop:2 }}>{p.cat}</div>
-                  </td>
-                  <td style={{ padding:"13px 14px", fontSize:12, color:C.t2 }}>{p.supplier}</td>
-                  <td style={{ padding:"13px 14px", fontSize:12, color:C.t2 }}>{p.resp}</td>
-                  <td style={{ padding:"13px 14px", fontSize:11, color:C.t3, whiteSpace:"nowrap" }}>{p.start} → {p.end}</td>
-                  <td style={{ padding:"13px 14px" }}>
-                    <span style={{ fontSize:14, fontWeight:700, color:p.roiEsp>=200?C.emerald:p.roiEsp>=120?C.blue:C.amber }}>{p.roiEsp}%</span>
-                  </td>
-                  <td style={{ padding:"13px 14px" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                      <ScoreRing val={p.score} C={C} size={44}/>
+                <tr
+                  key={record.id}
+                  onClick={() => abrirPoc(record)}
+                  style={{
+                    borderBottom: `1px solid ${C.border}`,
+                    cursor: "pointer",
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = C.cardHov)}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <td style={{ padding: "15px 16px" }}>
+                    <div style={{ fontSize: 13, color: C.t1, fontWeight: 800 }}>
+                      {record.poc_name}
+                    </div>
+                    <div style={{ fontSize: 11, color: C.t3, marginTop: 3 }}>
+                      Atualizada em {new Date(record.updated_at || record.created_at).toLocaleDateString("pt-BR")}
                     </div>
                   </td>
-                  <td style={{ padding:"13px 14px" }}>
-                    <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
-                      {p.criterios.slice(0,2).map((cr,i)=>(
-                        <span key={i} style={{ fontSize:9, padding:"2px 6px", borderRadius:4, background:C.bg3, color:C.t3 }}>{cr}</span>
-                      ))}
-                      {p.criterios.length>2 && <span style={{ fontSize:9, color:C.t3 }}>+{p.criterios.length-2}</span>}
-                    </div>
+
+                  <td style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}>
+                    {record.supplier || "-"}
                   </td>
-                  <td style={{ padding:"13px 14px" }}><Chip label={p.status} color={st.color} bg={st.bg}/></td>
-                  <td style={{ padding:"13px 14px" }}>
-                    <button onClick={e=>{e.stopPropagation();setDetail(p);}} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:6, cursor:"pointer", color:C.t2, padding:"4px 8px", fontSize:11 }}>
-                      <Eye size={13}/>
-                    </button>
+
+                  <td style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}>
+                    {record.responsible || "-"}
+                  </td>
+
+                  <td style={{ padding: "15px 16px" }}>
+                    <Chip label={record.status || "Em Planejamento"} color={statusColor} bg={statusColor + "22"} />
+                  </td>
+
+                  <td style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}>
+                    <strong style={{ color: m.entrega >= 85 ? C.emerald : m.entrega >= 70 ? C.amber : C.rose }}>{m.entrega}%</strong>
+                  </td>
+
+                  <td style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}>
+                    <strong style={{ color: m.leitura >= 60 ? C.emerald : m.leitura >= 45 ? C.amber : C.rose }}>{m.leitura}%</strong>
+                  </td>
+
+                  <td style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}>
+                    <strong style={{ color: C.violet }}>{m.conversao}%</strong>
+                  </td>
+
+                  <td style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}>
+                    {record.recommendation || "Em avaliação"}
                   </td>
                 </tr>
               );
             })}
+
+            {records.length === 0 && (
+              <tr>
+                <td colSpan={8} style={{ padding: 30, textAlign: "center", color: C.t3, fontSize: 13 }}>
+                  Nenhuma POC cadastrada ainda. Clique em Nova POC para iniciar.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
-      </div>
-
-      {/* Radar chart */}
-      <div style={{ ...card(C), padding:"22px 24px" }}>
-        <div style={{ fontSize:14, fontWeight:600, color:C.t1, marginBottom:4 }}>Performance por Dimensão — Todos os Fornecedores</div>
-        <div style={{ fontSize:12, color:C.t3, marginBottom:16 }}>Técnico · Funcional · Financeiro · Estratégico</div>
-        <ResponsiveContainer width="100%" height={280}>
-          <RadarChart data={pocPerfData}>
-            <PolarGrid stroke={C.border}/>
-            <PolarAngleAxis dataKey="name" tick={{ fill:C.t2, fontSize:10 }}/>
-            <Radar name="Técnico"    dataKey="Técnico"    stroke={C.blue}   fill={C.blue}   fillOpacity={0.08} strokeWidth={1.5}/>
-            <Radar name="Funcional"  dataKey="Funcional"  stroke={C.violet} fill={C.violet} fillOpacity={0.08} strokeWidth={1.5}/>
-            <Radar name="Financeiro" dataKey="Financeiro" stroke={C.amber}  fill={C.amber}  fillOpacity={0.08} strokeWidth={1.5}/>
-            <Radar name="Estratégico"dataKey="Estratégico"stroke={C.cyan}   fill={C.cyan}   fillOpacity={0.08} strokeWidth={1.5}/>
-            <Tooltip content={<CT C={C}/>}/>
-          </RadarChart>
-        </ResponsiveContainer>
-        <div style={{ display:"flex", justifyContent:"center", gap:20, marginTop:4 }}>
-          {[["Técnico",C.blue],["Funcional",C.violet],["Financeiro",C.amber],["Estratégico",C.cyan]].map(([l,c],i)=>(
-            <div key={i} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:C.t2 }}>
-              <span style={{ width:10, height:3, borderRadius:99, background:c }}/>{l}
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
 }
+
 
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 const navItems = [
