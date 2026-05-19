@@ -455,26 +455,43 @@ function Dashboard({ C }) {
 }
 
 function ProjectsView({ C }) {
+  const etapasCiclo = ["Backlog", "Planejamento", "Execução", "Monitoramento", "Encerramento"];
+
   const [filter, setFilter] = useState("Todos");
+  const [showFilters, setShowFilters] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [dbProjects, setDbProjects] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
+  const [savingProject, setSavingProject] = useState(false);
 
-  const [form, setForm] = useState({
+  const emptyForm = {
     nome: "",
     responsavel: "",
     fornecedor: "",
     canal: "",
-    prioridade: "",
-    status: "",
-    etapa: "Início",
+    prioridade: "Média",
+    statusCiclo: "Backlog",
     descricao: "",
-  });
+    prazo: "",
+  };
 
-  const filters = ["Todos", "Em Andamento", "Concluído", "Planejamento"];
+  const [form, setForm] = useState(emptyForm);
+
+  const filters = ["Todos", ...etapasCiclo];
+
+  const fieldBase = {
+    ...inputStyle(C),
+    width: "100%",
+    minHeight: 46,
+    boxSizing: "border-box",
+    borderRadius: 14,
+    padding: "12px 16px",
+    fontSize: 13,
+  };
 
   function calcularProgressoPorEtapa(etapa) {
     const etapas = {
+      "Backlog": 10,
       "Início": 10,
       "Planejamento": 30,
       "Execução": 60,
@@ -485,6 +502,28 @@ function ProjectsView({ C }) {
     return etapas[etapa] || 0;
   }
 
+  function normalizarEtapa(valor) {
+    const texto = String(valor || "").toLowerCase();
+
+    if (texto.includes("backlog") || texto.includes("início") || texto.includes("inicio")) return "Backlog";
+    if (texto.includes("plane")) return "Planejamento";
+    if (texto.includes("exec") || texto.includes("andamento")) return "Execução";
+    if (texto.includes("monitor")) return "Monitoramento";
+    if (texto.includes("encer") || texto.includes("concl")) return "Encerramento";
+
+    return "Backlog";
+  }
+
+  function corEtapa(etapa) {
+    const etapaNormalizada = normalizarEtapa(etapa);
+
+    if (etapaNormalizada === "Backlog") return { color: C.t3, bg: C.bg3 };
+    if (etapaNormalizada === "Planejamento") return { color: C.violet, bg: C.violetGlow };
+    if (etapaNormalizada === "Execução") return { color: C.blue, bg: C.blueGlow };
+    if (etapaNormalizada === "Monitoramento") return { color: C.amber, bg: C.amberGlow };
+    return { color: C.emerald, bg: C.emeraldGlow };
+  }
+
   function handleChange(campo, valor) {
     setForm((prev) => ({
       ...prev,
@@ -493,136 +532,156 @@ function ProjectsView({ C }) {
   }
 
   async function carregarProjetos() {
-  setLoadingProjects(true);
+    setLoadingProjects(true);
 
-  const { data, error } = await supabase
-    .from("projects")
-    .select("*")
-    .order("created_at", { ascending: false });
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    console.log("Erro ao carregar projetos:", error);
-    setLoadingProjects(false);
-    return;
-  }
-
-  const projetosFormatados = data.map((p, index) => {
-    let statusFormatado = p.status || "Planejamento";
-    const statusLower = statusFormatado.toLowerCase();
-
-    if (statusLower.includes("andamento")) {
-      statusFormatado = "Em Andamento";
-    } else if (statusLower.includes("concl")) {
-      statusFormatado = "Concluído";
-    } else if (statusLower.includes("plane")) {
-      statusFormatado = "Planejamento";
-    } else if (
-      statusLower.includes("início") ||
-      statusLower.includes("inicio")
-    ) {
-      statusFormatado = "Planejamento";
+    if (error) {
+      console.log("Erro ao carregar projetos:", error);
+      setLoadingProjects(false);
+      return;
     }
 
-    const etapaAtual = p.current_stage || "Início";
+    const projetosFormatados = (data || []).map((p, index) => {
+      const etapaAtual = normalizarEtapa(p.current_stage || p.status);
 
-    return {
-      dbId: p.id,
-      id: `BP-${String(index + 1).padStart(3, "0")}`,
-      name: p.name || "-",
-      resp: p.responsible || "-",
-      etapa: etapaAtual,
-      prog: calcularProgressoPorEtapa(etapaAtual),
-      prazo: p.end_date ? p.end_date.split("-").reverse().join("/") : "-",
-      prioridade: p.priority || "Média",
-      orcamento: "-",
-      status: statusFormatado,
-    };
-  });
+      return {
+        dbId: p.id,
+        id: `BP-${String(index + 1).padStart(3, "0")}`,
+        name: p.name || "-",
+        resp: p.responsible || "-",
+        fornecedor: p.supplier || "-",
+        canal: p.channel || "-",
+        etapa: etapaAtual,
+        prog: calcularProgressoPorEtapa(etapaAtual),
+        prazo: p.end_date ? p.end_date.split("-").reverse().join("/") : "-",
+        prioridade: p.priority || "Média",
+        orcamento: "-",
+        statusCiclo: etapaAtual,
+      };
+    });
 
-  setDbProjects(projetosFormatados);
-  setLoadingProjects(false);
-}
-    useEffect(() => {
-  carregarProjetos();
+    setDbProjects(projetosFormatados);
+    setLoadingProjects(false);
+  }
+
+  useEffect(() => {
+    carregarProjetos();
   }, []);
 
   async function salvarProjeto() {
-    const { data, error } = await supabase
-      .from("projects")
-      .insert([
-        {
-          name: form.nome,
-          description: form.descricao,
-          responsible: form.responsavel,
-          supplier: form.fornecedor,
-          channel: form.canal,
-          priority: form.prioridade,
-          status: form.status || "Início",
-          current_stage: form.etapa || "Início",
-        },
-      ])
-      .select();
+    if (!form.nome || !form.nome.trim()) {
+      alert("Informe o nome do projeto antes de salvar.");
+      return;
+    }
 
-    if (error) {
-      console.log("Erro ao salvar projeto:", error);
+    setSavingProject(true);
+
+    const etapaSelecionada = normalizarEtapa(form.statusCiclo);
+
+    const payloadBase = {
+      name: form.nome,
+      description: form.descricao,
+      responsible: form.responsavel,
+      supplier: form.fornecedor,
+      channel: form.canal,
+      priority: form.prioridade || "Média",
+      status: etapaSelecionada,
+      current_stage: etapaSelecionada,
+    };
+
+    const tentativas = [
+      { ...payloadBase, end_date: form.prazo || null },
+      payloadBase,
+    ];
+
+    let ultimoErro = null;
+
+    for (const payload of tentativas) {
+      const { error } = await supabase.from("projects").insert([payload]);
+
+      if (!error) {
+        ultimoErro = null;
+        break;
+      }
+
+      ultimoErro = error;
+      console.log("Tentativa de salvar projeto falhou:", error);
+    }
+
+    setSavingProject(false);
+
+    if (ultimoErro) {
+      console.log("Erro ao salvar projeto:", ultimoErro);
       alert("Erro ao salvar projeto. Veja o console.");
       return;
     }
 
-    console.log("Projeto salvo:", data);
     alert("Projeto salvo com sucesso!");
 
-    setForm({
-      nome: "",
-      responsavel: "",
-      fornecedor: "",
-      canal: "",
-      prioridade: "",
-      status: "",
-      etapa: "Início",
-      descricao: "",
-    });
-
+    setForm(emptyForm);
     setShowForm(false);
     await carregarProjetos();
   }
 
-  async function salvarProjeto() {
-  // todo o código que já existe aqui dentro
-}
+  async function atualizarStatusCicloProjeto(dbId, novaEtapa) {
+    if (!dbId) {
+      alert("Este projeto ainda não possui ID do Supabase.");
+      return;
+    }
 
-async function atualizarEtapaProjeto(dbId, novaEtapa) {
-  if (!dbId) {
-    alert("Este projeto ainda não possui ID do Supabase.");
-    return;
+    const etapaNormalizada = normalizarEtapa(novaEtapa);
+
+    const { error } = await supabase
+      .from("projects")
+      .update({
+        current_stage: etapaNormalizada,
+        status: etapaNormalizada,
+      })
+      .eq("id", dbId);
+
+    if (error) {
+      console.log("Erro ao atualizar status do ciclo:", error);
+      alert("Erro ao atualizar status do ciclo do projeto.");
+      return;
+    }
+
+    await carregarProjetos();
   }
 
-  const { error } = await supabase
-    .from("projects")
-    .update({
-      current_stage: novaEtapa,
-    })
-    .eq("id", dbId);
-
-  if (error) {
-    console.log("Erro ao atualizar etapa:", error);
-    alert("Erro ao atualizar etapa do projeto.");
-    return;
-  }
-
-  await carregarProjetos();
-}
-
-  const sourceProjects = dbProjects.length > 0 ? dbProjects : projects;
+  const sourceProjects =
+    dbProjects.length > 0
+      ? dbProjects
+      : projects.map((p) => {
+          const etapaAtual = normalizarEtapa(p.etapa || p.status);
+          return {
+            ...p,
+            etapa: etapaAtual,
+            statusCiclo: etapaAtual,
+            prog: calcularProgressoPorEtapa(etapaAtual),
+          };
+        });
 
   const filtered =
     filter === "Todos"
       ? sourceProjects
-      : sourceProjects.filter((p) => p.status === filter);
+      : sourceProjects.filter((p) => normalizarEtapa(p.statusCiclo || p.etapa || p.status) === filter);
+
+  const totalPorFiltro = filters.reduce((acc, item) => {
+    if (item === "Todos") {
+      acc[item] = sourceProjects.length;
+    } else {
+      acc[item] = sourceProjects.filter((p) => normalizarEtapa(p.statusCiclo || p.etapa || p.status) === item).length;
+    }
+    return acc;
+  }, {});
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 700, color: C.t1 }}>
             Gestão de Projetos
@@ -634,23 +693,80 @@ async function atualizarEtapaProjeto(dbId, novaEtapa) {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, position: "relative" }}>
           <button
+            onClick={() => setShowFilters((prev) => !prev)}
             style={{
               display: "flex",
               alignItems: "center",
               gap: 6,
               padding: "8px 14px",
-              borderRadius: 8,
-              background: C.surface,
-              border: `1px solid ${C.border}`,
-              color: C.t2,
+              borderRadius: 10,
+              background: showFilters ? C.blueGlow : C.surface,
+              border: `1px solid ${showFilters ? C.blue : C.border}`,
+              color: showFilters ? C.blue : C.t2,
               cursor: "pointer",
               fontSize: 13,
+              fontWeight: showFilters ? 700 : 500,
             }}
           >
             Filtros
           </button>
+
+          {showFilters && (
+            <div
+              style={{
+                position: "absolute",
+                top: 44,
+                right: 150,
+                width: 260,
+                zIndex: 20,
+                ...card(C),
+                padding: 12,
+                boxShadow: "0 18px 45px rgba(0,0,0,0.18)",
+              }}
+            >
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.t1, marginBottom: 10 }}>
+                Filtrar por status do ciclo
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {filters.map((f) => {
+                  const active = filter === f;
+                  const cores = f === "Todos" ? { color: C.blue, bg: C.blueGlow } : corEtapa(f);
+
+                  return (
+                    <button
+                      key={f}
+                      onClick={() => {
+                        setFilter(f);
+                        setShowFilters(false);
+                      }}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        width: "100%",
+                        padding: "9px 10px",
+                        borderRadius: 9,
+                        border: `1px solid ${active ? cores.color : C.border}`,
+                        background: active ? cores.bg : "transparent",
+                        color: active ? cores.color : C.t2,
+                        cursor: "pointer",
+                        fontSize: 12,
+                        fontWeight: active ? 700 : 500,
+                      }}
+                    >
+                      <span>{f}</span>
+                      <span style={{ fontSize: 10, color: active ? cores.color : C.t3 }}>
+                        {totalPorFiltro[f] || 0}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <button
             onClick={() => setShowForm(true)}
@@ -659,13 +775,14 @@ async function atualizarEtapaProjeto(dbId, novaEtapa) {
               alignItems: "center",
               gap: 6,
               padding: "8px 14px",
-              borderRadius: 8,
+              borderRadius: 10,
               background: C.blue,
               border: "none",
               color: "#fff",
               cursor: "pointer",
               fontSize: 13,
               fontWeight: 700,
+              boxShadow: "0 10px 24px rgba(37,99,235,0.18)",
             }}
           >
             Novo Projeto
@@ -676,21 +793,26 @@ async function atualizarEtapaProjeto(dbId, novaEtapa) {
       {showForm && (
         <div
           style={{
-            background: C.card,
-            border: `1px solid ${C.border}`,
-            borderRadius: 16,
-            padding: 22,
-            display: "flex",
-            flexDirection: "column",
-            gap: 14,
+            ...card(C),
+            padding: 0,
+            borderRadius: 22,
+            overflow: "hidden",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div
+            style={{
+              padding: "24px 26px 8px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: 16,
+            }}
+          >
             <div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: C.t1 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: C.t1 }}>
                 Novo Projeto
               </div>
-              <div style={{ fontSize: 12, color: C.t3 }}>
+              <div style={{ fontSize: 12, color: C.t3, marginTop: 4 }}>
                 Cadastre um novo projeto da Transformação Digital
               </div>
             </div>
@@ -698,144 +820,184 @@ async function atualizarEtapaProjeto(dbId, novaEtapa) {
             <button
               onClick={() => setShowForm(false)}
               style={{
-                background: "transparent",
+                background: C.surface,
                 border: `1px solid ${C.border}`,
                 color: C.t2,
-                borderRadius: 8,
-                padding: "6px 10px",
+                borderRadius: 12,
+                padding: "8px 14px",
                 cursor: "pointer",
+                fontWeight: 600,
               }}
             >
               Fechar
             </button>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
-            <input
-              placeholder="Nome do projeto"
-              value={form.nome}
-              onChange={(e) => handleChange("nome", e.target.value)}
-              style={inputStyle(C)}
-            />
-
-            <input
-              placeholder="Responsável"
-              value={form.responsavel}
-              onChange={(e) => handleChange("responsavel", e.target.value)}
-              style={inputStyle(C)}
-            />
-
-            <input
-              placeholder="Fornecedor"
-              value={form.fornecedor}
-              onChange={(e) => handleChange("fornecedor", e.target.value)}
-              style={inputStyle(C)}
-            />
-
-            <input
-              placeholder="Canal: WhatsApp, RCS, SMS, E-mail..."
-              value={form.canal}
-              onChange={(e) => handleChange("canal", e.target.value)}
-              style={inputStyle(C)}
-            />
-
-            <input
-              placeholder="Prioridade"
-              value={form.prioridade}
-              onChange={(e) => handleChange("prioridade", e.target.value)}
-              style={inputStyle(C)}
-            />
-
-            <input
-              placeholder="Status"
-              value={form.status}
-              onChange={(e) => handleChange("status", e.target.value)}
-              style={inputStyle(C)}
-            />
-
-            <select
-              value={form.etapa}
-              onChange={(e) => handleChange("etapa", e.target.value)}
-              style={inputStyle(C)}
-            >
-              <option value="Início">Início</option>
-              <option value="Planejamento">Planejamento</option>
-              <option value="Execução">Execução</option>
-              <option value="Monitoramento">Monitoramento</option>
-              <option value="Encerramento">Encerramento</option>
-            </select>
-          </div>
-
-          <textarea
-            placeholder="Descrição do projeto"
-            value={form.descricao}
-            onChange={(e) => handleChange("descricao", e.target.value)}
+          <div
             style={{
-              ...inputStyle(C),
-              minHeight: 90,
-              resize: "vertical",
+              maxWidth: 1160,
+              margin: "0 auto",
+              padding: "12px 26px 26px",
             }}
-          />
-
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-            <button
-              onClick={() => setShowForm(false)}
+          >
+            <div
               style={{
-                background: C.surface,
-                border: `1px solid ${C.border}`,
-                color: C.t2,
-                borderRadius: 8,
-                padding: "9px 14px",
-                cursor: "pointer",
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: 14,
+                alignItems: "start",
               }}
             >
-              Cancelar
-            </button>
+              <input
+                placeholder="Nome do projeto"
+                value={form.nome}
+                onChange={(e) => handleChange("nome", e.target.value)}
+                style={fieldBase}
+              />
 
-            <button
-              onClick={salvarProjeto}
+              <input
+                placeholder="Responsável"
+                value={form.responsavel}
+                onChange={(e) => handleChange("responsavel", e.target.value)}
+                style={fieldBase}
+              />
+
+              <input
+                placeholder="Fornecedor"
+                value={form.fornecedor}
+                onChange={(e) => handleChange("fornecedor", e.target.value)}
+                style={fieldBase}
+              />
+
+              <input
+                placeholder="Canal: WhatsApp, RCS, SMS, E-mail..."
+                value={form.canal}
+                onChange={(e) => handleChange("canal", e.target.value)}
+                style={fieldBase}
+              />
+
+              <select
+                value={form.prioridade}
+                onChange={(e) => handleChange("prioridade", e.target.value)}
+                style={fieldBase}
+              >
+                <option value="Baixa">Prioridade: Baixa</option>
+                <option value="Média">Prioridade: Média</option>
+                <option value="Alta">Prioridade: Alta</option>
+                <option value="Crítica">Prioridade: Crítica</option>
+              </select>
+
+              <select
+                value={form.statusCiclo}
+                onChange={(e) => handleChange("statusCiclo", e.target.value)}
+                style={fieldBase}
+              >
+                {etapasCiclo.map((etapa) => (
+                  <option key={etapa} value={etapa}>
+                    Status do ciclo: {etapa}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                type="date"
+                value={form.prazo}
+                onChange={(e) => handleChange("prazo", e.target.value)}
+                style={{ ...fieldBase, gridColumn: "1 / -1" }}
+              />
+
+              <textarea
+                placeholder="Descrição do projeto"
+                value={form.descricao}
+                onChange={(e) => handleChange("descricao", e.target.value)}
+                style={{
+                  ...fieldBase,
+                  gridColumn: "1 / -1",
+                  minHeight: 136,
+                  resize: "vertical",
+                  lineHeight: 1.5,
+                }}
+              />
+            </div>
+
+            <div
               style={{
-                background: C.blue,
-                border: "none",
-                color: "#fff",
-                borderRadius: 8,
-                padding: "9px 14px",
-                cursor: "pointer",
-                fontWeight: 700,
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 12,
+                marginTop: 18,
+                paddingTop: 18,
+                borderTop: `1px solid ${C.border}`,
               }}
             >
-              Salvar Projeto
-            </button>
+              <button
+                onClick={() => setShowForm(false)}
+                style={{
+                  background: C.surface,
+                  border: `1px solid ${C.border}`,
+                  color: C.t2,
+                  borderRadius: 12,
+                  padding: "11px 18px",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={salvarProjeto}
+                disabled={savingProject}
+                style={{
+                  background: C.blue,
+                  border: "none",
+                  color: "#fff",
+                  borderRadius: 12,
+                  padding: "11px 20px",
+                  cursor: savingProject ? "not-allowed" : "pointer",
+                  fontWeight: 800,
+                  opacity: savingProject ? 0.7 : 1,
+                  boxShadow: "0 10px 24px rgba(37,99,235,0.18)",
+                }}
+              >
+                {savingProject ? "Salvando..." : "Salvar Projeto"}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 8 }}>
-        {filters.map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            style={{
-              padding: "6px 14px",
-              borderRadius: 8,
-              border: `1px solid ${filter === f ? C.blue : C.border}`,
-              background: filter === f ? C.blueGlow : "transparent",
-              color: filter === f ? C.blue : C.t2,
-              fontSize: 12,
-              cursor: "pointer",
-              fontWeight: filter === f ? 700 : 400,
-            }}
-          >
-            {f}
-          </button>
-        ))}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {filters.map((f) => {
+          const active = filter === f;
+          const cores = f === "Todos" ? { color: C.blue, bg: C.blueGlow } : corEtapa(f);
+
+          return (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 9,
+                border: `1px solid ${active ? cores.color : C.border}`,
+                background: active ? cores.bg : "transparent",
+                color: active ? cores.color : C.t2,
+                fontSize: 12,
+                cursor: "pointer",
+                fontWeight: active ? 700 : 500,
+              }}
+            >
+              {f}
+            </button>
+          );
+        })}
       </div>
 
       <div style={{ ...card(C), padding: 0, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-              {["ID", "Projeto", "Responsável", "Etapa", "Progresso", "Prazo", "Prioridade", "Orçamento", "Status", ""].map((h, i) => (
+              {["ID", "Projeto", "Responsável", "Status do Ciclo", "Progresso", "Prazo", "Prioridade", "Orçamento"].map((h, i) => (
                 <th
                   key={i}
                   style={{
@@ -855,70 +1017,77 @@ async function atualizarEtapaProjeto(dbId, novaEtapa) {
           </thead>
 
           <tbody>
-            {filtered.map((p) => (
-              <tr key={p.id} style={{ borderBottom: `1px solid ${C.border}` }}>
-                <td style={{ padding: "14px 16px", fontSize: 12, color: C.t3 }}>
-                  {p.id}
-                </td>
+            {filtered.map((p) => {
+              const etapaAtual = normalizarEtapa(p.statusCiclo || p.etapa || p.status);
+              const cores = corEtapa(etapaAtual);
 
-                <td style={{ padding: "14px 16px", fontSize: 13, color: C.t1, fontWeight: 600 }}>
-                  {p.name}
-                </td>
+              return (
+                <tr key={p.dbId || p.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                  <td style={{ padding: "14px 16px", fontSize: 12, color: C.t3 }}>
+                    {p.id}
+                  </td>
 
-                <td style={{ padding: "14px 16px", fontSize: 12, color: C.t2 }}>
-                  {p.resp}
-                </td>
+                  <td style={{ padding: "14px 16px", fontSize: 13, color: C.t1, fontWeight: 700 }}>
+                    {p.name}
+                  </td>
 
-                <td style={{ padding: "14px 16px" }}>
-  <select
-    value={p.etapa || "Início"}
-    onChange={(e) => atualizarEtapaProjeto(p.dbId, e.target.value)}
-    style={{
-      ...inputStyle(C),
-      minWidth: 150,
-      padding: "8px 10px",
-      background: C.surface,
-      color: C.t1,
-      cursor: "pointer",
-    }}
-  >
-    <option value="Início">Início</option>
-    <option value="Planejamento">Planejamento</option>
-    <option value="Execução">Execução</option>
-    <option value="Monitoramento">Monitoramento</option>
-    <option value="Encerramento">Encerramento</option>
-  </select>
-</td>
+                  <td style={{ padding: "14px 16px", fontSize: 12, color: C.t2 }}>
+                    {p.resp}
+                  </td>
 
-                <td style={{ padding: "14px 16px", minWidth: 140 }}>
-                  <ProgressBar
-                    val={p.prog}
-                    color={p.prog === 100 ? C.emerald : C.blue}
-                    C={C}
-                  />
-                </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <select
+                      value={etapaAtual}
+                      onChange={(e) => atualizarStatusCicloProjeto(p.dbId, e.target.value)}
+                      style={{
+                        ...fieldBase,
+                        minWidth: 170,
+                        padding: "8px 10px",
+                        minHeight: 42,
+                        background: C.surface,
+                        color: C.t1,
+                        cursor: "pointer",
+                        borderColor: cores.color + "66",
+                      }}
+                    >
+                      {etapasCiclo.map((etapa) => (
+                        <option key={etapa} value={etapa}>
+                          {etapa}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
 
-                <td style={{ padding: "14px 16px", fontSize: 12, color: C.t2 }}>
-                  {p.prazo}
-                </td>
+                  <td style={{ padding: "14px 16px", minWidth: 140 }}>
+                    <ProgressBar
+                      val={p.prog}
+                      color={p.prog === 100 ? C.emerald : cores.color}
+                      C={C}
+                    />
+                  </td>
 
-                <td style={{ padding: "14px 16px" }}>
-                  <Chip label={p.prioridade} color={C.amber} bg={C.amberGlow} />
-                </td>
+                  <td style={{ padding: "14px 16px", fontSize: 12, color: C.t2 }}>
+                    {p.prazo}
+                  </td>
 
-                <td style={{ padding: "14px 16px", fontSize: 12, color: C.t2 }}>
-                  {p.orcamento}
-                </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <Chip label={p.prioridade} color={C.amber} bg={C.amberGlow} />
+                  </td>
 
-                <td style={{ padding: "14px 16px" }}>
-                  <Chip label={p.status} color={C.blue} bg={C.blueGlow} />
-                </td>
+                  <td style={{ padding: "14px 16px", fontSize: 12, color: C.t2 }}>
+                    {p.orcamento}
+                  </td>
+                </tr>
+              );
+            })}
 
-                <td style={{ padding: "14px 16px" }}>
-                  <MoreHorizontal size={16} color={C.t3} />
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={8} style={{ padding: "26px 16px", textAlign: "center", color: C.t3, fontSize: 13 }}>
+                  Nenhum projeto encontrado para este filtro.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
