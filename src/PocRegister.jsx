@@ -11,8 +11,8 @@ const emptyPoc = {
     product: "",
     periodStart: "",
     periodEnd: "",
-    dailyGoal: "300",
-    pocDays: "30",
+    dailyGoal: "",
+    pocDays: "",
     status: "Em Planejamento",
   },
   planning: {
@@ -62,6 +62,45 @@ const emptyPoc = {
     recommendation: "Em avaliação",
     conditions: "",
     executiveSummary: "",
+    kpiResults: [],
+    dealBreakers: [
+      { key: "security", label: "Falha crítica de segurança / LGPD", checked: false },
+      { key: "integration", label: "Integração crítica não funcionou", checked: false },
+      { key: "availability", label: "Disponibilidade ou performance inviável", checked: false },
+      { key: "support", label: "Fornecedor não atendeu suporte/SLA mínimo", checked: false },
+      { key: "cost", label: "Custo ou operação inviável para escala", checked: false },
+    ],
+    qualitative: {
+      support: "0",
+      communication: "0",
+      incidentResponse: "0",
+      technicalCapacity: "0",
+      documentation: "0",
+      implementationEase: "0",
+    },
+    baseline: {
+      currentDelivery: "",
+      supplierDelivery: "",
+      currentReading: "",
+      supplierReading: "",
+      currentConversion: "",
+      supplierConversion: "",
+      notes: "",
+    },
+    recommendationJustification: "",
+    recommendationOwner: "",
+    recommendationDate: "",
+    leadershipApproval: "Pendente",
+    decommissioning: [
+      { key: "credentialsRevoked", label: "Credenciais e tokens revogados", checked: false },
+      { key: "vpnAccessRemoved", label: "Acessos VPN/IPs removidos", checked: false },
+      { key: "dataPurged", label: "Dados de teste expurgados", checked: false },
+      { key: "residualDataValidated", label: "Dados residuais validados", checked: false },
+      { key: "cloudStopped", label: "Infra cloud pausada/desprovida", checked: false },
+      { key: "supplierNotified", label: "Fornecedor notificado formalmente", checked: false },
+      { key: "internalSystemUpdated", label: "Registro atualizado no sistema interno", checked: false },
+      { key: "finalEvidenceStored", label: "Evidências finais armazenadas", checked: false },
+    ],
     credentialsRevoked: false,
     dataPurged: false,
     cloudStopped: false,
@@ -129,13 +168,37 @@ function cloneData(data) {
   return JSON.parse(JSON.stringify(data));
 }
 
+function deepMerge(base, extra) {
+  const output = cloneData(base);
+
+  function merge(target, source) {
+    if (!source || typeof source !== "object") return target;
+
+    Object.keys(source).forEach((key) => {
+      const value = source[key];
+
+      if (Array.isArray(value)) {
+        target[key] = value;
+      } else if (value && typeof value === "object") {
+        target[key] = merge(target[key] || {}, value);
+      } else if (value !== undefined) {
+        target[key] = value;
+      }
+    });
+
+    return target;
+  }
+
+  return merge(output, extra);
+}
+
 export default function PocRegister({ C, registroInicial = null, onSaved = null, onClose = null } = {}) {
   const [tab, setTab] = useState("overview");
   const [saving, setSaving] = useState(false);
   const [lastEditedAt, setLastEditedAt] = useState(null);
   const [data, setData] = useState(() => {
     const saved = registroInicial?.record_data || registroInicial?.dados_do_registro || null;
-    return saved || emptyPoc;
+    return saved ? deepMerge(emptyPoc, saved) : emptyPoc;
   });
 
   const metrics = useMemo(() => calcMetrics(data.analytics.rows || []), [data.analytics.rows]);
@@ -483,7 +546,7 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
                   ["Produto testado", data.general.product || "-"],
                   ["Responsável", data.general.responsible || "-"],
                   ["Período", `${brDate(data.general.periodStart)} a ${brDate(data.general.periodEnd)}`],
-                  ["Meta diária", `${data.general.dailyGoal || "-"} disparos/dia`],
+                  ["Qtd. disparo por dia", data.general.dailyGoal ? `${data.general.dailyGoal} disparos/dia` : "-"],
                 ].map(([label, value]) => (
                   <div
                     key={label}
@@ -931,24 +994,34 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
                 style={field}
               />
 
-              <input
-                placeholder="Meta de disparos por dia"
-                defaultValue={data.general.dailyGoal}
-                onBlur={(e) => update("general.dailyGoal", e.target.value)}
-                style={field}
-              />
+              <div>
+                <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+                  Quantidade de disparo por dia
+                </div>
+                <input
+                  placeholder="Ex: 300"
+                  defaultValue={data.general.dailyGoal}
+                  onBlur={(e) => update("general.dailyGoal", e.target.value)}
+                  style={field}
+                />
+              </div>
 
-              <input
-                placeholder="Quantidade de dias da POC"
-                defaultValue={data.general.pocDays}
-                onBlur={(e) => update("general.pocDays", e.target.value)}
-                style={field}
-              />
+              <div>
+                <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+                  Duração da POC
+                </div>
+                <input
+                  placeholder="Ex: 30 dias"
+                  defaultValue={data.general.pocDays}
+                  onBlur={(e) => update("general.pocDays", e.target.value)}
+                  style={field}
+                />
+              </div>
 
               <select
                 value={data.general.status}
                 onChange={(e) => update("general.status", e.target.value)}
-                style={{ ...field, gridColumn: "1 / -1" }}
+                style={{ ...field, maxWidth: 360 }}
               >
                 <option>Em Planejamento</option>
                 <option>Em Execução</option>
@@ -1547,45 +1620,556 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
 
       {tab === "evaluation" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <Section title="Matriz de Avaliação Final" sub="Notas de 1 a 5 para tomada de decisão">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 14 }}>
-              <input placeholder="Funcionalidade (1 a 5)" value={data.evaluation.functionality} onChange={(e) => update("evaluation.functionality", e.target.value)} style={field} />
-              <input placeholder="Performance (1 a 5)" value={data.evaluation.performance} onChange={(e) => update("evaluation.performance", e.target.value)} style={field} />
-              <input placeholder="Suporte (1 a 5)" value={data.evaluation.support} onChange={(e) => update("evaluation.support", e.target.value)} style={field} />
-              <input placeholder="Implementação (1 a 5)" value={data.evaluation.implementation} onChange={(e) => update("evaluation.implementation", e.target.value)} style={field} />
-            </div>
-            <div style={{ fontSize: 13, color: C.t2 }}>
-              Score médio: <strong style={{ color: averageScore >= 4 ? C.emerald : averageScore >= 3 ? C.amber : C.rose }}>{averageScore.toFixed(1)}</strong>
-            </div>
-          </Section>
+          {(() => {
+            const defaultDealBreakers = [
+              { key: "security", label: "Falha crítica de segurança / LGPD", checked: false },
+              { key: "integration", label: "Integração crítica não funcionou", checked: false },
+              { key: "availability", label: "Disponibilidade ou performance inviável", checked: false },
+              { key: "support", label: "Fornecedor não atendeu suporte/SLA mínimo", checked: false },
+              { key: "cost", label: "Custo ou operação inviável para escala", checked: false },
+            ];
 
-          <Section title="Descomissionamento e Segurança" sub="Garantia de encerramento seguro da POC">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-              {[
-                ["credentialsRevoked", "Credenciais revogadas"],
-                ["dataPurged", "Dados expurgados"],
-                ["cloudStopped", "Infra cloud pausada/desprovida"],
-              ].map(([key, label]) => (
-                <label key={key} style={{ display: "flex", gap: 9, alignItems: "center", color: C.t2, fontSize: 13 }}>
-                  <input type="checkbox" checked={data.evaluation[key]} onChange={(e) => update(`evaluation.${key}`, e.target.checked)} />
-                  {label}
-                </label>
-              ))}
-            </div>
-          </Section>
+            const defaultDecommissioning = [
+              { key: "credentialsRevoked", label: "Credenciais e tokens revogados", checked: false },
+              { key: "vpnAccessRemoved", label: "Acessos VPN/IPs removidos", checked: false },
+              { key: "dataPurged", label: "Dados de teste expurgados", checked: false },
+              { key: "residualDataValidated", label: "Dados residuais validados", checked: false },
+              { key: "cloudStopped", label: "Infra cloud pausada/desprovida", checked: false },
+              { key: "supplierNotified", label: "Fornecedor notificado formalmente", checked: false },
+              { key: "internalSystemUpdated", label: "Registro atualizado no sistema interno", checked: false },
+              { key: "finalEvidenceStored", label: "Evidências finais armazenadas", checked: false },
+            ];
 
-          <Section title="Recomendação Final" sub="Decisão técnica para apresentação à liderança">
-            <select value={data.evaluation.recommendation} onChange={(e) => update("evaluation.recommendation", e.target.value)} style={{ ...field, marginBottom: 12 }}>
-              <option>Em avaliação</option>
-              <option>Aprovado</option>
-              <option>Reprovado</option>
-              <option>Aprovado com condições</option>
-            </select>
+            const evaluation = data.evaluation || {};
+            const planningKpis = (data.planning?.successCriteria || []).filter((kpi) => kpi.kpi);
+            const savedKpis = evaluation.kpiResults || [];
 
-            <textarea placeholder="Condições, observações finais e próximos passos" defaultValue={data.evaluation.conditions} onBlur={(e) => update("evaluation.conditions", e.target.value)} style={{ ...field, minHeight: 130, resize: "vertical" }} />
-          </Section>
+            const kpiRows = planningKpis.map((kpi, index) => {
+              const saved = savedKpis.find((item) => item.kpiId === kpi.id) || {};
+              const statusBase =
+                kpi.status === "Atendido"
+                  ? 100
+                  : kpi.status === "Parcial"
+                  ? 60
+                  : kpi.status === "Não atendido"
+                  ? 0
+                  : "";
+
+              return {
+                kpiId: kpi.id,
+                name: kpi.kpi || `KPI ${index + 1}`,
+                target: kpi.target || "-",
+                result: saved.result ?? kpi.result ?? "",
+                attainment: saved.attainment ?? statusBase,
+                weight: saved.weight ?? "1",
+                notes: saved.notes ?? "",
+              };
+            });
+
+            const gradeFromAttainment = (value) => {
+              if (value === "" || value === null || value === undefined) return 0;
+              const n = toNum(value);
+              if (n >= 100) return 5;
+              if (n >= 80) return 4;
+              if (n >= 60) return 3;
+              if (n >= 40) return 2;
+              return 1;
+            };
+
+            const evaluatedKpis = kpiRows.filter((item) => item.attainment !== "" && item.attainment !== null && item.attainment !== undefined);
+            const totalWeight = evaluatedKpis.reduce((acc, item) => acc + Math.max(0, toNum(item.weight || 1)), 0);
+            const weightedScore5 = totalWeight
+              ? evaluatedKpis.reduce((acc, item) => acc + gradeFromAttainment(item.attainment) * Math.max(0, toNum(item.weight || 1)), 0) / totalWeight
+              : 0;
+
+            const score10 = weightedScore5 * 2;
+            const kpiCompletion = planningKpis.length ? (evaluatedKpis.length / planningKpis.length) * 100 : 0;
+
+            const savedDealBreakers = evaluation.dealBreakers || [];
+            const dealBreakers = defaultDealBreakers.map((item) => ({
+              ...item,
+              checked: Boolean(savedDealBreakers.find((saved) => saved.key === item.key)?.checked),
+            }));
+
+            const hasDealBreaker = dealBreakers.some((item) => item.checked);
+
+            const scoreColor = hasDealBreaker
+              ? C.rose
+              : score10 >= 8
+              ? C.emerald
+              : score10 >= 6
+              ? C.amber
+              : C.rose;
+
+            const scoreLabel = hasDealBreaker
+              ? "Bloqueado por deal-breaker"
+              : score10 >= 8
+              ? "Favorável"
+              : score10 >= 6
+              ? "Atenção / Condições"
+              : "Não favorável";
+
+            const qualitative = {
+              support: evaluation.qualitative?.support || "0",
+              communication: evaluation.qualitative?.communication || "0",
+              incidentResponse: evaluation.qualitative?.incidentResponse || "0",
+              technicalCapacity: evaluation.qualitative?.technicalCapacity || "0",
+              documentation: evaluation.qualitative?.documentation || "0",
+              implementationEase: evaluation.qualitative?.implementationEase || "0",
+            };
+
+            const qualitativeItems = [
+              ["support", "Suporte do fornecedor"],
+              ["communication", "Comunicação e alinhamento"],
+              ["incidentResponse", "Velocidade de resposta a incidentes"],
+              ["technicalCapacity", "Capacidade técnica"],
+              ["documentation", "Documentação entregue"],
+              ["implementationEase", "Facilidade de implementação"],
+            ];
+
+            const baseline = evaluation.baseline || {};
+            const savedDecommissioning = evaluation.decommissioning || [];
+            const decommissioning = defaultDecommissioning.map((item) => ({
+              ...item,
+              checked:
+                Boolean(savedDecommissioning.find((saved) => saved.key === item.key)?.checked) ||
+                Boolean(evaluation[item.key]),
+            }));
+
+            function updateEvaluationPatch(patch) {
+              setLastEditedAt(new Date());
+              setData((prev) => {
+                const next = cloneData(prev);
+                next.evaluation = {
+                  ...(next.evaluation || {}),
+                  ...patch,
+                };
+                return next;
+              });
+            }
+
+            function updateKpiResult(kpiId, patch) {
+              setLastEditedAt(new Date());
+              setData((prev) => {
+                const next = cloneData(prev);
+                const current = next.evaluation?.kpiResults || [];
+                const index = current.findIndex((item) => item.kpiId === kpiId);
+
+                if (index >= 0) {
+                  current[index] = { ...current[index], ...patch };
+                } else {
+                  current.push({ kpiId, ...patch });
+                }
+
+                next.evaluation = {
+                  ...(next.evaluation || {}),
+                  kpiResults: current,
+                };
+
+                return next;
+              });
+            }
+
+            function updateDealBreaker(key, checked) {
+              setLastEditedAt(new Date());
+              setData((prev) => {
+                const next = cloneData(prev);
+                const current = defaultDealBreakers.map((item) => {
+                  const saved = (next.evaluation?.dealBreakers || []).find((d) => d.key === item.key);
+                  return { ...item, checked: Boolean(saved?.checked) };
+                });
+
+                const updated = current.map((item) => item.key === key ? { ...item, checked } : item);
+
+                next.evaluation = {
+                  ...(next.evaluation || {}),
+                  dealBreakers: updated,
+                };
+
+                return next;
+              });
+            }
+
+            function updateQualitative(key, value) {
+              setLastEditedAt(new Date());
+              setData((prev) => {
+                const next = cloneData(prev);
+                next.evaluation = {
+                  ...(next.evaluation || {}),
+                  qualitative: {
+                    ...(next.evaluation?.qualitative || {}),
+                    [key]: value,
+                  },
+                };
+                return next;
+              });
+            }
+
+            function updateBaseline(key, value) {
+              setLastEditedAt(new Date());
+              setData((prev) => {
+                const next = cloneData(prev);
+                next.evaluation = {
+                  ...(next.evaluation || {}),
+                  baseline: {
+                    ...(next.evaluation?.baseline || {}),
+                    [key]: value,
+                  },
+                };
+                return next;
+              });
+            }
+
+            function updateDecommissioning(key, checked) {
+              setLastEditedAt(new Date());
+              setData((prev) => {
+                const next = cloneData(prev);
+                const current = defaultDecommissioning.map((item) => {
+                  const saved = (next.evaluation?.decommissioning || []).find((d) => d.key === item.key);
+                  return { ...item, checked: Boolean(saved?.checked) || Boolean(next.evaluation?.[item.key]) };
+                });
+
+                const updated = current.map((item) => item.key === key ? { ...item, checked } : item);
+
+                next.evaluation = {
+                  ...(next.evaluation || {}),
+                  decommissioning: updated,
+                  [key]: checked,
+                };
+
+                return next;
+              });
+            }
+
+            return (
+              <>
+                <Section title="Score Final da POC" sub="Resultado ponderado calculado a partir dos KPIs, deal-breakers e critérios avaliados">
+                  <div style={{ display: "grid", gridTemplateColumns: "190px 0.75fr 1fr", gap: 14, alignItems: "stretch" }}>
+                    <div
+                      style={{
+                        background: hasDealBreaker ? (C.roseGlow || "rgba(239,68,68,0.10)") : C.bg3,
+                        border: `1px solid ${hasDealBreaker ? C.rose : C.border}`,
+                        borderRadius: 14,
+                        padding: 14,
+                        animation: hasDealBreaker ? "pocPulseAlert 1.6s infinite" : "none",
+                      }}
+                    >
+                      <div style={{ fontSize: 11, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        Score ponderado
+                      </div>
+                      <div style={{ fontSize: 38, fontWeight: 950, color: scoreColor, lineHeight: 1.05, marginTop: 8 }}>
+                        {score10.toFixed(1)}
+                      </div>
+                      <div style={{ fontSize: 12, color: scoreColor, fontWeight: 900, marginTop: 4 }}>
+                        {scoreLabel}
+                      </div>
+                      <div style={{ fontSize: 11, color: C.t3, marginTop: 5 }}>
+                        Escala 0–10
+                      </div>
+                    </div>
+
+                    <div style={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 14, padding: 14 }}>
+                      <div style={{ fontSize: 11, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        KPIs avaliados
+                      </div>
+                      <div style={{ fontSize: 24, fontWeight: 950, color: C.blue, marginTop: 8 }}>
+                        {evaluatedKpis.length}/{planningKpis.length || 0}
+                      </div>
+                      <div style={{ marginTop: 10 }}>
+                        <SimpleBar value={kpiCompletion} color={C.blue} />
+                      </div>
+                      <div style={{ fontSize: 12, color: C.t2, marginTop: 8 }}>
+                        {pct(kpiCompletion)} dos critérios com resultado informado
+                      </div>
+                    </div>
+
+                    <div style={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 14, padding: 14 }}>
+                      <div style={{ fontSize: 11, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+                        Chips por indicador
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {kpiRows.length === 0 && (
+                          <span style={{ fontSize: 12, color: C.t3 }}>
+                            Cadastre os KPIs na aba Planejamento.
+                          </span>
+                        )}
+
+                        {kpiRows.map((item) => {
+                          const grade = gradeFromAttainment(item.attainment);
+                          const color = grade >= 5 ? C.emerald : grade >= 3 ? C.amber : item.attainment === "" ? C.t3 : C.rose;
+                          const bg = grade >= 5 ? C.emeraldGlow : grade >= 3 ? C.amberGlow : item.attainment === "" ? C.bg1 : (C.roseGlow || "rgba(239,68,68,0.10)");
+
+                          return (
+                            <span
+                              key={item.kpiId}
+                              style={{
+                                background: bg,
+                                border: `1px solid ${color}44`,
+                                color,
+                                borderRadius: 999,
+                                padding: "4px 8px",
+                                fontSize: 10,
+                                fontWeight: 800,
+                              }}
+                            >
+                              {item.name}: {item.attainment === "" ? "pendente" : `${item.attainment}%`}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </Section>
+
+                <Section title="Meta vs. Realidade" sub="KPIs vindos do Planejamento. Preencha o resultado alcançado e o atingimento para cálculo automático do score">
+                  {kpiRows.length === 0 ? (
+                    <div style={{ padding: 18, background: C.bg3, borderRadius: 12, color: C.t3, fontSize: 13 }}>
+                      Nenhum KPI cadastrado ainda. Vá em Planejamento e adicione os critérios de sucesso da POC.
+                    </div>
+                  ) : (
+                    <div style={{ overflowX: "auto" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1050 }}>
+                        <thead>
+                          <tr>
+                            {["KPI", "Meta acordada", "Resultado alcançado", "Atingimento %", "Nota 1–5", "Peso", "Peso ponderado", "Observação"].map((h) => (
+                              <th
+                                key={h}
+                                style={{
+                                  padding: "10px 8px",
+                                  fontSize: 10,
+                                  color: C.t3,
+                                  textAlign: "left",
+                                  borderBottom: `1px solid ${C.border}`,
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.06em",
+                                }}
+                              >
+                                {h}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {kpiRows.map((item) => {
+                            const grade = gradeFromAttainment(item.attainment);
+                            const weight = Math.max(0, toNum(item.weight || 1));
+                            const weighted = grade * weight;
+
+                            return (
+                              <tr key={item.kpiId} style={{ borderBottom: `1px solid ${C.border}` }}>
+                                <td style={{ padding: 8, fontSize: 12, color: C.t1, fontWeight: 900 }}>{item.name}</td>
+                                <td style={{ padding: 8, fontSize: 12, color: C.t2 }}>{item.target}</td>
+                                <td style={{ padding: 8 }}>
+                                  <input
+                                    defaultValue={item.result}
+                                    onBlur={(e) => updateKpiResult(item.kpiId, { result: e.target.value })}
+                                    placeholder="Resultado medido"
+                                    style={smallField}
+                                  />
+                                </td>
+                                <td style={{ padding: 8 }}>
+                                  <input
+                                    defaultValue={item.attainment}
+                                    onBlur={(e) => updateKpiResult(item.kpiId, { attainment: e.target.value })}
+                                    placeholder="Ex: 85"
+                                    style={smallField}
+                                  />
+                                </td>
+                                <td style={{ padding: 8, fontSize: 13, color: grade >= 4 ? C.emerald : grade >= 3 ? C.amber : C.rose, fontWeight: 950 }}>
+                                  {grade || "-"}
+                                </td>
+                                <td style={{ padding: 8, width: 90 }}>
+                                  <input
+                                    defaultValue={item.weight}
+                                    onBlur={(e) => updateKpiResult(item.kpiId, { weight: e.target.value })}
+                                    style={smallField}
+                                  />
+                                </td>
+                                <td style={{ padding: 8, fontSize: 13, color: C.blue, fontWeight: 950 }}>
+                                  {weighted.toFixed(1)}
+                                </td>
+                                <td style={{ padding: 8 }}>
+                                  <input
+                                    defaultValue={item.notes}
+                                    onBlur={(e) => updateKpiResult(item.kpiId, { notes: e.target.value })}
+                                    placeholder="Observação"
+                                    style={smallField}
+                                  />
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </Section>
+
+                <Section title="Deal-breakers" sub="Critérios de reprovação automática. Se qualquer item for marcado, a aprovação fica bloqueada independente do score">
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 10 }}>
+                    {dealBreakers.map((item) => (
+                      <button
+                        key={item.key}
+                        onClick={() => updateDealBreaker(item.key, !item.checked)}
+                        style={{
+                          textAlign: "left",
+                          background: item.checked ? (C.roseGlow || "rgba(239,68,68,0.10)") : C.bg3,
+                          border: `1px solid ${item.checked ? C.rose : C.border}`,
+                          color: item.checked ? C.rose : C.t2,
+                          borderRadius: 14,
+                          padding: "13px 14px",
+                          cursor: "pointer",
+                          fontWeight: 800,
+                          animation: item.checked ? "pocPulseAlert 1.6s infinite" : "none",
+                        }}
+                      >
+                        {item.checked ? "🚫 " : "○ "}
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </Section>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <Section title="Comparação com Baseline" sub="Contexto da performance: fornecedor vs. operação atual">
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      <input placeholder="Entrega atual / baseline %" defaultValue={baseline.currentDelivery || ""} onBlur={(e) => updateBaseline("currentDelivery", e.target.value)} style={field} />
+                      <input placeholder="Entrega fornecedor %" defaultValue={baseline.supplierDelivery || ""} onBlur={(e) => updateBaseline("supplierDelivery", e.target.value)} style={field} />
+                      <input placeholder="Leitura atual / baseline %" defaultValue={baseline.currentReading || ""} onBlur={(e) => updateBaseline("currentReading", e.target.value)} style={field} />
+                      <input placeholder="Leitura fornecedor %" defaultValue={baseline.supplierReading || ""} onBlur={(e) => updateBaseline("supplierReading", e.target.value)} style={field} />
+                      <input placeholder="Conversão atual / baseline %" defaultValue={baseline.currentConversion || ""} onBlur={(e) => updateBaseline("currentConversion", e.target.value)} style={field} />
+                      <input placeholder="Conversão fornecedor %" defaultValue={baseline.supplierConversion || ""} onBlur={(e) => updateBaseline("supplierConversion", e.target.value)} style={field} />
+                    </div>
+
+                    <textarea
+                      placeholder="Observações sobre comparação com operação atual, fornecedor anterior ou baseline interno"
+                      defaultValue={baseline.notes || ""}
+                      onBlur={(e) => updateBaseline("notes", e.target.value)}
+                      style={{ ...field, marginTop: 12, minHeight: 90, resize: "vertical", lineHeight: 1.6 }}
+                    />
+                  </Section>
+
+                  <Section title="Avaliação Qualitativa" sub="Dimensões que afetam contratação e operação no longo prazo">
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      {qualitativeItems.map(([key, label]) => (
+                        <div key={key}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5, fontSize: 12 }}>
+                            <span style={{ color: C.t2, fontWeight: 800 }}>{label}</span>
+                            <strong style={{ color: C.blue }}>{qualitative[key]}/5</strong>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="5"
+                            step="1"
+                            value={qualitative[key]}
+                            onChange={(e) => updateQualitative(key, e.target.value)}
+                            style={{ width: "100%" }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </Section>
+                </div>
+
+                <Section title="Recomendação Fundamentada" sub="Decisão formal com justificativa, responsável, data e aprovação da liderança">
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 180px 220px", gap: 12, marginBottom: 12 }}>
+                    <select
+                      value={evaluation.recommendation || "Em avaliação"}
+                      onChange={(e) => updateEvaluationPatch({ recommendation: e.target.value })}
+                      style={field}
+                    >
+                      <option>Em avaliação</option>
+                      <option>Aprovado</option>
+                      <option>Reprovado</option>
+                      <option>Aprovado com condições</option>
+                    </select>
+
+                    <input
+                      placeholder="Responsável pela recomendação"
+                      defaultValue={evaluation.recommendationOwner || ""}
+                      onBlur={(e) => updateEvaluationPatch({ recommendationOwner: e.target.value })}
+                      style={field}
+                    />
+
+                    <input
+                      type="date"
+                      defaultValue={evaluation.recommendationDate || ""}
+                      onBlur={(e) => updateEvaluationPatch({ recommendationDate: e.target.value })}
+                      style={field}
+                    />
+
+                    <select
+                      value={evaluation.leadershipApproval || "Pendente"}
+                      onChange={(e) => updateEvaluationPatch({ leadershipApproval: e.target.value })}
+                      style={field}
+                    >
+                      <option>Pendente</option>
+                      <option>Aprovado pela liderança</option>
+                      <option>Reprovado pela liderança</option>
+                      <option>Solicitado ajuste</option>
+                    </select>
+                  </div>
+
+                  <textarea
+                    placeholder="Justificativa obrigatória da recomendação: por que aprovar, reprovar ou aprovar com condições?"
+                    defaultValue={evaluation.recommendationJustification || ""}
+                    onBlur={(e) => updateEvaluationPatch({ recommendationJustification: e.target.value })}
+                    style={{ ...field, minHeight: 120, resize: "vertical", lineHeight: 1.6 }}
+                  />
+
+                  {(evaluation.recommendation || "Em avaliação") === "Aprovado com condições" && (
+                    <textarea
+                      placeholder="Condições para aprovação: ajustes técnicos, SLA, segurança, custo, integração, documentação..."
+                      defaultValue={evaluation.conditions || ""}
+                      onBlur={(e) => updateEvaluationPatch({ conditions: e.target.value })}
+                      style={{ ...field, minHeight: 100, resize: "vertical", lineHeight: 1.6, marginTop: 12 }}
+                    />
+                  )}
+
+                  {((evaluation.recommendation || "Em avaliação") !== "Em avaliação" && !evaluation.recommendationJustification) && (
+                    <div style={{ marginTop: 12, background: C.amberGlow, border: `1px solid ${C.amber}44`, color: C.t1, borderRadius: 12, padding: "10px 12px", fontSize: 12 }}>
+                      A recomendação precisa de justificativa escrita para rastreabilidade da decisão.
+                    </div>
+                  )}
+                </Section>
+
+                <Section title="Descomissionamento e Encerramento Seguro" sub="Checklist ampliado para encerramento seguro da POC">
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 10 }}>
+                    {decommissioning.map((item) => (
+                      <label
+                        key={item.key}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          background: item.checked ? C.emeraldGlow : C.bg3,
+                          border: `1px solid ${item.checked ? C.emerald + "55" : C.border}`,
+                          borderRadius: 12,
+                          padding: "11px 12px",
+                          color: C.t2,
+                          fontSize: 13,
+                          fontWeight: 700,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={item.checked}
+                          onChange={(e) => updateDecommissioning(item.key, e.target.checked)}
+                        />
+                        {item.label}
+                      </label>
+                    ))}
+                  </div>
+                </Section>
+              </>
+            );
+          })()}
         </div>
       )}
+
+      
     </div>
   );
 }
