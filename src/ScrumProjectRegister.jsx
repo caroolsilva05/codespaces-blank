@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { supabase } from "./lib/supabase";
 
 // ============================================================
@@ -47,120 +47,88 @@ const theme = {
 // ============================================================
 const initialData = {
   projectInfo: {
-    nome: "Implementação Canal RCS — Campanhas Relacionais",
-    codigoId: "TD-2025-042",
+    nome: "",
+    codigoId: "",
     tipo: "Fornecedor",
-    canais: ["RCS", "WhatsApp"],
-    fornecedor: "Sinch Brasil Ltda.",
-    responsavel: "Ana Beatriz Monteiro",
-    solicitante: "Diretoria de Marketing Digital",
-    equipe: "Ana Beatriz Monteiro, Lucas Ferreira, Camila Rocha, Pedro Alves (TI)",
-    dataAbertura: "2025-01-15",
-    previsaoEncerramento: "2025-06-30",
-    faseAtual: "Execução",
-    status: "Atenção",
+    canais: [],
+    fornecedor: "",
+    responsavel: "",
+    solicitante: "",
+    equipe: "",
+    dataAbertura: "",
+    previsaoEncerramento: "",
+    faseAtual: "Backlog",
+    status: "Em dia",
   },
   phase1: {
-    objetivo:
-      "Implementar o canal RCS como novo meio de comunicação relacional com clientes, integrando à plataforma de campanhas existente e habilitando envio de mensagens enriquecidas com mídia, botões e carrossel.",
-    justificativa:
-      "O RCS oferece taxas de leitura até 3× superiores ao SMS tradicional e custo inferior ao WhatsApp para campanhas em escala. A ausência deste canal representa perda de competitividade e oportunidade de melhoria no engajamento com a base de clientes.",
+    objetivo: "",
+    justificativa: "",
     stakeholders: [
-      { id: 1, nome: "Diretoria de Marketing Digital", papel: "Patrocinador",        envolvimento: "Aprovação e financiamento" },
-      { id: 2, nome: "Ana Beatriz Monteiro / TD",      papel: "Gerente do Projeto",  envolvimento: "Gestão e coordenação" },
-      { id: 3, nome: "Lucas Ferreira / TI",            papel: "Arquiteto Técnico",   envolvimento: "Integração e APIs" },
-      { id: 4, nome: "Camila Rocha / CRM",             papel: "Usuária-chave",       envolvimento: "Validação funcional" },
-      { id: 5, nome: "Sinch Brasil",                   papel: "Fornecedor",          envolvimento: "Implementação técnica" },
+      { id: 1, nome: "", papel: "", envolvimento: "" },
     ],
     checklist: {
-      objetivoAprovado:          true,
-      stakeholdersIdentificados: true,
-      escopoDefinido:            true,
-      recursosAprovados:         false,
+      objetivoAprovado: false,
+      stakeholdersIdentificados: false,
+      escopoDefinido: false,
+      recursosAprovados: false,
     },
   },
   phase2: {
     escopo: {
-      dentro: [
-        "Integração da API RCS com plataforma de campanhas",
-        "Criação de templates de mensagens enriquecidas",
-        "Treinamento da equipe de operações de CRM",
-        "Relatório de performance comparativo (RCS vs SMS)",
-      ],
-      fora: [
-        "Migração de histórico de SMS para RCS",
-        "Desenvolvimento de chatbot no canal RCS",
-        "Integração com plataforma legada de e-mail marketing",
-      ],
+      dentro: [""],
+      fora: [""],
     },
     cronograma: [
-      { id: 1, tarefa: "Levantamento de requisitos técnicos",      previsto: "2025-01-20", realizado: "2025-01-22", status: "Concluída"    },
-      { id: 2, tarefa: "Contratação e homologação do fornecedor",  previsto: "2025-02-10", realizado: "2025-02-15", status: "Concluída"    },
-      { id: 3, tarefa: "Desenvolvimento da integração API",        previsto: "2025-03-30", realizado: "",           status: "Em andamento" },
-      { id: 4, tarefa: "Testes de qualidade e homologação",        previsto: "2025-04-30", realizado: "",           status: "Pendente"     },
-      { id: 5, tarefa: "Treinamento das equipes",                  previsto: "2025-05-15", realizado: "",           status: "Pendente"     },
-      { id: 6, tarefa: "Go-live e acompanhamento",                 previsto: "2025-06-01", realizado: "",           status: "Pendente"     },
+      { id: 1, tarefa: "", previsto: "", realizado: "", status: "Pendente" },
     ],
     riscos: [
-      { id: 1, risco: "Instabilidade da API do fornecedor em produção",         probabilidade: "Média", impacto: "Alto",  mitigacao: "Ambiente de homologação dedicado; SLA contratual com penalidades" },
-      { id: 2, risco: "Atraso na aprovação orçamentária",                       probabilidade: "Baixa", impacto: "Alto",  mitigacao: "Alinhamento prévio com financeiro; aprovação em duas etapas" },
-      { id: 3, risco: "Resistência da equipe de operações na adoção",           probabilidade: "Média", impacto: "Médio", mitigacao: "Plano de capacitação e comunicação de benefícios" },
+      { id: 1, risco: "", probabilidade: "Média", impacto: "Médio", mitigacao: "" },
     ],
   },
   phase3: {
     atividades: [
-      { id: 1, atividade: "Finalizar documentação técnica da API",       responsavel: "Lucas Ferreira", prazo: "2025-03-25", status: "Concluída"    },
-      { id: 2, atividade: "Desenvolver módulo de envio RCS",             responsavel: "Lucas Ferreira", prazo: "2025-04-10", status: "Em andamento" },
-      { id: 3, atividade: "Criar templates aprovados pelo fornecedor",   responsavel: "Camila Rocha",   prazo: "2025-04-15", status: "Em andamento" },
-      { id: 4, atividade: "Configurar ambiente de homologação",          responsavel: "Pedro Alves",    prazo: "2025-04-05", status: "Pendente"     },
-      { id: 5, atividade: "Validar fluxo de opt-out LGPD",              responsavel: "Ana Beatriz",    prazo: "2025-04-20", status: "Pendente"     },
+      { id: 1, atividade: "", responsavel: "", prazo: "", status: "Pendente" },
     ],
     impedimentos: [
-      { id: 1, impedimento: "Credenciais de acesso ao ambiente sandbox do fornecedor não entregues", dataIdentificado: "2025-03-18", responsavel: "Lucas Ferreira", resolucao: "Aguardando suporte técnico da Sinch — prazo: 25/03" },
+      { id: 1, impedimento: "", dataIdentificado: "", responsavel: "", resolucao: "" },
     ],
     decisoes: [
-      { id: 1, data: "2025-02-05", decisao: "Aprovado uso de RCS somente para base Android — iOS aguarda disponibilidade da operadora", quemDecidiu: "Diretoria de Marketing + TI" },
-      { id: 2, data: "2025-03-10", decisao: "Priorizar campanha de reativação de clientes inativos como projeto piloto do canal",        quemDecidiu: "Ana Beatriz Monteiro" },
+      { id: 1, data: "", decisao: "", quemDecidiu: "" },
     ],
   },
   phase4: {
     kpis: [
-      { id: 1, indicador: "% de conclusão das atividades",           meta: "100%",         realizado: "42%",          variacao: "−58%", status: "Atenção" },
-      { id: 2, indicador: "Prazo: dias de atraso / adiantamento",    meta: "0 dias",       realizado: "+5 dias",      variacao: "+5",   status: "Atenção" },
-      { id: 3, indicador: "Orçamento: realizado vs previsto",        meta: "R$ 120.000",   realizado: "R$ 48.500",    variacao: "40%",  status: "Em dia"  },
-      { id: 4, indicador: "Nº de mudanças de escopo",                meta: "0",            realizado: "1",            variacao: "+1",   status: "Atenção" },
-      { id: 5, indicador: "Nível de satisfação do cliente interno",  meta: "≥ 4,0 / 5,0", realizado: "Não medido",   variacao: "—",    status: "Pendente"},
+      { id: 1, indicador: "% de conclusão das atividades", meta: "", realizado: "", variacao: "", status: "Pendente" },
+      { id: 2, indicador: "Prazo: dias de atraso / adiantamento", meta: "", realizado: "", variacao: "", status: "Pendente" },
+      { id: 3, indicador: "Orçamento: realizado vs previsto", meta: "", realizado: "", variacao: "", status: "Pendente" },
+      { id: 4, indicador: "Nº de mudanças de escopo", meta: "", realizado: "", variacao: "", status: "Pendente" },
+      { id: 5, indicador: "Nível de satisfação do cliente interno", meta: "", realizado: "", variacao: "", status: "Pendente" },
     ],
     relatorioStatus: [
-      { id: 1, data: "2025-02-28", statusGeral: "Em dia",  feito:  "Contratação do fornecedor concluída. Kick-off realizado com todas as partes.", proximos: "Iniciar desenvolvimento da integração API. Reunião técnica com Sinch agendada." },
-      { id: 2, data: "2025-03-31", statusGeral: "Atenção", feito:  "Documentação técnica finalizada. Impedimento identificado: credenciais sandbox pendentes.", proximos: "Resolver acesso sandbox. Avançar com desenvolvimento do módulo de envio." },
+      { id: 1, data: "", statusGeral: "Em dia", feito: "", proximos: "" },
     ],
   },
   phase5: {
     entregaveis: [
-      { id: 1, entregavel: "Integração API RCS funcional em produção",        aceite: null, responsavel: "Lucas Ferreira / TI"  },
-      { id: 2, entregavel: "Templates de mensagens homologados",              aceite: null, responsavel: "Camila Rocha / CRM"   },
-      { id: 3, entregavel: "Documentação técnica e manual de operação",       aceite: null, responsavel: "Lucas Ferreira"       },
-      { id: 4, entregavel: "Treinamento concluído para equipe de CRM",        aceite: null, responsavel: "Ana Beatriz Monteiro" },
-      { id: 5, entregavel: "Relatório de performance do projeto piloto",      aceite: null, responsavel: "Ana Beatriz Monteiro" },
+      { id: 1, entregavel: "", aceite: null, responsavel: "" },
     ],
     licoesAprendidas: {
-      funcionouBem: "Alinhamento semanal com o fornecedor acelerou a resolução de dúvidas técnicas. Engajamento da equipe de CRM desde o início facilitou a definição dos templates.",
-      melhorar: "Processo de contratação deve ser iniciado com maior antecedência. Credenciais de ambiente de teste devem ser solicitadas antes do início do desenvolvimento.",
+      funcionouBem: "",
+      melhorar: "",
     },
     checklist: {
-      entregaveisAceitos:  false,
-      licoesRegistradas:   false,
-      comunicadoEnviado:   false,
-      recursosLiberados:   false,
-      projetoMarcado:      false,
+      entregaveisAceitos: false,
+      licoesRegistradas: false,
+      comunicadoEnviado: false,
+      recursosLiberados: false,
+      projetoMarcado: false,
     },
     resumo: {
-      dataEncerramento:  "",
-      dataPrevista:      "2025-06-30",
-      objetivoAtingido:  "",
-      resultados:        "",
-      aprovadoPor:       "",
+      dataEncerramento: "",
+      dataPrevista: "",
+      objetivoAtingido: "",
+      resultados: "",
+      aprovadoPor: "",
     },
   },
 };
@@ -375,6 +343,7 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
   const [phases, setPhases] = useState({ 1: true, 2: true, 3: true, 4: true, 5: true });
   const [flash, setFlash]   = useState("");
   const [saving, setSaving] = useState(false);
+  const printRef = useRef(null);
 
   const toggle = (n) => setPhases(p => ({ ...p, [n]: !p[n] }));
 
@@ -467,6 +436,93 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
   setTimeout(() => setFlash(""), 2000);
 };
 
+
+  const handleExportPdf = () => {
+    const conteudo = printRef.current;
+
+    if (!conteudo) {
+      alert("Não foi possível preparar o PDF.");
+      return;
+    }
+
+    const janela = window.open("", "_blank", "width=1200,height=900");
+
+    if (!janela) {
+      alert("O navegador bloqueou a janela de impressão. Libere pop-ups para exportar o PDF.");
+      return;
+    }
+
+    janela.document.write(`
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+        <head>
+          <meta charset="UTF-8" />
+          <title>Registro Scrum - ${data.projectInfo.nome || "Projeto"}</title>
+          <style>
+            * {
+              box-sizing: border-box;
+            }
+
+            body {
+              margin: 0;
+              font-family: Segoe UI, Arial, sans-serif;
+              background: #f0f4f8;
+              color: #1e293b;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+
+            button {
+              display: none !important;
+            }
+
+            input,
+            textarea,
+            select {
+              border: none !important;
+              background: transparent !important;
+              color: #1e293b !important;
+              pointer-events: none;
+            }
+
+            textarea {
+              resize: none !important;
+            }
+
+            @page {
+              size: A4;
+              margin: 12mm;
+            }
+
+            @media print {
+              body {
+                background: #ffffff;
+              }
+
+              div {
+                break-inside: avoid;
+              }
+            }
+          </style>
+        </head>
+
+        <body>
+          ${conteudo.innerHTML}
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.focus();
+                window.print();
+              }, 500);
+            };
+          <\/script>
+        </body>
+      </html>
+    `);
+
+    janela.document.close();
+  };
+
   const { projectInfo: pi, phase1, phase2, phase3, phase4, phase5 } = data;
 
   const p1Done = Object.values(phase1.checklist).filter(Boolean).length;
@@ -477,7 +533,7 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
 
   // ──────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: "100vh", background: theme.bg, fontFamily: "'Segoe UI','Helvetica Neue',Arial,sans-serif", color: theme.text }}>
+    <div ref={printRef} style={{ minHeight: "100vh", background: theme.bg, fontFamily: "'Segoe UI','Helvetica Neue',Arial,sans-serif", color: theme.text }}>
 
       {/* ── HEADER ── */}
       <div style={{
@@ -510,7 +566,6 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
             {[
               { label: saving ? "⏳  Salvando..." : flash === "saved" ? "✓  Salvo!" : "Salvar projeto", fn: handleSave, style: { background: flash === "saved" ? "#047857" : "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" } },
-              { label: "Exportar PDF",                                      fn: () => window.print(), style: { background: "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" } },
                           ].map(btn => (
               <button key={btn.label} onClick={btn.fn} style={{
                 ...btn.style, padding: "9px 18px", borderRadius: 7,
