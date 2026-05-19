@@ -1463,11 +1463,167 @@ function ScrumView({ C }) {
 }
 
 function SuppliersView({ C }) {
+  const emptyForm = {
+    nome: "",
+    categoria: "",
+    canais: "",
+    responsavel: "",
+    contato: "",
+    email: "",
+    telefone: "",
+    status: "Ativo",
+    sla_meta: "",
+    performance_score: "",
+    risco: "Baixo",
+    projetos_ativos: "",
+    incidentes_abertos: "",
+    avaliacao: "",
+    observacoes: "",
+  };
+
+  const [fornecedores, setFornecedores] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [filter, setFilter] = useState("Todos");
+  const [form, setForm] = useState(emptyForm);
+
+  const field = {
+    width: "100%",
+    minHeight: 44,
+    borderRadius: 12,
+    border: `1px solid ${C.border}`,
+    background: C.surface,
+    color: C.t1,
+    padding: "10px 12px",
+    fontSize: 13,
+    outline: "none",
+    boxSizing: "border-box",
+    fontFamily: "inherit",
+  };
+
+  function toNum(value) {
+    const parsed = Number(String(value || "0").replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function updateForm(campo, valor) {
+    setForm((prev) => ({
+      ...prev,
+      [campo]: valor,
+    }));
+  }
+
+  function statusColor(status) {
+    if (status === "Ativo") return { color: C.emerald, bg: C.emeraldGlow };
+    if (status === "Em Homologação") return { color: C.blue, bg: C.blueGlow };
+    if (status === "Em Observação") return { color: C.amber, bg: C.amberGlow };
+    if (status === "Inativo") return { color: C.t3, bg: C.bg3 };
+    return { color: C.blue, bg: C.blueGlow };
+  }
+
+  function riscoColor(risco) {
+    if (risco === "Baixo") return C.emerald;
+    if (risco === "Médio") return C.amber;
+    if (risco === "Alto") return C.rose;
+    return C.t3;
+  }
+
+  async function carregarFornecedores() {
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from("fornecedores")
+      .select("*")
+      .order("updated_at", { ascending: false });
+
+    setLoading(false);
+
+    if (error) {
+      console.log("Erro ao carregar fornecedores:", error);
+      return;
+    }
+
+    setFornecedores(data || []);
+  }
+
+  useEffect(() => {
+    carregarFornecedores();
+  }, []);
+
+  async function salvarFornecedor() {
+    if (!form.nome.trim()) {
+      alert("Informe o nome do fornecedor.");
+      return;
+    }
+
+    setSaving(true);
+
+    const canais = form.canais
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    const payload = {
+      nome: form.nome,
+      categoria: form.categoria,
+      canais,
+      responsavel: form.responsavel,
+      contato: form.contato,
+      email: form.email,
+      telefone: form.telefone,
+      status: form.status,
+      sla_meta: toNum(form.sla_meta),
+      performance_score: toNum(form.performance_score),
+      risco: form.risco,
+      projetos_ativos: toNum(form.projetos_ativos),
+      incidentes_abertos: toNum(form.incidentes_abertos),
+      avaliacao: form.avaliacao,
+      observacoes: form.observacoes,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase
+      .from("fornecedores")
+      .insert([payload]);
+
+    setSaving(false);
+
+    if (error) {
+      console.log("Erro ao salvar fornecedor:", error);
+      alert("Erro ao salvar fornecedor. Veja o console.");
+      return;
+    }
+
+    alert("Fornecedor salvo com sucesso!");
+
+    setForm(emptyForm);
+    setShowForm(false);
+    carregarFornecedores();
+  }
+
+  const filtrados =
+    filter === "Todos"
+      ? fornecedores
+      : fornecedores.filter((item) => item.status === filter || item.risco === filter);
+
+  const total = fornecedores.length;
+  const ativos = fornecedores.filter((f) => f.status === "Ativo").length;
+  const emObservacao = fornecedores.filter((f) => f.status === "Em Observação").length;
+  const altoRisco = fornecedores.filter((f) => f.risco === "Alto").length;
+  const incidentes = fornecedores.reduce((acc, item) => acc + toNum(item.incidentes_abertos), 0);
+  const scoreMedio =
+    total > 0
+      ? Math.round(fornecedores.reduce((acc, item) => acc + toNum(item.performance_score), 0) / total)
+      : 0;
+
+  const filtros = ["Todos", "Ativo", "Em Homologação", "Em Observação", "Inativo", "Alto"];
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
       <SectionHeader
         title="Gestão de Fornecedores"
-        sub="Acompanhamento de fornecedores, SLA e performance"
+        sub="Acompanhamento de fornecedores, canais, SLA, performance, risco e incidentes"
         actions={[
           <Btn
             key="n"
@@ -1475,26 +1631,280 @@ function SuppliersView({ C }) {
             icon={Plus}
             primary
             C={C}
+            onClick={() => setShowForm(true)}
           />,
         ]}
         C={C}
       />
 
-      <div
-        style={{
-          ...card(C),
-          padding: "24px",
-          color: C.t2,
-          fontSize: 13,
-        }}
-      >
-        <div style={{ fontSize: 16, fontWeight: 700, color: C.t1, marginBottom: 8 }}>
-          Fornecedores
-        </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}>
+        <KPICard icon={Users} label="Fornecedores" value={total} sub={loading ? "Carregando..." : "Base cadastrada"} color={C.blue} glow={C.blueGlow} C={C} />
+        <KPICard icon={CheckCircle2} label="Ativos" value={ativos} sub="Operação em andamento" color={C.emerald} glow={C.emeraldGlow} C={C} />
+        <KPICard icon={Activity} label="Score médio" value={`${scoreMedio}%`} sub="Performance geral" color={C.violet} glow={C.violetGlow} C={C} />
+        <KPICard icon={AlertTriangle} label="Incidentes" value={incidentes} sub={`${altoRisco} alto risco`} color={incidentes > 0 || altoRisco > 0 ? C.rose : C.emerald} glow={incidentes > 0 || altoRisco > 0 ? C.roseGlow : C.emeraldGlow} C={C} />
+      </div>
 
-        <div style={{ color: C.t3 }}>
-          Tela de fornecedores carregada com sucesso. Depois ajustamos essa área com os dados reais e visual executivo.
+      {showForm && (
+        <div style={{ ...card(C), padding: 0, overflow: "hidden", borderRadius: 20 }}>
+          <div
+            style={{
+              padding: "22px 24px 10px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: 16,
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: C.t1 }}>
+                Novo Fornecedor
+              </div>
+              <div style={{ fontSize: 12, color: C.t3, marginTop: 4 }}>
+                Cadastre dados operacionais, canais, SLA, performance e riscos do fornecedor
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowForm(false)}
+              style={{
+                background: C.surface,
+                border: `1px solid ${C.border}`,
+                color: C.t2,
+                borderRadius: 12,
+                padding: "8px 14px",
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
+            >
+              Fechar
+            </button>
+          </div>
+
+          <div style={{ padding: "12px 24px 24px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+              <input placeholder="Nome do fornecedor" value={form.nome} onChange={(e) => updateForm("nome", e.target.value)} style={field} />
+              <input placeholder="Categoria: Mensageria, IA, CRM, Portal..." value={form.categoria} onChange={(e) => updateForm("categoria", e.target.value)} style={field} />
+              <input placeholder="Canais atendidos: WhatsApp, RCS, SMS, E-mail..." value={form.canais} onChange={(e) => updateForm("canais", e.target.value)} style={{ ...field, gridColumn: "1 / -1" }} />
+              <input placeholder="Responsável interno" value={form.responsavel} onChange={(e) => updateForm("responsavel", e.target.value)} style={field} />
+              <input placeholder="Contato do fornecedor" value={form.contato} onChange={(e) => updateForm("contato", e.target.value)} style={field} />
+              <input placeholder="E-mail" value={form.email} onChange={(e) => updateForm("email", e.target.value)} style={field} />
+              <input placeholder="Telefone" value={form.telefone} onChange={(e) => updateForm("telefone", e.target.value)} style={field} />
+
+              <select value={form.status} onChange={(e) => updateForm("status", e.target.value)} style={field}>
+                <option>Ativo</option>
+                <option>Em Homologação</option>
+                <option>Em Observação</option>
+                <option>Inativo</option>
+              </select>
+
+              <select value={form.risco} onChange={(e) => updateForm("risco", e.target.value)} style={field}>
+                <option>Baixo</option>
+                <option>Médio</option>
+                <option>Alto</option>
+              </select>
+
+              <input type="number" placeholder="SLA contratado/meta (%)" value={form.sla_meta} onChange={(e) => updateForm("sla_meta", e.target.value)} style={field} />
+              <input type="number" placeholder="Score de performance (%)" value={form.performance_score} onChange={(e) => updateForm("performance_score", e.target.value)} style={field} />
+              <input type="number" placeholder="Projetos ativos" value={form.projetos_ativos} onChange={(e) => updateForm("projetos_ativos", e.target.value)} style={field} />
+              <input type="number" placeholder="Incidentes em aberto" value={form.incidentes_abertos} onChange={(e) => updateForm("incidentes_abertos", e.target.value)} style={field} />
+
+              <textarea
+                placeholder="Avaliação executiva do fornecedor"
+                value={form.avaliacao}
+                onChange={(e) => updateForm("avaliacao", e.target.value)}
+                style={{ ...field, gridColumn: "1 / -1", minHeight: 90, resize: "vertical", lineHeight: 1.6 }}
+              />
+
+              <textarea
+                placeholder="Observações, pontos de atenção, histórico de relacionamento ou próximos passos"
+                value={form.observacoes}
+                onChange={(e) => updateForm("observacoes", e.target.value)}
+                style={{ ...field, gridColumn: "1 / -1", minHeight: 90, resize: "vertical", lineHeight: 1.6 }}
+              />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
+              <button
+                onClick={() => setShowForm(false)}
+                style={{
+                  background: C.surface,
+                  border: `1px solid ${C.border}`,
+                  color: C.t2,
+                  borderRadius: 12,
+                  padding: "11px 18px",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                }}
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={salvarFornecedor}
+                disabled={saving}
+                style={{
+                  background: C.blue,
+                  border: "none",
+                  color: "#fff",
+                  borderRadius: 12,
+                  padding: "11px 20px",
+                  cursor: saving ? "not-allowed" : "pointer",
+                  fontWeight: 900,
+                  opacity: saving ? 0.7 : 1,
+                }}
+              >
+                {saving ? "Salvando..." : "Salvar Fornecedor"}
+              </button>
+            </div>
+          </div>
         </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {filtros.map((f) => {
+          const active = filter === f;
+          return (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              style={{
+                padding: "7px 13px",
+                borderRadius: 10,
+                border: `1px solid ${active ? C.blue : C.border}`,
+                background: active ? C.blueGlow : C.surface,
+                color: active ? C.blue : C.t2,
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: active ? 900 : 700,
+              }}
+            >
+              {f}
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ ...card(C), padding: 0, overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+              {["Fornecedor", "Canais", "Responsável", "SLA", "Score", "Risco", "Projetos", "Incidentes", "Status"].map((h) => (
+                <th
+                  key={h}
+                  style={{
+                    padding: "14px 16px",
+                    fontSize: 11,
+                    fontWeight: 900,
+                    color: C.t3,
+                    textAlign: "left",
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+
+          <tbody>
+            {filtrados.map((item) => {
+              const st = statusColor(item.status);
+              const canais = Array.isArray(item.canais) ? item.canais : [];
+
+              return (
+                <tr
+                  key={item.id}
+                  style={{
+                    borderBottom: `1px solid ${C.border}`,
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = C.cardHov)}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <td style={{ padding: "15px 16px" }}>
+                    <div style={{ fontSize: 13, color: C.t1, fontWeight: 900 }}>
+                      {item.nome || "-"}
+                    </div>
+                    <div style={{ fontSize: 11, color: C.t3, marginTop: 3 }}>
+                      {item.categoria || "-"}
+                    </div>
+                  </td>
+
+                  <td style={{ padding: "15px 16px" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                      {canais.length === 0 && <span style={{ fontSize: 12, color: C.t3 }}>-</span>}
+                      {canais.slice(0, 3).map((canal) => (
+                        <span
+                          key={canal}
+                          style={{
+                            fontSize: 10,
+                            padding: "4px 8px",
+                            borderRadius: 999,
+                            background: C.bg3,
+                            border: `1px solid ${C.border}`,
+                            color: C.t2,
+                            fontWeight: 800,
+                          }}
+                        >
+                          {canal}
+                        </span>
+                      ))}
+                      {canais.length > 3 && <span style={{ fontSize: 10, color: C.t3 }}>+{canais.length - 3}</span>}
+                    </div>
+                  </td>
+
+                  <td style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}>
+                    {item.responsavel || "-"}
+                  </td>
+
+                  <td style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}>
+                    <strong style={{ color: C.blue }}>{toNum(item.sla_meta)}%</strong>
+                  </td>
+
+                  <td style={{ padding: "15px 16px", minWidth: 130 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ flex: 1 }}>
+                        <ProgressBar
+                          val={Math.max(0, Math.min(100, toNum(item.performance_score)))}
+                          color={toNum(item.performance_score) >= 80 ? C.emerald : toNum(item.performance_score) >= 60 ? C.amber : C.rose}
+                          C={C}
+                        />
+                      </div>
+                      <strong style={{ fontSize: 12, color: toNum(item.performance_score) >= 80 ? C.emerald : toNum(item.performance_score) >= 60 ? C.amber : C.rose }}>
+                        {toNum(item.performance_score)}%
+                      </strong>
+                    </div>
+                  </td>
+
+                  <td style={{ padding: "15px 16px", fontSize: 12, fontWeight: 900, color: riscoColor(item.risco) }}>
+                    {item.risco || "-"}
+                  </td>
+
+                  <td style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}>
+                    {toNum(item.projetos_ativos)}
+                  </td>
+
+                  <td style={{ padding: "15px 16px", fontSize: 12, fontWeight: 900, color: toNum(item.incidentes_abertos) > 0 ? C.rose : C.emerald }}>
+                    {toNum(item.incidentes_abertos)}
+                  </td>
+
+                  <td style={{ padding: "15px 16px" }}>
+                    <Chip label={item.status || "Ativo"} color={st.color} bg={st.bg} />
+                  </td>
+                </tr>
+              );
+            })}
+
+            {filtrados.length === 0 && (
+              <tr>
+                <td colSpan={9} style={{ padding: 30, textAlign: "center", color: C.t3, fontSize: 13 }}>
+                  Nenhum fornecedor encontrado. Clique em Novo Fornecedor para cadastrar.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
