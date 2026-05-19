@@ -111,9 +111,9 @@ function calcMetrics(rows) {
 
   const taxaEntrega = totals.totalMensagens > 0 ? (totals.entregue / totals.totalMensagens) * 100 : 0;
   const taxaLeituraEntregues = totals.entregue > 0 ? (totals.lido / totals.entregue) * 100 : 0;
-  const taxaLeituraDisparados = totals.disparado > 0 ? (totals.lido / totals.disparado) * 100 : 0;
+  const taxaLeituraDisparados = totals.totalMensagens > 0 ? (totals.lido / totals.totalMensagens) * 100 : 0;
   const taxaRetornoLidos = totals.lido > 0 ? (totals.retornoCliente / totals.lido) * 100 : 0;
-  const taxaConversaoFinal = totals.disparado > 0 ? (totals.acordos / totals.disparado) * 100 : 0;
+  const taxaConversaoFinal = totals.totalMensagens > 0 ? (totals.acordos / totals.totalMensagens) * 100 : 0;
 
   return {
     ...totals,
@@ -964,9 +964,9 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
           </Section>
 
           <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 16 }}>
-            <Section title="Funil de Conversão" sub="Volume, percentual sobre etapa anterior e percentual sobre disparados">
+            <Section title="Funil de Conversão" sub="Base do funil: Total de mensagens. Percentuais calculados conforme regra de negócio da POC">
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 680 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 720 }}>
                   <thead>
                     <tr>
                       {["Etapa do Funil", "Volume", "% s/ anterior", "% s/ disparados", "Observação"].map((h) => (
@@ -989,58 +989,78 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
                   </thead>
 
                   <tbody>
-                    {[
-                      {
-                        etapa: "Disparados",
-                        volume: metrics.disparado,
-                        anterior: null,
-                        disparados: 100,
-                        obs: "Base total registrada no relatório",
-                      },
-                      {
-                        etapa: "Entregues",
-                        volume: metrics.entregue,
-                        anterior: metrics.disparado ? (metrics.entregue / metrics.disparado) * 100 : 0,
-                        disparados: metrics.disparado ? (metrics.entregue / metrics.disparado) * 100 : 0,
-                        obs: "Confirmação de entrega",
-                      },
-                      {
-                        etapa: "Lidos",
-                        volume: metrics.lido,
-                        anterior: metrics.entregue ? (metrics.lido / metrics.entregue) * 100 : 0,
-                        disparados: metrics.disparado ? (metrics.lido / metrics.disparado) * 100 : 0,
-                        obs: "Marcação de leitura",
-                      },
-                      {
-                        etapa: "Cliques",
-                        volume: metrics.cliques,
-                        anterior: metrics.lido ? (metrics.cliques / metrics.lido) * 100 : 0,
-                        disparados: metrics.disparado ? (metrics.cliques / metrics.disparado) * 100 : 0,
-                        obs: metrics.cliques > metrics.lido ? "Volume superior a lidos" : "Interação com a mensagem",
-                      },
-                      {
-                        etapa: "Retorno cliente",
-                        volume: metrics.retornoCliente,
-                        anterior: metrics.lido ? (metrics.retornoCliente / metrics.lido) * 100 : 0,
-                        disparados: metrics.disparado ? (metrics.retornoCliente / metrics.disparado) * 100 : 0,
-                        obs: "Clientes que responderam",
-                      },
-                      {
-                        etapa: "Acordos gerados",
-                        volume: metrics.acordos,
-                        anterior: metrics.retornoCliente ? (metrics.acordos / metrics.retornoCliente) * 100 : 0,
-                        disparados: metrics.disparado ? (metrics.acordos / metrics.disparado) * 100 : 0,
-                        obs: "Conversão final",
-                      },
-                    ].map((row) => (
-                      <tr key={row.etapa} style={{ borderBottom: `1px solid ${C.border}` }}>
-                        <td style={{ padding: "10px 8px", fontSize: 12, color: C.t1, fontWeight: 800 }}>{row.etapa}</td>
-                        <td style={{ padding: "10px 8px", fontSize: 13, color: C.blue, fontWeight: 900 }}>{row.volume}</td>
-                        <td style={{ padding: "10px 8px", fontSize: 12, color: C.t2 }}>{row.anterior === null ? "—" : pct(row.anterior)}</td>
-                        <td style={{ padding: "10px 8px", fontSize: 12, color: C.t2 }}>{pct(row.disparados)}</td>
-                        <td style={{ padding: "10px 8px", fontSize: 12, color: row.obs === "Volume superior a lidos" ? C.rose : C.t2 }}>{row.obs}</td>
-                      </tr>
-                    ))}
+                    {(() => {
+                      const baseFunil = metrics.totalMensagens || 0;
+
+                      const etapas = [
+                        {
+                          etapa: "Total de mensagens",
+                          volume: metrics.totalMensagens,
+                          anterior: null,
+                          disparados: 100,
+                          obs: "Base total registrada no relatório",
+                        },
+                        {
+                          etapa: "Entregue",
+                          volume: metrics.entregue,
+                          anterior: baseFunil ? (metrics.entregue / baseFunil) * 100 : 0,
+                          disparados: baseFunil ? (metrics.entregue / baseFunil) * 100 : 0,
+                          obs: "Entregue / Total de mensagens",
+                        },
+                        {
+                          etapa: "Lido",
+                          volume: metrics.lido,
+                          anterior: metrics.entregue ? (metrics.lido / metrics.entregue) * 100 : 0,
+                          disparados: baseFunil ? (metrics.lido / baseFunil) * 100 : 0,
+                          obs: "Lido / Entregue",
+                        },
+                        {
+                          etapa: "Clique",
+                          volume: metrics.cliques,
+                          anterior: metrics.lido ? (metrics.cliques / metrics.lido) * 100 : 0,
+                          disparados: baseFunil ? (metrics.cliques / baseFunil) * 100 : 0,
+                          obs: "Clique / Lido",
+                        },
+                        {
+                          etapa: "Retorno de clientes",
+                          volume: metrics.retornoCliente,
+                          anterior: metrics.cliques ? (metrics.retornoCliente / metrics.cliques) * 100 : 0,
+                          disparados: baseFunil ? (metrics.retornoCliente / baseFunil) * 100 : 0,
+                          obs: "Retorno / Clique",
+                        },
+                        {
+                          etapa: "Acordos gerados",
+                          volume: metrics.acordos,
+                          anterior: metrics.retornoCliente ? (metrics.acordos / metrics.retornoCliente) * 100 : 0,
+                          disparados: baseFunil ? (metrics.acordos / baseFunil) * 100 : 0,
+                          obs: "Acordo / Retorno",
+                        },
+                      ];
+
+                      return etapas.map((row) => (
+                        <tr key={row.etapa} style={{ borderBottom: `1px solid ${C.border}` }}>
+                          <td style={{ padding: "10px 8px", fontSize: 12, color: C.t1, fontWeight: 800 }}>
+                            {row.etapa}
+                          </td>
+
+                          <td style={{ padding: "10px 8px", fontSize: 13, color: C.blue, fontWeight: 900 }}>
+                            {row.volume}
+                          </td>
+
+                          <td style={{ padding: "10px 8px", fontSize: 12, color: C.t2 }}>
+                            {row.anterior === null ? "—" : pct(row.anterior)}
+                          </td>
+
+                          <td style={{ padding: "10px 8px", fontSize: 12, color: C.t2 }}>
+                            {pct(row.disparados)}
+                          </td>
+
+                          <td style={{ padding: "10px 8px", fontSize: 12, color: C.t2 }}>
+                            {row.obs}
+                          </td>
+                        </tr>
+                      ));
+                    })()}
                   </tbody>
                 </table>
               </div>

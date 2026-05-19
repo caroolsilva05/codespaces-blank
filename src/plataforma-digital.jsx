@@ -1589,7 +1589,7 @@ function PocView({ C }) {
     return {
       ...totals,
       entrega: totals.totalMensagens > 0 ? Math.round((totals.entregue / totals.totalMensagens) * 100) : 0,
-      leitura: totals.disparado > 0 ? Math.round((totals.lido / totals.disparado) * 100) : 0,
+      leitura: totals.totalMensagens > 0 ? Math.round((totals.lido / totals.totalMensagens) * 100) : 0,
       conversao: totals.disparado > 0 ? ((totals.acordos / totals.disparado) * 100).toFixed(2) : "0.00",
     };
   }
