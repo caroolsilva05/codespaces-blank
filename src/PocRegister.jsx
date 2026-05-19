@@ -400,6 +400,8 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 20 }}>
           <TabButton id="overview" label="Visão Geral" />
           <TabButton id="general" label="Cadastro" />
+          <TabButton id="planning" label="Planejamento" />
+          <TabButton id="execution" label="Execução" />
           <TabButton id="analytics" label="Relatório Analítico" />
           <TabButton id="incidents" label="Incidentes" />
           <TabButton id="evaluation" label="Avaliação Final" />
@@ -420,8 +422,8 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
             <Section title="Resumo Executivo" sub="Leitura rápida para liderança">
               <textarea
                 placeholder="Escreva aqui a análise executiva da POC: desempenho geral, pontos de atenção, qualidade do fornecedor e recomendação preliminar."
-                value={data.evaluation.executiveSummary}
-                onChange={(e) => update("evaluation.executiveSummary", e.target.value)}
+                defaultValue={data.evaluation.executiveSummary}
+                onBlur={(e) => update("evaluation.executiveSummary", e.target.value)}
                 style={{ ...field, minHeight: 150, resize: "vertical", lineHeight: 1.6 }}
               />
             </Section>
@@ -467,19 +469,83 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
 
       {tab === "general" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <Section title="Informações Gerais da POC" sub="Dados de alinhamento inicial com o fornecedor">
+          <Section title="Informações Gerais da POC" sub="Dados de alinhamento inicial com o fornecedor e acompanhamento executivo">
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
-              <input placeholder="POC" value={data.general.pocName} onChange={(e) => update("general.pocName", e.target.value)} style={field} />
-              <input placeholder="Fornecedor / Tecnologia" value={data.general.supplier} onChange={(e) => update("general.supplier", e.target.value)} style={field} />
-              <input placeholder="Responsável" value={data.general.responsible} onChange={(e) => update("general.responsible", e.target.value)} style={field} />
-              <input placeholder="Gestor Executivo / Sponsor" value={data.general.sponsor} onChange={(e) => update("general.sponsor", e.target.value)} style={field} />
-              <input placeholder="Carteira / Produto" value={data.general.wallet} onChange={(e) => update("general.wallet", e.target.value)} style={field} />
-              <input placeholder="Produto testado" value={data.general.product} onChange={(e) => update("general.product", e.target.value)} style={field} />
-              <input type="date" value={data.general.periodStart} onChange={(e) => update("general.periodStart", e.target.value)} style={field} />
-              <input type="date" value={data.general.periodEnd} onChange={(e) => update("general.periodEnd", e.target.value)} style={field} />
-              <input placeholder="Meta de disparos por dia" value={data.general.dailyGoal} onChange={(e) => update("general.dailyGoal", e.target.value)} style={field} />
-              <input placeholder="Quantidade de dias da POC" value={data.general.pocDays} onChange={(e) => update("general.pocDays", e.target.value)} style={field} />
-              <select value={data.general.status} onChange={(e) => update("general.status", e.target.value)} style={field}>
+              <input
+                placeholder="Nome da POC"
+                defaultValue={data.general.pocName}
+                onBlur={(e) => update("general.pocName", e.target.value)}
+                style={field}
+              />
+
+              <input
+                placeholder="Fornecedor / Tecnologia"
+                defaultValue={data.general.supplier}
+                onBlur={(e) => update("general.supplier", e.target.value)}
+                style={field}
+              />
+
+              <input
+                placeholder="Responsável"
+                defaultValue={data.general.responsible}
+                onBlur={(e) => update("general.responsible", e.target.value)}
+                style={field}
+              />
+
+              <input
+                placeholder="Gestor Executivo / Sponsor"
+                defaultValue={data.general.sponsor}
+                onBlur={(e) => update("general.sponsor", e.target.value)}
+                style={field}
+              />
+
+              <input
+                placeholder="Carteira / Cliente"
+                defaultValue={data.general.wallet}
+                onBlur={(e) => update("general.wallet", e.target.value)}
+                style={field}
+              />
+
+              <input
+                placeholder="Produto / Solução testada"
+                defaultValue={data.general.product}
+                onBlur={(e) => update("general.product", e.target.value)}
+                style={field}
+              />
+
+              <input
+                type="date"
+                defaultValue={data.general.periodStart}
+                onBlur={(e) => update("general.periodStart", e.target.value)}
+                style={field}
+              />
+
+              <input
+                type="date"
+                defaultValue={data.general.periodEnd}
+                onBlur={(e) => update("general.periodEnd", e.target.value)}
+                style={field}
+              />
+
+              <input
+                placeholder="Meta de disparos por dia"
+                defaultValue={data.general.dailyGoal}
+                onBlur={(e) => update("general.dailyGoal", e.target.value)}
+                style={field}
+              />
+
+              <input
+                placeholder="Quantidade de dias da POC"
+                defaultValue={data.general.pocDays}
+                onBlur={(e) => update("general.pocDays", e.target.value)}
+                style={field}
+              />
+
+              <select
+                value={data.general.status}
+                onChange={(e) => update("general.status", e.target.value)}
+                style={{ ...field, gridColumn: "1 / -1" }}
+              >
                 <option>Em Planejamento</option>
                 <option>Em Execução</option>
                 <option>Em Monitoramento</option>
@@ -487,14 +553,135 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
               </select>
             </div>
           </Section>
+        </div>
+      )}
 
-          <Section title="Problema de Negócio & Objetivos" sub="Defina a dor que a tecnologia pretende resolver">
-            <textarea placeholder="Problema de negócio" value={data.planning.businessProblem} onChange={(e) => update("planning.businessProblem", e.target.value)} style={{ ...field, minHeight: 110, resize: "vertical", marginBottom: 12 }} />
-            <textarea placeholder="Objetivo da POC" value={data.planning.objective} onChange={(e) => update("planning.objective", e.target.value)} style={{ ...field, minHeight: 110, resize: "vertical" }} />
+      {tab === "planning" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <Section
+            title="Planejamento e Alinhamento da POC"
+            sub="Definição da dor de negócio, objetivo e critérios que determinam sucesso ou fracasso da POC"
+          >
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <textarea
+                placeholder="Problema de negócio: qual dor da empresa essa solução pretende resolver?"
+                defaultValue={data.planning.businessProblem}
+                onBlur={(e) => update("planning.businessProblem", e.target.value)}
+                style={{ ...field, minHeight: 130, resize: "vertical", lineHeight: 1.6 }}
+              />
+
+              <textarea
+                placeholder="Objetivo da POC: o que precisa ser comprovado durante o teste?"
+                defaultValue={data.planning.objective}
+                onBlur={(e) => update("planning.objective", e.target.value)}
+                style={{ ...field, minHeight: 130, resize: "vertical", lineHeight: 1.6 }}
+              />
+            </div>
           </Section>
 
-          <Section title="Infraestrutura e Segurança" sub="Checklist antes de liberar os testes">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 12 }}>
+          <Section
+            title="Critérios de Sucesso / KPIs"
+            sub="Métricas quantificáveis para avaliar se o produto do fornecedor atende ao esperado"
+          >
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
+                <thead>
+                  <tr>
+                    {["KPI", "Meta acordada", "Resultado obtido", "Status", ""].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: 9,
+                          fontSize: 11,
+                          color: C.t3,
+                          textAlign: "left",
+                          borderBottom: `1px solid ${C.border}`,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {data.planning.successCriteria.map((row) => (
+                    <tr key={row.id}>
+                      <td style={{ padding: 6 }}>
+                        <input
+                          defaultValue={row.kpi}
+                          onBlur={(e) => updateRow("planning", "successCriteria", row.id, "kpi", e.target.value)}
+                          style={smallField}
+                        />
+                      </td>
+
+                      <td style={{ padding: 6 }}>
+                        <input
+                          placeholder="Ex: API abaixo de 300ms"
+                          defaultValue={row.target}
+                          onBlur={(e) => updateRow("planning", "successCriteria", row.id, "target", e.target.value)}
+                          style={smallField}
+                        />
+                      </td>
+
+                      <td style={{ padding: 6 }}>
+                        <input
+                          placeholder="Resultado medido"
+                          defaultValue={row.result}
+                          onBlur={(e) => updateRow("planning", "successCriteria", row.id, "result", e.target.value)}
+                          style={smallField}
+                        />
+                      </td>
+
+                      <td style={{ padding: 6 }}>
+                        <select
+                          defaultValue={row.status}
+                          onBlur={(e) => updateRow("planning", "successCriteria", row.id, "status", e.target.value)}
+                          style={smallField}
+                        >
+                          <option>Pendente</option>
+                          <option>Atendido</option>
+                          <option>Parcial</option>
+                          <option>Não atendido</option>
+                        </select>
+                      </td>
+
+                      <td style={{ padding: 6 }}>
+                        <button
+                          onClick={() => removeRow("planning", "successCriteria", row.id)}
+                          style={{ ...smallField, cursor: "pointer" }}
+                        >
+                          Excluir
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <button
+              onClick={() =>
+                addRow("planning", "successCriteria", {
+                  kpi: "",
+                  target: "",
+                  result: "",
+                  status: "Pendente",
+                })
+              }
+              style={{ ...field, marginTop: 12, cursor: "pointer", fontWeight: 800 }}
+            >
+              + Adicionar KPI / Critério de sucesso
+            </button>
+          </Section>
+
+          <Section
+            title="Infraestrutura e Segurança"
+            sub="Checklist obrigatório antes de liberar os testes com o fornecedor"
+          >
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 14 }}>
               {[
                 ["vpn", "VPN configurada"],
                 ["ips", "IPs liberados"],
@@ -503,37 +690,104 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
                 ["cloudBudget", "Cloud com teto de gastos monitorado"],
               ].map(([key, label]) => (
                 <label key={key} style={{ display: "flex", gap: 9, alignItems: "center", color: C.t2, fontSize: 13 }}>
-                  <input type="checkbox" checked={data.security[key]} onChange={(e) => update(`security.${key}`, e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={data.security[key]}
+                    onChange={(e) => update(`security.${key}`, e.target.checked)}
+                  />
                   {label}
                 </label>
               ))}
             </div>
-            <textarea placeholder="Observações de infraestrutura e segurança" value={data.security.notes} onChange={(e) => update("security.notes", e.target.value)} style={{ ...field, minHeight: 90, resize: "vertical" }} />
+
+            <textarea
+              placeholder="Observações de infraestrutura, acessos, LGPD, dados de teste ou riscos de segurança"
+              value={data.security.notes}
+              onChange={(e) => update("security.notes", e.target.value)}
+              style={{ ...field, minHeight: 100, resize: "vertical", lineHeight: 1.6 }}
+            />
           </Section>
         </div>
       )}
 
-      {tab === "analytics" && (
+      {tab === "execution" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <Section title="Relatório Analítico de Disparos" sub="Preencha diariamente os dados da POC">
+          <Section
+            title="Execução e Acompanhamento Técnico"
+            sub="Acompanhe atividades, casos de teste, responsáveis, status e comportamento do fornecedor"
+          >
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1200 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1100 }}>
                 <thead>
                   <tr>
-                    {["Data", "Disparado", "Total Msgs", "Entregue", "Não entregue", "Em processo", "Lido", "Cliques", "Retorno", "Acordos", "Status", ""].map((h) => (
-                      <th key={h} style={{ padding: 9, fontSize: 11, color: C.t3, textAlign: "left", borderBottom: `1px solid ${C.border}` }}>{h}</th>
+                    {["Atividade / Caso de Teste", "Responsável", "Status", "Notas de evolução / comportamento", ""].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: 9,
+                          fontSize: 11,
+                          color: C.t3,
+                          textAlign: "left",
+                          borderBottom: `1px solid ${C.border}`,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                        }}
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
+
                 <tbody>
-                  {data.analytics.rows.map((row) => (
+                  {data.execution.activities.map((row) => (
                     <tr key={row.id}>
-                      <td style={{ padding: 6 }}><input type="date" value={row.date} onChange={(e) => updateRow("analytics", "rows", row.id, "date", e.target.value)} style={smallField} /></td>
-                      {["disparado", "totalMensagens", "entregue", "naoEntregue", "emProcesso", "lido", "cliques", "retornoCliente", "acordos"].map((key) => (
-                        <td key={key} style={{ padding: 6 }}><input value={row[key]} onChange={(e) => updateRow("analytics", "rows", row.id, key, e.target.value)} style={smallField} /></td>
-                      ))}
-                      <td style={{ padding: 6, fontSize: 12 }}><DayStatus row={row} /></td>
-                      <td style={{ padding: 6 }}><button onClick={() => removeRow("analytics", "rows", row.id)} style={{ ...smallField, cursor: "pointer" }}>Excluir</button></td>
+                      <td style={{ padding: 6 }}>
+                        <input
+                          defaultValue={row.activity}
+                          onBlur={(e) => updateRow("execution", "activities", row.id, "activity", e.target.value)}
+                          style={smallField}
+                        />
+                      </td>
+
+                      <td style={{ padding: 6 }}>
+                        <input
+                          defaultValue={row.owner}
+                          onBlur={(e) => updateRow("execution", "activities", row.id, "owner", e.target.value)}
+                          style={smallField}
+                        />
+                      </td>
+
+                      <td style={{ padding: 6 }}>
+                        <select
+                          defaultValue={row.status}
+                          onBlur={(e) => updateRow("execution", "activities", row.id, "status", e.target.value)}
+                          style={smallField}
+                        >
+                          <option>Pendente</option>
+                          <option>Em Andamento</option>
+                          <option>Concluído</option>
+                          <option>Bloqueado</option>
+                        </select>
+                      </td>
+
+                      <td style={{ padding: 6 }}>
+                        <input
+                          placeholder="Anote evolução, suporte do fornecedor, qualidade da documentação, desvios..."
+                          defaultValue={row.notes}
+                          onBlur={(e) => updateRow("execution", "activities", row.id, "notes", e.target.value)}
+                          style={smallField}
+                        />
+                      </td>
+
+                      <td style={{ padding: 6 }}>
+                        <button
+                          onClick={() => removeRow("execution", "activities", row.id)}
+                          style={{ ...smallField, cursor: "pointer" }}
+                        >
+                          Excluir
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -541,12 +795,281 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
             </div>
 
             <button
-              onClick={() => addRow("analytics", "rows", { date: "", disparado: "", totalMensagens: "", entregue: "", naoEntregue: "", emProcesso: "", lido: "", cliques: "", retornoCliente: "", acordos: "", observation: "" })}
+              onClick={() =>
+                addRow("execution", "activities", {
+                  activity: "",
+                  owner: "",
+                  status: "Pendente",
+                  notes: "",
+                })
+              }
+              style={{ ...field, marginTop: 12, cursor: "pointer", fontWeight: 800 }}
+            >
+              + Adicionar atividade / caso de teste
+            </button>
+          </Section>
+        </div>
+      )}
+
+      {tab === "analytics" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <Section
+            title="Relatório Analítico de Disparos"
+            sub="Atualização diária da POC com cálculo automático de entrega, leitura, retorno e conversão"
+          >
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1350 }}>
+                <thead>
+                  <tr>
+                    {[
+                      "Data",
+                      "Disparado",
+                      "Total Mensagens",
+                      "Entregue",
+                      "Não Entregue",
+                      "Em Processo",
+                      "Lido",
+                      "Cliques",
+                      "Retorno Cliente",
+                      "Acordos",
+                      "Tx. Entrega",
+                      "Tx. Leitura",
+                      "Status",
+                      "",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: "10px 8px",
+                          fontSize: 10,
+                          color: C.t3,
+                          textAlign: "left",
+                          borderBottom: `1px solid ${C.border}`,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {data.analytics.rows.map((row) => {
+                    const totalMensagens = toNum(row.totalMensagens);
+                    const entregue = toNum(row.entregue);
+                    const lido = toNum(row.lido);
+                    const txEntrega = totalMensagens > 0 ? (entregue / totalMensagens) * 100 : 0;
+                    const txLeitura = entregue > 0 ? (lido / entregue) * 100 : 0;
+
+                    return (
+                      <tr key={row.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                        <td style={{ padding: 6 }}>
+                          <input
+                            type="date"
+                            defaultValue={row.date}
+                            onBlur={(e) => updateRow("analytics", "rows", row.id, "date", e.target.value)}
+                            style={smallField}
+                          />
+                        </td>
+
+                        {[
+                          "disparado",
+                          "totalMensagens",
+                          "entregue",
+                          "naoEntregue",
+                          "emProcesso",
+                          "lido",
+                          "cliques",
+                          "retornoCliente",
+                          "acordos",
+                        ].map((key) => (
+                          <td key={key} style={{ padding: 6 }}>
+                            <input
+                              defaultValue={row[key]}
+                              onBlur={(e) => updateRow("analytics", "rows", row.id, key, e.target.value)}
+                              style={smallField}
+                            />
+                          </td>
+                        ))}
+
+                        <td style={{ padding: 6, fontSize: 12, fontWeight: 900, color: txEntrega >= 85 ? C.emerald : txEntrega >= 70 ? C.amber : C.rose }}>
+                          {pct(txEntrega)}
+                        </td>
+
+                        <td style={{ padding: 6, fontSize: 12, fontWeight: 900, color: txLeitura >= 60 ? C.emerald : txLeitura >= 45 ? C.amber : C.rose }}>
+                          {pct(txLeitura)}
+                        </td>
+
+                        <td style={{ padding: 6, fontSize: 12 }}>
+                          <DayStatus row={row} />
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <button
+                            onClick={() => removeRow("analytics", "rows", row.id)}
+                            style={{ ...smallField, cursor: "pointer" }}
+                          >
+                            Excluir
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  <tr style={{ background: C.bg2, borderTop: `2px solid ${C.borderStrong}` }}>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>
+                      TOTAL / MÉDIA
+                    </td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{metrics.disparado}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{metrics.totalMensagens}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{metrics.entregue}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{metrics.naoEntregue}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{metrics.emProcesso}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{metrics.lido}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{metrics.cliques}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{metrics.retornoCliente}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{metrics.acordos}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.emerald }}>{pct(metrics.taxaEntrega)}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.blue }}>{pct(metrics.taxaLeituraEntregues)}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t2 }}>—</td>
+                    <td />
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <button
+              onClick={() =>
+                addRow("analytics", "rows", {
+                  date: "",
+                  disparado: "",
+                  totalMensagens: "",
+                  entregue: "",
+                  naoEntregue: "",
+                  emProcesso: "",
+                  lido: "",
+                  cliques: "",
+                  retornoCliente: "",
+                  acordos: "",
+                  observation: "",
+                })
+              }
               style={{ ...field, marginTop: 12, cursor: "pointer", fontWeight: 800 }}
             >
               + Adicionar dia
             </button>
           </Section>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 16 }}>
+            <Section title="Funil de Conversão" sub="Volume, percentual sobre etapa anterior e percentual sobre disparados">
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 680 }}>
+                  <thead>
+                    <tr>
+                      {["Etapa do Funil", "Volume", "% s/ anterior", "% s/ disparados", "Observação"].map((h) => (
+                        <th
+                          key={h}
+                          style={{
+                            padding: "10px 8px",
+                            fontSize: 10,
+                            color: C.t3,
+                            textAlign: "left",
+                            borderBottom: `1px solid ${C.border}`,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.06em",
+                          }}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {[
+                      {
+                        etapa: "Disparados",
+                        volume: metrics.disparado,
+                        anterior: null,
+                        disparados: 100,
+                        obs: "Base total registrada no relatório",
+                      },
+                      {
+                        etapa: "Entregues",
+                        volume: metrics.entregue,
+                        anterior: metrics.disparado ? (metrics.entregue / metrics.disparado) * 100 : 0,
+                        disparados: metrics.disparado ? (metrics.entregue / metrics.disparado) * 100 : 0,
+                        obs: "Confirmação de entrega",
+                      },
+                      {
+                        etapa: "Lidos",
+                        volume: metrics.lido,
+                        anterior: metrics.entregue ? (metrics.lido / metrics.entregue) * 100 : 0,
+                        disparados: metrics.disparado ? (metrics.lido / metrics.disparado) * 100 : 0,
+                        obs: "Marcação de leitura",
+                      },
+                      {
+                        etapa: "Cliques",
+                        volume: metrics.cliques,
+                        anterior: metrics.lido ? (metrics.cliques / metrics.lido) * 100 : 0,
+                        disparados: metrics.disparado ? (metrics.cliques / metrics.disparado) * 100 : 0,
+                        obs: metrics.cliques > metrics.lido ? "Volume superior a lidos" : "Interação com a mensagem",
+                      },
+                      {
+                        etapa: "Retorno cliente",
+                        volume: metrics.retornoCliente,
+                        anterior: metrics.lido ? (metrics.retornoCliente / metrics.lido) * 100 : 0,
+                        disparados: metrics.disparado ? (metrics.retornoCliente / metrics.disparado) * 100 : 0,
+                        obs: "Clientes que responderam",
+                      },
+                      {
+                        etapa: "Acordos gerados",
+                        volume: metrics.acordos,
+                        anterior: metrics.retornoCliente ? (metrics.acordos / metrics.retornoCliente) * 100 : 0,
+                        disparados: metrics.disparado ? (metrics.acordos / metrics.disparado) * 100 : 0,
+                        obs: "Conversão final",
+                      },
+                    ].map((row) => (
+                      <tr key={row.etapa} style={{ borderBottom: `1px solid ${C.border}` }}>
+                        <td style={{ padding: "10px 8px", fontSize: 12, color: C.t1, fontWeight: 800 }}>{row.etapa}</td>
+                        <td style={{ padding: "10px 8px", fontSize: 13, color: C.blue, fontWeight: 900 }}>{row.volume}</td>
+                        <td style={{ padding: "10px 8px", fontSize: 12, color: C.t2 }}>{row.anterior === null ? "—" : pct(row.anterior)}</td>
+                        <td style={{ padding: "10px 8px", fontSize: 12, color: C.t2 }}>{pct(row.disparados)}</td>
+                        <td style={{ padding: "10px 8px", fontSize: 12, color: row.obs === "Volume superior a lidos" ? C.rose : C.t2 }}>{row.obs}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Section>
+
+            <Section title="Indicadores" sub="Resumo automático da performance da POC">
+              {[
+                ["Taxa de entrega geral", metrics.taxaEntrega, C.emerald],
+                ["Taxa de leitura s/ entregues", metrics.taxaLeituraEntregues, C.blue],
+                ["Taxa de leitura s/ disparados", metrics.taxaLeituraDisparados, C.violet],
+                ["Taxa de retorno s/ lidos", metrics.taxaRetornoLidos, C.amber],
+                ["Taxa de conversão final", metrics.taxaConversaoFinal, C.rose],
+              ].map(([label, value, color]) => (
+                <div
+                  key={label}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    padding: "11px 0",
+                    borderBottom: `1px solid ${C.border}`,
+                    fontSize: 13,
+                  }}
+                >
+                  <span style={{ color: C.t2 }}>{label}</span>
+                  <strong style={{ color }}>{pct(value)}</strong>
+                </div>
+              ))}
+            </Section>
+          </div>
         </div>
       )}
 
@@ -635,7 +1158,7 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
               <option>Aprovado com condições</option>
             </select>
 
-            <textarea placeholder="Condições, observações finais e próximos passos" value={data.evaluation.conditions} onChange={(e) => update("evaluation.conditions", e.target.value)} style={{ ...field, minHeight: 130, resize: "vertical" }} />
+            <textarea placeholder="Condições, observações finais e próximos passos" defaultValue={data.evaluation.conditions} onBlur={(e) => update("evaluation.conditions", e.target.value)} style={{ ...field, minHeight: 130, resize: "vertical" }} />
           </Section>
         </div>
       )}
