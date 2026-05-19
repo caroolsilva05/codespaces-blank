@@ -228,12 +228,14 @@ const Chip = ({ label, color, bg, border }) => (
   }}>{label}</span>
 );
 
+const formatPct = (value) => `${Number(value || 0).toFixed(1).replace(".", ",")}%`;
+
 const ProgressBar = ({ val, color, C }) => (
   <div style={{ display:"flex", alignItems:"center", gap:10 }}>
     <div style={{ flex:1, height:4, background:C.bg3, borderRadius:99, overflow:"hidden" }}>
       <div style={{ width:`${val}%`, height:"100%", background:color, borderRadius:99, transition:"width 0.9s ease" }} />
     </div>
-    <span style={{ fontSize:12, color:C.t2, minWidth:32, textAlign:"right" }}>{val}%</span>
+    <span style={{ fontSize:12, color:C.t2, minWidth:42, textAlign:"right" }}>{formatPct(val)}</span>
   </div>
 );
 
@@ -1911,63 +1913,481 @@ function SuppliersView({ C }) {
 }
 
 function IndicatorsView({ C }) {
+  const [loading, setLoading] = useState(false);
+  const [projetos, setProjetos] = useState([]);
+  const [pocs, setPocs] = useState([]);
+  const [fornecedores, setFornecedores] = useState([]);
+
+  function toNum(value) {
+    const parsed = Number(String(value || "0").replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function pct(value) {
+    return `${Number(value || 0).toFixed(1).replace(".", ",")}%`;
+  }
+
+  function normalizarEtapa(etapa) {
+    if (!etapa) return "Backlog";
+    const e = String(etapa).trim();
+
+    if (["Backlog", "Planejamento", "Execução", "Monitoramento", "Encerramento"].includes(e)) {
+      return e;
+    }
+
+    if (e === "Em Andamento") return "Execução";
+    if (e === "Concluído") return "Encerramento";
+    if (e === "Concluida") return "Encerramento";
+    if (e === "Concluída") return "Encerramento";
+
+    return e;
+  }
+
+  function progressoPorEtapa(etapa) {
+    const e = normalizarEtapa(etapa);
+    if (e === "Backlog") return 10;
+    if (e === "Planejamento") return 30;
+    if (e === "Execução") return 60;
+    if (e === "Monitoramento") return 80;
+    if (e === "Encerramento") return 100;
+    return 0;
+  }
+
+  function calcPoc(record) {
+    const rows = record?.record_data?.analytics?.rows || [];
+    const totals = rows.reduce(
+      (acc, row) => {
+        acc.totalMensagens += toNum(row.totalMensagens);
+        acc.entregue += toNum(row.entregue);
+        acc.lido += toNum(row.lido);
+        acc.retorno += toNum(row.retornoCliente);
+        acc.acordos += toNum(row.acordos);
+        return acc;
+      },
+      { totalMensagens: 0, entregue: 0, lido: 0, retorno: 0, acordos: 0 }
+    );
+
+    return {
+      ...totals,
+      entrega: totals.totalMensagens > 0 ? (totals.entregue / totals.totalMensagens) * 100 : 0,
+      leitura: totals.totalMensagens > 0 ? (totals.lido / totals.totalMensagens) * 100 : 0,
+      conversao: totals.totalMensagens > 0 ? (totals.acordos / totals.totalMensagens) * 100 : 0,
+    };
+  }
+
+  function getPocStatus(record) {
+    return record?.status || record?.record_data?.general?.status || "Em avaliação";
+  }
+
+  function getPocRecommendation(record) {
+    return record?.recommendation || record?.record_data?.evaluation?.recommendation || "Em avaliação";
+  }
+
+  async function carregarIndicadores() {
+    setLoading(true);
+
+    const [projectsRes, pocsRes, suppliersRes] = await Promise.all([
+      supabase.from("projects").select("*"),
+      supabase.from("poc_records").select("*"),
+      supabase.from("fornecedores").select("*"),
+    ]);
+
+    if (projectsRes.error) console.log("Erro ao carregar projetos:", projectsRes.error);
+    if (pocsRes.error) console.log("Erro ao carregar POCs:", pocsRes.error);
+    if (suppliersRes.error) console.log("Erro ao carregar fornecedores:", suppliersRes.error);
+
+    setProjetos(projectsRes.data || []);
+    setPocs(pocsRes.data || []);
+    setFornecedores(suppliersRes.data || []);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    carregarIndicadores();
+  }, []);
+
+  const hoje = new Date().toISOString().slice(0, 10);
+
+  const totalProjetos = projetos.length;
+  const projetosPorEtapa = ["Backlog", "Planejamento", "Execução", "Monitoramento", "Encerramento"].map((etapa) => {
+    const qtd = projetos.filter((p) => normalizarEtapa(p.current_stage || p.status) === etapa).length;
+    return { etapa, qtd, perc: totalProjetos ? (qtd / totalProjetos) * 100 : 0 };
+  });
+
+  const projetosEmExecucao = projetosPorEtapa.find((p) => p.etapa === "Execução")?.qtd || 0;
+  const projetosEncerrados = projetosPorEtapa.find((p) => p.etapa === "Encerramento")?.qtd || 0;
+  const projetosAtrasados = projetos.filter((p) => {
+    const etapa = normalizarEtapa(p.current_stage || p.status);
+    return p.end_date && p.end_date < hoje && etapa !== "Encerramento";
+  }).length;
+
+  const progressoMedioProjetos =
+    totalProjetos > 0
+      ? Math.round(
+          projetos.reduce((acc, p) => acc + progressoPorEtapa(p.current_stage || p.status), 0) / totalProjetos
+        )
+      : 0;
+
+  const totalPocs = pocs.length;
+  const pocsExecucao = pocs.filter((p) => getPocStatus(p) === "Em Execução").length;
+  const pocsEncerradas = pocs.filter((p) => getPocStatus(p) === "Encerrada").length;
+  const pocsCondicoes = pocs.filter((p) => getPocRecommendation(p) === "Aprovado com condições").length;
+
+  const pocTotals = pocs.reduce(
+    (acc, poc) => {
+      const m = calcPoc(poc);
+      acc.totalMensagens += m.totalMensagens;
+      acc.entregue += m.entregue;
+      acc.lido += m.lido;
+      acc.retorno += m.retorno;
+      acc.acordos += m.acordos;
+      return acc;
+    },
+    { totalMensagens: 0, entregue: 0, lido: 0, retorno: 0, acordos: 0 }
+  );
+
+  const pocEntrega = pocTotals.totalMensagens > 0 ? (pocTotals.entregue / pocTotals.totalMensagens) * 100 : 0;
+  const pocLeitura = pocTotals.totalMensagens > 0 ? (pocTotals.lido / pocTotals.totalMensagens) * 100 : 0;
+  const pocConversao = pocTotals.totalMensagens > 0 ? (pocTotals.acordos / pocTotals.totalMensagens) * 100 : 0;
+
+  const totalFornecedores = fornecedores.length;
+  const fornecedoresAtivos = fornecedores.filter((f) => f.status === "Ativo").length;
+  const fornecedoresRiscoAlto = fornecedores.filter((f) => f.risco === "Alto").length;
+  const incidentesFornecedores = fornecedores.reduce((acc, f) => acc + toNum(f.incidentes_abertos), 0);
+  const scoreMedioFornecedores =
+    totalFornecedores > 0
+      ? Math.round(fornecedores.reduce((acc, f) => acc + toNum(f.performance_score), 0) / totalFornecedores)
+      : 0;
+
+  const scoreProjetos = progressoMedioProjetos;
+  const scorePocs = Math.min(100, pocEntrega * 0.45 + pocLeitura * 0.45 + Math.min(100, pocConversao * 30) * 0.10);
+  const scoreFornecedores = scoreMedioFornecedores;
+
+  const healthScore = Math.round(
+    scoreProjetos * 0.35 +
+      scorePocs * 0.35 +
+      scoreFornecedores * 0.30
+  );
+
+  const healthColor = healthScore >= 80 ? C.emerald : healthScore >= 60 ? C.amber : C.rose;
+
+  const alertas = [
+    {
+      label: "Projetos atrasados",
+      value: projetosAtrasados,
+      color: projetosAtrasados > 0 ? C.rose : C.emerald,
+      desc: "Projetos com prazo vencido e ciclo não encerrado",
+    },
+    {
+      label: "POCs com condições",
+      value: pocsCondicoes,
+      color: pocsCondicoes > 0 ? C.amber : C.emerald,
+      desc: "POCs aprovadas com ressalvas executivas",
+    },
+    {
+      label: "Fornecedores alto risco",
+      value: fornecedoresRiscoAlto,
+      color: fornecedoresRiscoAlto > 0 ? C.rose : C.emerald,
+      desc: "Fornecedores classificados como risco alto",
+    },
+    {
+      label: "Incidentes em fornecedores",
+      value: incidentesFornecedores,
+      color: incidentesFornecedores > 0 ? C.rose : C.emerald,
+      desc: "Incidentes abertos na gestão de fornecedores",
+    },
+  ];
+
+  const rankingFornecedores = [...fornecedores]
+    .sort((a, b) => toNum(b.performance_score) - toNum(a.performance_score))
+    .slice(0, 5);
+
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
-      <SectionHeader title="Indicadores Executivos" sub="OKRs e métricas estratégicas — Q4 2024" C={C}/>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
-        <div style={{ ...card(C), padding:"22px 24px", gridColumn:"span 2" }}>
-          <div style={{ fontSize:14, fontWeight:600, color:C.t1, marginBottom:18 }}>OKRs Estratégicos 2024</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-            {[
-              { ok:"Digitalizar 100% dos processos core",     meta:100, atual:78,   c:C.blue },
-              { ok:"Reduzir custos operacionais em 25%",      meta:25,  atual:19.2, c:C.emerald },
-              { ok:"Atingir NPS interno ≥ 75",                meta:75,  atual:82,   c:C.violet },
-              { ok:"Zero incidentes críticos de segurança",   meta:0,   atual:2,    c:C.rose, inv:true },
-              { ok:"Time-to-market < 30 dias",                meta:30,  atual:22,   c:C.amber, inv:true },
-            ].map((o,i)=>(
-              <div key={i} style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                <div style={{ display:"flex", justifyContent:"space-between" }}>
-                  <span style={{ fontSize:13, color:C.t2 }}>{o.ok}</span>
-                  <span style={{ fontSize:12, fontWeight:700, color:o.c }}>{o.atual} / meta {o.meta}</span>
+    <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+      <SectionHeader
+        title="Indicadores Executivos"
+        sub="Visão consolidada da Transformação Digital: projetos, POCs, fornecedores, riscos e performance"
+        actions={[
+          <Btn
+            key="refresh"
+            label={loading ? "Atualizando..." : "Atualizar"}
+            icon={RefreshCw}
+            C={C}
+            onClick={carregarIndicadores}
+          />,
+        ]}
+        C={C}
+      />
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}>
+        <KPICard icon={Activity} label="Saúde geral" value={`${healthScore}%`} sub="Score consolidado" color={healthColor} glow={healthScore >= 80 ? C.emeraldGlow : healthScore >= 60 ? C.amberGlow : C.roseGlow} C={C} />
+        <KPICard icon={FolderKanban} label="Projetos" value={totalProjetos} sub={`${projetosEmExecucao} em execução`} color={C.blue} glow={C.blueGlow} C={C} />
+        <KPICard icon={FlaskConical} label="POCs" value={totalPocs} sub={`${pocsExecucao} em execução`} color={C.violet} glow={C.violetGlow} C={C} />
+        <KPICard icon={Users} label="Fornecedores" value={totalFornecedores} sub={`${fornecedoresAtivos} ativos`} color={C.emerald} glow={C.emeraldGlow} C={C} />
+        <KPICard icon={AlertTriangle} label="Alertas" value={projetosAtrasados + pocsCondicoes + fornecedoresRiscoAlto + incidentesFornecedores} sub="Pontos de atenção" color={projetosAtrasados + pocsCondicoes + fornecedoresRiscoAlto + incidentesFornecedores > 0 ? C.rose : C.emerald} glow={projetosAtrasados + pocsCondicoes + fornecedoresRiscoAlto + incidentesFornecedores > 0 ? C.roseGlow : C.emeraldGlow} C={C} />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 16 }}>
+        <div style={{ ...card(C), padding: "22px 24px" }}>
+          <div style={{ fontSize: 16, fontWeight: 900, color: C.t1, marginBottom: 4 }}>
+            Pipeline de Projetos
+          </div>
+          <div style={{ fontSize: 12, color: C.t3, marginBottom: 18 }}>
+            Distribuição por etapa do ciclo de vida
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 90px 90px",
+              gap: 12,
+              padding: "0 0 8px",
+              borderBottom: `1px solid ${C.border}`,
+              marginBottom: 12,
+            }}
+          >
+            <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 900 }}>
+              Etapa
+            </div>
+            <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 900, textAlign: "right" }}>
+              Qtd.
+            </div>
+            <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 900, textAlign: "right" }}>
+              %
+            </div>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {projetosPorEtapa.map((item) => {
+              const color =
+                item.etapa === "Backlog"
+                  ? C.t3
+                  : item.etapa === "Planejamento"
+                  ? C.violet
+                  : item.etapa === "Execução"
+                  ? C.blue
+                  : item.etapa === "Monitoramento"
+                  ? C.amber
+                  : C.emerald;
+
+              return (
+                <div key={item.etapa}>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 90px 90px",
+                      gap: 12,
+                      alignItems: "center",
+                      marginBottom: 7,
+                    }}
+                  >
+                    <span style={{ fontSize: 13, color: C.t2, fontWeight: 900 }}>
+                      {item.etapa}
+                    </span>
+
+                    <span style={{ fontSize: 12, color, fontWeight: 900, textAlign: "right" }}>
+                      {item.qtd}
+                    </span>
+
+                    <span style={{ fontSize: 12, color, fontWeight: 900, textAlign: "right" }}>
+                      {pct(item.perc)}
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      height: 5,
+                      background: C.bg3,
+                      borderRadius: 999,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${Math.max(0, Math.min(100, item.perc))}%`,
+                        height: "100%",
+                        background: color,
+                        borderRadius: 999,
+                        transition: "width 0.9s ease",
+                      }}
+                    />
+                  </div>
                 </div>
-                <ProgressBar val={Math.min(100, o.inv?(o.meta===0?(o.atual===0?100:20):Math.round((1-o.atual/o.meta)*100)):Math.round((o.atual/o.meta)*100))} color={o.c} C={C}/>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ ...card(C), padding: "22px 24px" }}>
+          <div style={{ fontSize: 16, fontWeight: 900, color: C.t1, marginBottom: 4 }}>
+            Mapa de Atenção
+          </div>
+          <div style={{ fontSize: 12, color: C.t3, marginBottom: 16 }}>
+            Pontos que precisam de acompanhamento executivo
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {alertas.map((a) => (
+              <div
+                key={a.label}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  alignItems: "center",
+                  background: a.value > 0 ? `${a.color}14` : C.bg3,
+                  border: `1px solid ${a.value > 0 ? a.color + "44" : C.border}`,
+                  borderRadius: 14,
+                  padding: "12px 14px",
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, color: C.t1, fontWeight: 900 }}>{a.label}</div>
+                  <div style={{ fontSize: 11, color: C.t3, marginTop: 3 }}>{a.desc}</div>
+                </div>
+                <strong style={{ fontSize: 22, color: a.color }}>{a.value}</strong>
               </div>
             ))}
           </div>
         </div>
-        <div style={{ ...card(C), padding:"22px 24px" }}>
-          <div style={{ fontSize:14, fontWeight:600, color:C.t1, marginBottom:16 }}>ROI por Projeto</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {[{ n:"BI & Analytics",v:320,c:C.emerald },{ n:"Cloud Migration",v:185,c:C.blue },{ n:"RPA Financeiro",v:142,c:C.cyan },{ n:"ZeroTrust Sec",v:98,c:C.violet },{ n:"ERP SAP",v:67,c:C.amber }]
-              .map((r,i)=>(
-                <div key={i} style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", fontSize:12 }}>
-                    <span style={{ color:C.t2 }}>{r.n}</span><span style={{ color:r.c, fontWeight:700 }}>{r.v}%</span>
-                  </div>
-                  <ProgressBar val={Math.min(100,Math.round(r.v/3.2))} color={r.c} C={C}/>
-                </div>
-              ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+        <div style={{ ...card(C), padding: "22px 24px" }}>
+          <div style={{ fontSize: 16, fontWeight: 900, color: C.t1, marginBottom: 4 }}>
+            Performance das POCs
+          </div>
+          <div style={{ fontSize: 12, color: C.t3, marginBottom: 18 }}>
+            Indicadores consolidados das validações
+          </div>
+
+          {[
+            ["Entrega", pocEntrega, C.emerald],
+            ["Leitura", pocLeitura, C.blue],
+            ["Conversão", pocConversao, C.rose],
+          ].map(([label, value, color]) => (
+            <div key={label} style={{ marginBottom: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                <span style={{ fontSize: 13, color: C.t2, fontWeight: 800 }}>{label}</span>
+                <span style={{ fontSize: 12, color, fontWeight: 900 }}>{pct(value)}</span>
+              </div>
+              <ProgressBar val={Math.min(100, value)} color={color} C={C} />
+            </div>
+          ))}
+
+          <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            <div style={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 12, padding: 10 }}>
+              <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase" }}>Mensagens</div>
+              <div style={{ fontSize: 16, color: C.t1, fontWeight: 900 }}>{pocTotals.totalMensagens}</div>
+            </div>
+            <div style={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 12, padding: 10 }}>
+              <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase" }}>Retornos</div>
+              <div style={{ fontSize: 16, color: C.amber, fontWeight: 900 }}>{pocTotals.retorno}</div>
+            </div>
+            <div style={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 12, padding: 10 }}>
+              <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase" }}>Acordos</div>
+              <div style={{ fontSize: 16, color: C.rose, fontWeight: 900 }}>{pocTotals.acordos}</div>
+            </div>
           </div>
         </div>
-        <div style={{ ...card(C), padding:"22px 24px" }}>
-          <div style={{ fontSize:14, fontWeight:600, color:C.t1, marginBottom:16 }}>Maturidade Digital</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-            {[{ d:"Infraestrutura Cloud",n:88 },{ d:"Automação de Processos",n:62 },{ d:"Analytics & BI",n:91 },{ d:"Segurança",n:74 },{ d:"Exp. do Colaborador",n:55 },{ d:"Governança de Dados",n:69 }]
-              .map((d,i)=>(
-                <div key={i} style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", fontSize:12 }}>
-                    <span style={{ color:C.t2 }}>{d.d}</span>
-                    <span style={{ color:d.n>=80?C.emerald:d.n>=65?C.amber:C.rose, fontWeight:700 }}>{d.n}%</span>
-                  </div>
-                  <ProgressBar val={d.n} color={d.n>=80?C.emerald:d.n>=65?C.amber:C.rose} C={C}/>
-                </div>
-              ))}
+
+        <div style={{ ...card(C), padding: "22px 24px" }}>
+          <div style={{ fontSize: 16, fontWeight: 900, color: C.t1, marginBottom: 4 }}>
+            Fornecedores
           </div>
+          <div style={{ fontSize: 12, color: C.t3, marginBottom: 18 }}>
+            Performance e risco operacional
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+              <span style={{ fontSize: 13, color: C.t2, fontWeight: 800 }}>Score médio</span>
+              <span style={{ fontSize: 12, color: scoreMedioFornecedores >= 80 ? C.emerald : scoreMedioFornecedores >= 60 ? C.amber : C.rose, fontWeight: 900 }}>
+                {scoreMedioFornecedores}%
+              </span>
+            </div>
+            <ProgressBar val={scoreMedioFornecedores} color={scoreMedioFornecedores >= 80 ? C.emerald : scoreMedioFornecedores >= 60 ? C.amber : C.rose} C={C} />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+            <div style={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12 }}>
+              <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase" }}>Ativos</div>
+              <div style={{ fontSize: 22, color: C.emerald, fontWeight: 950 }}>{fornecedoresAtivos}</div>
+            </div>
+            <div style={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12 }}>
+              <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase" }}>Alto risco</div>
+              <div style={{ fontSize: 22, color: fornecedoresRiscoAlto > 0 ? C.rose : C.emerald, fontWeight: 950 }}>{fornecedoresRiscoAlto}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ ...card(C), padding: "22px 24px" }}>
+          <div style={{ fontSize: 16, fontWeight: 900, color: C.t1, marginBottom: 4 }}>
+            Ranking de Fornecedores
+          </div>
+          <div style={{ fontSize: 12, color: C.t3, marginBottom: 16 }}>
+            Top performance cadastrada
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {rankingFornecedores.length === 0 && (
+              <div style={{ fontSize: 13, color: C.t3 }}>
+                Nenhum fornecedor cadastrado.
+              </div>
+            )}
+
+            {rankingFornecedores.map((item, index) => {
+              const score = toNum(item.performance_score);
+              const color = score >= 80 ? C.emerald : score >= 60 ? C.amber : C.rose;
+
+              return (
+                <div key={item.id || item.nome} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div
+                    style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: 999,
+                      display: "grid",
+                      placeItems: "center",
+                      background: C.bg3,
+                      border: `1px solid ${C.border}`,
+                      color: C.t2,
+                      fontSize: 11,
+                      fontWeight: 900,
+                    }}
+                  >
+                    {index + 1}
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: C.t1, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {item.nome || "-"}
+                    </div>
+                    <ProgressBar val={score} color={color} C={C} />
+                  </div>
+
+                  <strong style={{ fontSize: 12, color }}>{score}%</strong>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ ...card(C), padding: "20px 24px" }}>
+        <div style={{ fontSize: 16, fontWeight: 900, color: C.t1, marginBottom: 4 }}>
+          Leitura Executiva
+        </div>
+        <div style={{ fontSize: 13, color: C.t2, lineHeight: 1.6 }}>
+          A plataforma consolida o acompanhamento de projetos, POCs e fornecedores em uma única visão executiva.
+          O objetivo desta tela é apoiar a liderança na identificação rápida de evolução, riscos, gargalos e pontos
+          de atenção que precisam de decisão ou acompanhamento.
         </div>
       </div>
     </div>
   );
 }
+
 
 // ─── POC VIEW ─────────────────────────────────────────────────────────────────
 function PocView({ C }) {
