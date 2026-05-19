@@ -132,6 +132,7 @@ function cloneData(data) {
 export default function PocRegister({ C, registroInicial = null, onSaved = null, onClose = null } = {}) {
   const [tab, setTab] = useState("overview");
   const [saving, setSaving] = useState(false);
+  const [lastEditedAt, setLastEditedAt] = useState(null);
   const [data, setData] = useState(() => {
     const saved = registroInicial?.record_data || registroInicial?.dados_do_registro || null;
     return saved || emptyPoc;
@@ -174,6 +175,7 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
   };
 
   function update(path, value) {
+    setLastEditedAt(new Date());
     setData((prev) => {
       const next = cloneData(prev);
       const keys = path.split(".");
@@ -296,7 +298,7 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
       <div style={{ fontSize: 11, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em" }}>
         {label}
       </div>
-      <div style={{ fontSize: 26, fontWeight: 900, color, marginTop: 7 }}>{value}</div>
+      <div style={{ fontSize: 38, fontWeight: 950, color, marginTop: 7 }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: C.t2, marginTop: 4 }}>{sub}</div>}
     </div>
   );
@@ -409,61 +411,463 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
       </div>
 
       {tab === "overview" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 14 }}>
-            <MetricCard label="Total disparado" value={metrics.disparado} sub="Base disparada" color={C.violet} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <style>{`
+            @keyframes pocPulseAlert {
+              0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.28); }
+              70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+              100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+            }
+          `}</style>
+
+          {lastEditedAt && (
+            <div
+              style={{
+                alignSelf: "flex-end",
+                marginTop: -4,
+                fontSize: 12,
+                color: C.emerald,
+                fontWeight: 800,
+                background: C.emeraldGlow,
+                border: `1px solid ${C.emerald}33`,
+                borderRadius: 999,
+                padding: "6px 11px",
+              }}
+            >
+              Alteração aplicada na tela ✓
+            </div>
+          )}
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+            <MetricCard label="Total mensagens" value={metrics.totalMensagens} sub="Base consolidada" color={C.violet} />
             <MetricCard label="Entregues" value={metrics.entregue} sub={pct(metrics.taxaEntrega)} color={C.emerald} />
             <MetricCard label="Lidos" value={metrics.lido} sub={pct(metrics.taxaLeituraDisparados)} color={C.blue} />
             <MetricCard label="Retorno" value={metrics.retornoCliente} sub={pct(metrics.taxaRetornoLidos)} color={C.amber} />
             <MetricCard label="Acordos" value={metrics.acordos} sub={pct(metrics.taxaConversaoFinal)} color={C.rose} />
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 16 }}>
-            <Section title="Resumo Executivo" sub="Leitura rápida para liderança">
-              <textarea
-                placeholder="Escreva aqui a análise executiva da POC: desempenho geral, pontos de atenção, qualidade do fornecedor e recomendação preliminar."
-                defaultValue={data.evaluation.executiveSummary}
-                onBlur={(e) => update("evaluation.executiveSummary", e.target.value)}
-                style={{ ...field, minHeight: 150, resize: "vertical", lineHeight: 1.6 }}
-              />
+          <div
+            style={{
+              height: 4,
+              borderRadius: 999,
+              background: `linear-gradient(90deg, ${C.blue}, ${C.violet}, ${C.emerald})`,
+              opacity: 0.22,
+              margin: "2px 0 4px",
+            }}
+          />
+
+          <div style={{ display: "grid", gridTemplateColumns: "1.25fr 0.75fr", gap: 12 }}>
+            <Section title="Resumo da POC" sub="Leitura executiva do teste com fornecedor/produto">
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+                <button
+                  onClick={() => setTab("general")}
+                  style={{
+                    border: `1px solid ${C.border}`,
+                    background: C.surface,
+                    color: C.blue,
+                    borderRadius: 999,
+                    padding: "6px 11px",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    fontWeight: 800,
+                  }}
+                >
+                  Editar cadastro
+                </button>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                {[
+                  ["Fornecedor", data.general.supplier || "-"],
+                  ["Carteira / Cliente", data.general.wallet || "-"],
+                  ["Produto testado", data.general.product || "-"],
+                  ["Responsável", data.general.responsible || "-"],
+                  ["Período", `${brDate(data.general.periodStart)} a ${brDate(data.general.periodEnd)}`],
+                  ["Meta diária", `${data.general.dailyGoal || "-"} disparos/dia`],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    style={{
+                      background: C.bg3,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 12,
+                      padding: "12px 14px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: C.t3,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                        marginBottom: 5,
+                      }}
+                    >
+                      {label}
+                    </div>
+                    <div style={{ fontSize: 13, color: C.t1, fontWeight: 800 }}>
+                      {value}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </Section>
 
-            <Section title="Indicadores principais" sub="Calculados a partir do relatório analítico">
-              {[
-                ["Taxa de entrega geral", metrics.taxaEntrega, C.emerald],
-                ["Leitura s/ entregues", metrics.taxaLeituraEntregues, C.blue],
-                ["Leitura s/ disparados", metrics.taxaLeituraDisparados, C.violet],
-                ["Retorno s/ lidos", metrics.taxaRetornoLidos, C.amber],
-                ["Conversão final", metrics.taxaConversaoFinal, C.rose],
-              ].map(([label, value, color]) => (
-                <div key={label} style={{ marginBottom: 13 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 5 }}>
-                    <span style={{ color: C.t2 }}>{label}</span>
-                    <strong style={{ color }}>{pct(value)}</strong>
+            <Section title="Status Executivo" sub="Decisão atual da POC para acompanhamento da liderança">
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+                      Status operacional
+                    </div>
+                    <select
+                      value={data.general.status}
+                      onChange={(e) => update("general.status", e.target.value)}
+                      style={field}
+                    >
+                      <option>Em Planejamento</option>
+                      <option>Em Execução</option>
+                      <option>Em Monitoramento</option>
+                      <option>Encerrada</option>
+                    </select>
                   </div>
-                  <SimpleBar value={value} color={color} />
+
+                  <div>
+                    <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+                      Recomendação
+                    </div>
+                    <select
+                      value={data.evaluation.recommendation}
+                      onChange={(e) => update("evaluation.recommendation", e.target.value)}
+                      style={field}
+                    >
+                      <option>Em avaliação</option>
+                      <option>Aprovado</option>
+                      <option>Reprovado</option>
+                      <option>Aprovado com condições</option>
+                    </select>
+                  </div>
                 </div>
-              ))}
+
+                {(() => {
+                  const rec = data.evaluation.recommendation || "Em avaliação";
+                  const status = data.general.status || "Em Planejamento";
+
+                  const color =
+                    rec === "Aprovado"
+                      ? C.emerald
+                      : rec === "Reprovado"
+                      ? C.rose
+                      : rec === "Aprovado com condições"
+                      ? C.amber
+                      : C.blue;
+
+                  const bg =
+                    rec === "Aprovado"
+                      ? C.emeraldGlow
+                      : rec === "Reprovado"
+                      ? C.roseGlow
+                      : rec === "Aprovado com condições"
+                      ? C.amberGlow
+                      : C.blueGlow;
+
+                  const texto =
+                    rec === "Aprovado"
+                      ? "POC com resultado favorável para evolução."
+                      : rec === "Reprovado"
+                      ? "POC não recomendada para continuidade no momento."
+                      : rec === "Aprovado com condições"
+                      ? "POC favorável, mas depende de ajustes antes da contratação."
+                      : "POC ainda em avaliação. Acompanhar indicadores, incidentes e critérios de sucesso.";
+
+                  return (
+                    <div
+                      style={{
+                        background: bg,
+                        border: `1px solid ${color}44`,
+                        borderRadius: 16,
+                        padding: "16px 18px",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                        <div>
+                          <div style={{ fontSize: 11, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>
+                            Decisão atual
+                          </div>
+                          <div style={{ fontSize: 22, fontWeight: 900, color }}>
+                            {rec}
+                          </div>
+                        </div>
+
+                        <div
+                          style={{
+                            padding: "7px 11px",
+                            borderRadius: 999,
+                            background: C.bg1,
+                            border: `1px solid ${C.border}`,
+                            color: C.t2,
+                            fontSize: 12,
+                            fontWeight: 800,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {status}
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: 12, fontSize: 13, color: C.t2, lineHeight: 1.5 }}>
+                        {texto}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {(() => {
+                  const steps = ["Em Planejamento", "Em Execução", "Em Monitoramento", "Encerrada"];
+                  const currentIndex = Math.max(0, steps.indexOf(data.general.status || "Em Planejamento"));
+
+                  return (
+                    <div style={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 14px" }}>
+                      <div style={{ fontSize: 11, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 11 }}>
+                        Etapa da POC
+                      </div>
+
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                        {steps.map((step, index) => {
+                          const active = index <= currentIndex;
+                          return (
+                            <div key={step} style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                              <div
+                                style={{
+                                  height: 7,
+                                  borderRadius: 999,
+                                  background: active ? C.blue : C.border,
+                                }}
+                              />
+                              <span style={{ fontSize: 10, color: active ? C.blue : C.t3, fontWeight: active ? 900 : 600 }}>
+                                {step.replace("Em ", "")}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
             </Section>
           </div>
 
-          <Section title="Funil Visual" sub="Representação resumida do desempenho da POC">
-            {[
-              ["Disparados", metrics.disparado, 100, C.violet],
-              ["Entregues", metrics.entregue, metrics.disparado ? (metrics.entregue / metrics.disparado) * 100 : 0, C.blue],
-              ["Lidos", metrics.lido, metrics.disparado ? (metrics.lido / metrics.disparado) * 100 : 0, C.cyan],
-              ["Cliques", metrics.cliques, metrics.disparado ? (metrics.cliques / metrics.disparado) * 100 : 0, C.emerald],
-              ["Retorno cliente", metrics.retornoCliente, metrics.disparado ? (metrics.retornoCliente / metrics.disparado) * 100 : 0, C.amber],
-              ["Acordos", metrics.acordos, metrics.disparado ? (metrics.acordos / metrics.disparado) * 100 : 0, C.rose],
-            ].map(([label, value, percent, color]) => (
-              <div key={label} style={{ display: "grid", gridTemplateColumns: "160px 90px 1fr 70px", gap: 12, alignItems: "center", marginBottom: 10 }}>
-                <div style={{ fontSize: 13, color: C.t2, fontWeight: 700 }}>{label}</div>
-                <div style={{ fontSize: 13, color: C.t1, fontWeight: 900 }}>{value}</div>
-                <SimpleBar value={percent} color={color} />
-                <div style={{ fontSize: 12, color, fontWeight: 800 }}>{pct(percent)}</div>
+          <Section title="Funil Drop-off Executivo" sub="Retenção e perda entre as etapas da jornada da POC">
+            {metrics.cliques > metrics.lido && (
+              <div
+                title="Cliques maior que lidos pode ocorrer quando o fornecedor contabiliza múltiplos cliques por cliente, cliques técnicos, redirecionamentos ou eventos duplicados."
+                style={{
+                  marginBottom: 14,
+                  background: C.amberGlow,
+                  border: `1px solid ${C.amber}44`,
+                  color: C.t1,
+                  borderRadius: 12,
+                  padding: "11px 13px",
+                  fontSize: 12,
+                  lineHeight: 1.5,
+                }}
+              >
+                <strong style={{ color: C.amber }}>Ponto de atenção:</strong>{" "}
+                Cliques acima de Lidos. Validar a regra de contagem do fornecedor antes da apresentação executiva.
               </div>
-            ))}
+            )}
+
+            {(() => {
+              const etapas = [
+                { nome: "Total mensagens", volume: metrics.totalMensagens, base: metrics.totalMensagens, anterior: null, cor: C.violet },
+                { nome: "Entregues", volume: metrics.entregue, base: metrics.totalMensagens, anterior: metrics.totalMensagens, cor: C.emerald },
+                { nome: "Lidos", volume: metrics.lido, base: metrics.totalMensagens, anterior: metrics.entregue, cor: C.blue },
+                { nome: "Cliques", volume: metrics.cliques, base: metrics.totalMensagens, anterior: metrics.lido, cor: C.cyan },
+                { nome: "Retorno cliente", volume: metrics.retornoCliente, base: metrics.totalMensagens, anterior: metrics.cliques, cor: C.amber },
+                { nome: "Acordos", volume: metrics.acordos, base: metrics.totalMensagens, anterior: metrics.retornoCliente, cor: C.rose },
+              ];
+
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {etapas.map((etapa, index) => {
+                    const percentualBase = etapa.base ? (etapa.volume / etapa.base) * 100 : 0;
+                    const retencaoAnterior =
+                      etapa.anterior === null
+                        ? 100
+                        : etapa.anterior > 0
+                        ? (etapa.volume / etapa.anterior) * 100
+                        : 0;
+
+                    const perdaAnterior =
+                      etapa.anterior === null
+                        ? 0
+                        : Math.max(0, 100 - retencaoAnterior);
+
+                    const largura = Math.max(0.5, Math.min(100, percentualBase));
+                    const alertaVolumeMaior = etapa.anterior !== null && etapa.volume > etapa.anterior;
+
+                    return (
+                      <div
+                        key={etapa.nome}
+                        style={{
+                          background: C.bg3,
+                          border: `1px solid ${alertaVolumeMaior ? C.amber + "66" : C.border}`,
+                          borderRadius: 14,
+                          padding: "13px 14px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "180px 95px 130px 130px 1fr",
+                            gap: 12,
+                            alignItems: "center",
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontSize: 13, color: C.t1, fontWeight: 900 }}>
+                              {etapa.nome}
+                            </div>
+                            {alertaVolumeMaior && (
+                              <div style={{ marginTop: 3, fontSize: 10, color: C.amber, fontWeight: 800 }}>
+                                Validar contagem
+                              </div>
+                            )}
+                          </div>
+
+                          <div>
+                            <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                              Volume
+                            </div>
+                            <div style={{ fontSize: 18, color: etapa.cor, fontWeight: 950 }}>
+                              {etapa.volume}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                              Retenção
+                            </div>
+                            <div style={{ fontSize: 14, color: alertaVolumeMaior ? C.amber : C.t1, fontWeight: 900 }}>
+                              {index === 0 ? "100,0%" : pct(retencaoAnterior)}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                              Drop-off
+                            </div>
+                            <div style={{ fontSize: 14, color: perdaAnterior > 40 ? C.rose : perdaAnterior > 20 ? C.amber : C.emerald, fontWeight: 900 }}>
+                              {index === 0 ? "—" : pct(perdaAnterior)}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div
+                              style={{
+                                height: 16,
+                                background: C.bg1,
+                                border: `1px solid ${C.border}`,
+                                borderRadius: 999,
+                                overflow: "hidden",
+                                position: "relative",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: `${largura}%`,
+                                  height: "100%",
+                                  background: etapa.cor,
+                                  borderRadius: 999,
+                                }}
+                              />
+                            </div>
+
+                            <div style={{ marginTop: 5, display: "flex", justifyContent: "space-between", fontSize: 10, color: C.t3 }}>
+                              <span>% sobre base</span>
+                              <strong style={{ color: etapa.cor }}>{pct(percentualBase)}</strong>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </Section>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 12 }}>
+            <Section title="Resumo Executivo" sub="Análise rápida para liderança">
+              <textarea
+                placeholder="Escreva aqui a análise executiva da POC: desempenho geral, principais pontos de atenção, qualidade do fornecedor, comportamento técnico, riscos e recomendação preliminar."
+                defaultValue={data.evaluation.executiveSummary}
+                onBlur={(e) => update("evaluation.executiveSummary", e.target.value)}
+                style={{ ...field, minHeight: 120, resize: "vertical", lineHeight: 1.6 }}
+              />
+            </Section>
+
+            <Section title="Alertas executivos" sub="Pontos de atenção automáticos">
+              {(() => {
+                const incidentes = data.incidents.rows || [];
+                const blockers = data.execution.blockers || [];
+                const criticos = incidentes.filter((i) => i.severity === "Crítica").length;
+                const altas = incidentes.filter((i) => i.severity === "Alta").length;
+                const pendentes = incidentes.filter((i) => i.status !== "Resolvido" && i.incident).length;
+                const bloqueiosAbertos = blockers.filter((b) => b.status !== "Resolvido" && b.blocker).length;
+
+                const alertas = [
+                  { label: "Incidentes críticos", value: criticos, severity: "critical" },
+                  { label: "Incidentes alta severidade", value: altas, severity: "high" },
+                  { label: "Pendências técnicas", value: pendentes, severity: "medium" },
+                  { label: "Bloqueios em aberto", value: bloqueiosAbertos, severity: "critical" },
+                ];
+
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {alertas.map((a) => {
+                      const hasProblem = a.value > 0;
+                      const color = !hasProblem
+                        ? C.t3
+                        : a.severity === "critical"
+                        ? C.rose
+                        : a.severity === "high"
+                        ? C.amber
+                        : C.blue;
+
+                      const bg = !hasProblem
+                        ? C.bg3
+                        : a.severity === "critical"
+                        ? C.roseGlow || "rgba(239,68,68,0.10)"
+                        : a.severity === "high"
+                        ? C.amberGlow
+                        : C.blueGlow;
+
+                      return (
+                        <div
+                          key={a.label}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            background: bg,
+                            border: `1px solid ${hasProblem ? color + "55" : C.border}`,
+                            borderRadius: 12,
+                            padding: "11px 13px",
+                            animation: hasProblem ? "pocPulseAlert 1.8s infinite" : "none",
+                          }}
+                        >
+                          <span style={{ fontSize: 13, color: C.t2 }}>{a.label}</span>
+                          <strong style={{ color, fontSize: 18 }}>{a.value}</strong>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </Section>
+          </div>
         </div>
       )}
 
