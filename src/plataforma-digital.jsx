@@ -3029,7 +3029,7 @@ function Sidebar({ active, setActive, C }) {
             <div style={{ fontSize:12, fontWeight:700, color:C.t1 }}>Equipe Projetos</div>
             <div style={{ fontSize:10, color:C.t3 }}>Administrador</div>
           </div>
-          <Settings size={13} color={C.t3} style={{ cursor:"pointer" }}/>
+
         </div>
       </div>
     </div>
@@ -3038,64 +3038,231 @@ function Sidebar({ active, setActive, C }) {
 
 // ─── TOPBAR ───────────────────────────────────────────────────────────────────
 function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
-  const now = new Date().toLocaleDateString("pt-BR",{ day:"2-digit", month:"long", year:"numeric" });
+  const now = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const iconButton = {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    border: `1px solid ${C.border}`,
+    background: C.surface,
+    color: C.t2,
+    display: "grid",
+    placeItems: "center",
+    cursor: "pointer",
+  };
+
+  const popoverStyle = {
+    position: "absolute",
+    top: 42,
+    right: 0,
+    width: 320,
+    background: C.bg1,
+    border: `1px solid ${C.border}`,
+    borderRadius: 16,
+    boxShadow: "0 18px 45px rgba(15,23,42,0.22)",
+    padding: 14,
+    zIndex: 99,
+  };
+
+  function closeAll() {
+    setShowNotifications(false);
+    setShowSettings(false);
+  }
+
   return (
     <div style={{
-      height:54, display:"flex", alignItems:"center", justifyContent:"space-between",
-      padding:"0 26px", borderBottom:`1px solid ${C.border}`,
-      background:C.bg1, position:"sticky", top:0, zIndex:20,
-      transition:"background 0.3s, border-color 0.3s",
+      height: 54,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "0 26px",
+      borderBottom: `1px solid ${C.border}`,
+      background: C.bg1,
+      position: "sticky",
+      top: 0,
+      zIndex: 20,
+      transition: "background 0.3s, border-color 0.3s",
     }}>
-      <div style={{ display:"flex", alignItems:"center", gap:7, fontSize:13, color:C.t3 }}>
-        <span style={{ fontWeight:600 }}>Bellinati Perez</span>
-        <ChevronRight size={13}/>
-        <span style={{ color:C.t1, fontWeight:500 }}>{navItems.find(n=>n.id===page)?.label||"Control Tower"}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, color: C.t3 }}>
+        <span style={{ fontWeight: 600 }}>Bellinati Perez</span>
+        <ChevronRight size={13} />
+        <span style={{ color: C.t1, fontWeight: 500 }}>
+          {navItems.find(n => n.id === page)?.label || "Control Tower"}
+        </span>
       </div>
-      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-        <span style={{ fontSize:11, color:C.t3 }}>{now}</span>
-        <div style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 12px", borderRadius:8, background:C.surface, border:`1px solid ${C.border}`, cursor:"text" }}>
-          <Search size={12} color={C.t3}/>
-          <span style={{ fontSize:12, color:C.t3 }}>Buscar...</span>
-          <span style={{ fontSize:9, color:C.t4, padding:"1px 5px", borderRadius:4, background:C.bg3, marginLeft:18 }}>⌘K</span>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontSize: 11, color: C.t3 }}>{now}</span>
+
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => {
+              setShowNotifications((prev) => !prev);
+              setShowSettings(false);
+            }}
+            style={iconButton}
+            title="Notificações"
+          >
+            <Bell size={16} />
+            <span style={{
+              position: "absolute",
+              top: 7,
+              right: 7,
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: C.rose,
+              border: `2px solid ${C.bg1}`,
+            }} />
+          </button>
+
+          {showNotifications && (
+            <div style={popoverStyle}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 950, color: C.t1 }}>Notificações</div>
+                  <div style={{ fontSize: 11, color: C.t3, marginTop: 2 }}>Acompanhamento da plataforma</div>
+                </div>
+
+                <button
+                  onClick={closeAll}
+                  style={{ border: "none", background: "transparent", color: C.t3, cursor: "pointer", fontSize: 18, lineHeight: 1 }}
+                >
+                  ×
+                </button>
+              </div>
+
+              {[
+                { title: "Login demonstrativo ativo", desc: "Ambiente configurado para apresentação do MVP.", color: C.blue },
+                { title: "Control Tower disponível", desc: "Indicadores consolidados carregados na tela inicial.", color: C.emerald },
+                { title: "Pontos de atenção", desc: "Alertas operacionais podem ser acompanhados pela liderança.", color: C.amber },
+              ].map((item) => (
+                <div key={item.title} style={{ display: "flex", gap: 10, padding: "10px 0", borderTop: `1px solid ${C.border}` }}>
+                  <span style={{
+                    width: 9,
+                    height: 9,
+                    borderRadius: "50%",
+                    background: item.color,
+                    marginTop: 5,
+                    flexShrink: 0,
+                    boxShadow: `0 0 8px ${item.color}`,
+                  }} />
+                  <div>
+                    <div style={{ fontSize: 12, color: C.t1, fontWeight: 900 }}>{item.title}</div>
+                    <div style={{ fontSize: 11, color: C.t3, marginTop: 3, lineHeight: 1.45 }}>{item.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        {/* THEME TOGGLE */}
-        <button onClick={toggleTheme} style={{
-          display:"flex", alignItems:"center", gap:6, padding:"6px 12px", borderRadius:20,
-          border:`1px solid ${C.border}`, background:C.surface, cursor:"pointer",
-          color:C.t2, fontSize:12, transition:"all 0.2s",
-        }}
-          onMouseEnter={e=>{ e.currentTarget.style.borderColor=C.borderHov; e.currentTarget.style.color=C.t1; }}
-          onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.t2; }}
-        >
-          {dark ? <Sun size={14} color={C.amber}/> : <Moon size={14} color={C.blue}/>}
-          <span style={{ fontWeight:500 }}>{dark?"Light":"Dark"}</span>
-        </button>
-        <div style={{ position:"relative" }}>
-          <Bell size={17} color={C.t2} style={{ cursor:"pointer" }}/>
-          <span style={{ position:"absolute", top:-3, right:-3, width:7, height:7, borderRadius:"50%", background:C.rose, border:`2px solid ${C.bg1}` }}/>
+
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => {
+              setShowSettings((prev) => !prev);
+              setShowNotifications(false);
+            }}
+            style={iconButton}
+            title="Configurações"
+          >
+            <Settings size={16} />
+          </button>
+
+          {showSettings && (
+            <div style={popoverStyle}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 950, color: C.t1 }}>Configurações</div>
+                  <div style={{ fontSize: 11, color: C.t3, marginTop: 2 }}>Preferências da plataforma</div>
+                </div>
+
+                <button
+                  onClick={closeAll}
+                  style={{ border: "none", background: "transparent", color: C.t3, cursor: "pointer", fontSize: 18, lineHeight: 1 }}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                <button
+                  onClick={toggleTheme}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "100%",
+                    border: `1px solid ${C.border}`,
+                    background: C.surface,
+                    color: C.t2,
+                    borderRadius: 12,
+                    padding: "10px 12px",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    fontWeight: 800,
+                  }}
+                >
+                  <span>Modo de exibição</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 6, color: dark ? C.amber : C.blue }}>
+                    {dark ? <Sun size={14} /> : <Moon size={14} />}
+                    {dark ? "Dark" : "Light"}
+                  </span>
+                </button>
+
+                <div style={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 12px" }}>
+                  <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 900 }}>
+                    Ambiente
+                  </div>
+                  <div style={{ fontSize: 12, color: C.t1, fontWeight: 900, marginTop: 4 }}>
+                    MVP Demonstrativo
+                  </div>
+                  <div style={{ fontSize: 11, color: C.t3, marginTop: 4, lineHeight: 1.45 }}>
+                    Login e permissões definitivas serão integrados após aprovação da Infra e Segurança da Informação.
+                  </div>
+                </div>
+
+                <div style={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 12px" }}>
+                  <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 900 }}>
+                    Usuário atual
+                  </div>
+                  <div style={{ fontSize: 12, color: C.t1, fontWeight: 900, marginTop: 4 }}>
+                    Teste Digital
+                  </div>
+                  <div style={{ fontSize: 11, color: C.t3, marginTop: 4 }}>
+                    {userEmail || "teste@digital.com.br"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-        <div style={{ display:"flex", alignItems:"center", gap:8, padding:"4px 8px 4px 4px", borderRadius:999, background:C.surface, border:`1px solid ${C.border}` }}>
-          <div style={{ width:30, height:30, borderRadius:"50%", background:`linear-gradient(135deg,${C.blue},${C.violet})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:"#fff" }}>TD</div>
-          <div style={{ lineHeight:1.1 }}>
-            <div style={{ fontSize:11, fontWeight:800, color:C.t1 }}>Teste Digital</div>
-            <div style={{ fontSize:9, color:C.t3 }}>{userEmail || "teste@digital.com.br"}</div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px 4px 4px", borderRadius: 999, background: C.surface, border: `1px solid ${C.border}` }}>
+          <div style={{ width: 30, height: 30, borderRadius: "50%", background: `linear-gradient(135deg,${C.blue},${C.violet})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "#fff" }}>
+            TD
+          </div>
+          <div style={{ lineHeight: 1.1 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: C.t1 }}>Teste Digital</div>
+            <div style={{ fontSize: 9, color: C.t3 }}>{userEmail || "teste@digital.com.br"}</div>
           </div>
         </div>
 
         <button
           onClick={onLogout}
           style={{
-            padding:"6px 11px",
-            borderRadius:10,
-            border:`1px solid ${C.border}`,
-            background:C.surface,
-            color:C.t2,
-            cursor:"pointer",
-            fontSize:12,
-            fontWeight:700,
+            padding: "6px 11px",
+            borderRadius: 10,
+            border: `1px solid ${C.border}`,
+            background: C.surface,
+            color: C.t2,
+            cursor: "pointer",
+            fontSize: 12,
+            fontWeight: 700,
           }}
-          onMouseEnter={e=>{ e.currentTarget.style.borderColor=C.rose; e.currentTarget.style.color=C.rose; }}
-          onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.t2; }}
         >
           Sair
         </button>
@@ -3103,7 +3270,6 @@ function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
     </div>
   );
 }
-
 
 // ─── LOGIN DEMO ───────────────────────────────────────────────────────────────
 function LoginScreen({ C, dark, toggleTheme, onLogin }) {
