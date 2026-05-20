@@ -3037,7 +3037,7 @@ function Sidebar({ active, setActive, C }) {
 }
 
 // ─── TOPBAR ───────────────────────────────────────────────────────────────────
-function Topbar({ page, C, dark, toggleTheme }) {
+function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
   const now = new Date().toLocaleDateString("pt-BR",{ day:"2-digit", month:"long", year:"numeric" });
   return (
     <div style={{
@@ -3074,11 +3074,259 @@ function Topbar({ page, C, dark, toggleTheme }) {
           <Bell size={17} color={C.t2} style={{ cursor:"pointer" }}/>
           <span style={{ position:"absolute", top:-3, right:-3, width:7, height:7, borderRadius:"50%", background:C.rose, border:`2px solid ${C.bg1}` }}/>
         </div>
-        <div style={{ width:30, height:30, borderRadius:"50%", background:`linear-gradient(135deg,${C.blue},${C.violet})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:"#fff", cursor:"pointer" }}>EP</div>
+        <div style={{ display:"flex", alignItems:"center", gap:8, padding:"4px 8px 4px 4px", borderRadius:999, background:C.surface, border:`1px solid ${C.border}` }}>
+          <div style={{ width:30, height:30, borderRadius:"50%", background:`linear-gradient(135deg,${C.blue},${C.violet})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:"#fff" }}>TD</div>
+          <div style={{ lineHeight:1.1 }}>
+            <div style={{ fontSize:11, fontWeight:800, color:C.t1 }}>Teste Digital</div>
+            <div style={{ fontSize:9, color:C.t3 }}>{userEmail || "teste@digital.com.br"}</div>
+          </div>
+        </div>
+
+        <button
+          onClick={onLogout}
+          style={{
+            padding:"6px 11px",
+            borderRadius:10,
+            border:`1px solid ${C.border}`,
+            background:C.surface,
+            color:C.t2,
+            cursor:"pointer",
+            fontSize:12,
+            fontWeight:700,
+          }}
+          onMouseEnter={e=>{ e.currentTarget.style.borderColor=C.rose; e.currentTarget.style.color=C.rose; }}
+          onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.t2; }}
+        >
+          Sair
+        </button>
       </div>
     </div>
   );
 }
+
+
+// ─── LOGIN DEMO ───────────────────────────────────────────────────────────────
+function LoginScreen({ C, dark, toggleTheme, onLogin }) {
+  const [email, setEmail] = useState("teste@digital.com.br");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const DEMO_EMAIL = "teste@digital.com.br";
+  const DEMO_PASSWORD = "Teste@2026";
+
+  const field = {
+    width: "100%",
+    minHeight: 46,
+    borderRadius: 14,
+    border: `1px solid ${C.border}`,
+    background: C.surface,
+    color: C.t1,
+    padding: "12px 14px",
+    fontSize: 14,
+    outline: "none",
+    boxSizing: "border-box",
+    fontFamily: "inherit",
+  };
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    setTimeout(() => {
+      if (email.trim().toLowerCase() === DEMO_EMAIL && password === DEMO_PASSWORD) {
+        onLogin(DEMO_EMAIL);
+      } else {
+        setError("E-mail ou senha inválidos. Use o login de teste informado.");
+      }
+
+      setLoading(false);
+    }, 450);
+  }
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: `radial-gradient(circle at top left, ${C.blueGlow}, transparent 34%), radial-gradient(circle at bottom right, ${C.violetGlow}, transparent 34%), ${C.bg0}`,
+        display: "grid",
+        placeItems: "center",
+        padding: 24,
+        fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif",
+        color: C.t1,
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 980,
+          display: "grid",
+          gridTemplateColumns: "1.05fr 0.95fr",
+          gap: 18,
+          alignItems: "stretch",
+        }}
+      >
+        <div
+          style={{
+            ...card(C),
+            padding: 34,
+            borderRadius: 26,
+            position: "relative",
+            overflow: "hidden",
+            background: `linear-gradient(135deg, ${C.card}, ${C.blueGlow})`,
+          }}
+        >
+          <div style={{ position: "absolute", top: -80, right: -80, width: 240, height: 240, borderRadius: "50%", background: C.violetGlow, filter: "blur(18px)" }} />
+
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 34 }}>
+              <div style={{ width: 46, height: 46, borderRadius: 14, background: `linear-gradient(135deg,${C.blue},${C.violet})`, display: "grid", placeItems: "center" }}>
+                <Zap size={22} color="#fff" />
+              </div>
+
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 950, color: C.t1 }}>
+                  Bellinati Perez
+                </div>
+                <div style={{ fontSize: 11, color: C.t3, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>
+                  Transformação Digital
+                </div>
+              </div>
+            </div>
+
+            <div style={{ fontSize: 34, lineHeight: 1.12, letterSpacing: "-0.04em", fontWeight: 950, color: C.t1, maxWidth: 520 }}>
+              Plataforma de Projetos - Transformação Digital BP
+            </div>
+
+            <div style={{ fontSize: 14, color: C.t2, lineHeight: 1.7, marginTop: 16, maxWidth: 560 }}>
+              Central de acompanhamento para projetos, Scrum, POCs, fornecedores, riscos, indicadores e decisões executivas.
+            </div>
+
+            <div style={{ marginTop: 28, display: "flex", alignItems: "center", gap: 8, color: C.emerald, fontSize: 12, fontWeight: 800 }}>
+              <Shield size={15} />
+              Acesso demonstrativo para validação do MVP
+            </div>
+          </div>
+        </div>
+
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            ...card(C),
+            padding: 30,
+            borderRadius: 26,
+            background: C.card,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            minHeight: 470,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 24 }}>
+            <div>
+              <div style={{ fontSize: 24, color: C.t1, fontWeight: 950 }}>
+                Acessar plataforma
+              </div>
+              <div style={{ fontSize: 13, color: C.t3, marginTop: 5 }}>
+                Entre com as credenciais de teste
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              style={{
+                border: `1px solid ${C.border}`,
+                background: C.surface,
+                color: C.t2,
+                borderRadius: 999,
+                padding: "8px 11px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 12,
+                fontWeight: 700,
+              }}
+            >
+              {dark ? <Sun size={14} color={C.amber} /> : <Moon size={14} color={C.blue} />}
+              {dark ? "Light" : "Dark"}
+            </button>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+            <div>
+              <div style={{ fontSize: 11, color: C.t3, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 900, marginBottom: 7 }}>
+                E-mail
+              </div>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={field}
+                placeholder="teste@digital.com.br"
+                autoComplete="username"
+              />
+            </div>
+
+            <div>
+              <div style={{ fontSize: 11, color: C.t3, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 900, marginBottom: 7 }}>
+                Senha
+              </div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={field}
+                placeholder="Digite a senha"
+                autoComplete="current-password"
+              />
+            </div>
+
+            {error && (
+              <div style={{ background: C.roseGlow, border: `1px solid ${C.rose}44`, color: C.rose, borderRadius: 12, padding: "10px 12px", fontSize: 12, fontWeight: 800 }}>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                marginTop: 8,
+                width: "100%",
+                minHeight: 48,
+                borderRadius: 14,
+                border: "none",
+                background: C.blue,
+                color: "#fff",
+                fontSize: 14,
+                fontWeight: 950,
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.75 : 1,
+                boxShadow: "0 14px 28px rgba(37,99,235,0.22)",
+              }}
+            >
+              {loading ? "Validando acesso..." : "Entrar"}
+            </button>
+          </div>
+
+          <div style={{ marginTop: 20, background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 14, padding: 13 }}>
+            <div style={{ fontSize: 11, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 900, marginBottom: 6 }}>
+              Credencial de teste
+            </div>
+            <div style={{ fontSize: 12, color: C.t2, lineHeight: 1.6 }}>
+              Login: <strong style={{ color: C.t1 }}>teste@digital.com.br</strong><br />
+              Senha: <strong style={{ color: C.t1 }}>Teste@2026</strong>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 
 // ─── APP ─────────────────────────────────────────────────────────────────────
 export default function App() {
@@ -3099,6 +3347,20 @@ export default function App() {
 }, []);
   const [dark, setDark] = useState(true);
   const [active, setActive] = useState("indicators");
+  const [auth, setAuth] = useState(() => {
+    try {
+      return window.localStorage.getItem("bp-demo-auth") === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [authEmail, setAuthEmail] = useState(() => {
+    try {
+      return window.localStorage.getItem("bp-demo-email") || "";
+    } catch {
+      return "";
+    }
+  });
   const C = getC(dark);
 
   useEffect(() => {
@@ -3116,15 +3378,44 @@ export default function App() {
     try { await window.storage.set("bp-theme", next ? "dark" : "light"); } catch {}
   }, [dark]);
 
+  function handleLogin(email) {
+    setAuth(true);
+    setAuthEmail(email);
+
+    try {
+      window.localStorage.setItem("bp-demo-auth", "true");
+      window.localStorage.setItem("bp-demo-email", email);
+    } catch {}
+  }
+
+  function handleLogout() {
+    setAuth(false);
+    setAuthEmail("");
+    setActive("indicators");
+
+    try {
+      window.localStorage.removeItem("bp-demo-auth");
+      window.localStorage.removeItem("bp-demo-email");
+    } catch {}
+  }
+
   const views = { indicators:IndicatorsView, projects:ProjectsView, scrum:ScrumView, poc:PocView, suppliers:SuppliersView };
   const View = views[active] || IndicatorsView;
+
+  if (!auth) {
+    return (
+      <ThemeCtx.Provider value={{ dark, toggle: toggleTheme }}>
+        <LoginScreen C={C} dark={dark} toggleTheme={toggleTheme} onLogin={handleLogin} />
+      </ThemeCtx.Provider>
+    );
+  }
 
   return (
     <ThemeCtx.Provider value={{ dark, toggle: toggleTheme }}>
       <div style={{ display:"flex", background:C.bg0, minHeight:"100vh", fontFamily:"'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", color:C.t1, transition:"background 0.3s" }}>
         <Sidebar active={active} setActive={setActive} C={C}/>
         <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0 }}>
-          <Topbar page={active} C={C} dark={dark} toggleTheme={toggleTheme}/>
+          <Topbar page={active} C={C} dark={dark} toggleTheme={toggleTheme} userEmail={authEmail} onLogout={handleLogout}/>
           <main style={{ flex:1, padding:26, overflowY:"auto" }}>
             <View C={C}/>
           </main>
