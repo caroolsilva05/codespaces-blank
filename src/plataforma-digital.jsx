@@ -342,120 +342,488 @@ const inputStyle = (C) => ({
 });
 // ─── VIEWS ────────────────────────────────────────────────────────────────────
 function Dashboard({ C }) {
+  const [loading, setLoading] = useState(false);
+  const [projetos, setProjetos] = useState([]);
+  const [pocsRegistros, setPocsRegistros] = useState([]);
+  const [fornecedoresDb, setFornecedoresDb] = useState([]);
+
+  function toNum(value) {
+    const parsed = Number(String(value || "0").replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function pct(value) {
+    return `${Number(value || 0).toFixed(1).replace(".", ",")}%`;
+  }
+
+  function normalizarEtapa(etapa) {
+    if (!etapa) return "Backlog";
+    const texto = String(etapa).toLowerCase();
+
+    if (texto.includes("backlog") || texto.includes("início") || texto.includes("inicio")) return "Backlog";
+    if (texto.includes("plane")) return "Planejamento";
+    if (texto.includes("exec") || texto.includes("andamento")) return "Execução";
+    if (texto.includes("monitor")) return "Monitoramento";
+    if (texto.includes("encer") || texto.includes("concl")) return "Encerramento";
+
+    return etapa;
+  }
+
+  function progressoPorEtapa(etapa) {
+    const etapaNormalizada = normalizarEtapa(etapa);
+
+    if (etapaNormalizada === "Backlog") return 10;
+    if (etapaNormalizada === "Planejamento") return 30;
+    if (etapaNormalizada === "Execução") return 60;
+    if (etapaNormalizada === "Monitoramento") return 80;
+    if (etapaNormalizada === "Encerramento") return 100;
+
+    return 0;
+  }
+
+  function calcPoc(record) {
+    const rows = record?.record_data?.analytics?.rows || [];
+
+    const totals = rows.reduce(
+      (acc, row) => {
+        acc.totalMensagens += toNum(row.totalMensagens);
+        acc.entregue += toNum(row.entregue);
+        acc.lido += toNum(row.lido);
+        acc.retorno += toNum(row.retornoCliente);
+        acc.acordos += toNum(row.acordos);
+        return acc;
+      },
+      { totalMensagens: 0, entregue: 0, lido: 0, retorno: 0, acordos: 0 }
+    );
+
+    return {
+      ...totals,
+      entrega: totals.totalMensagens > 0 ? (totals.entregue / totals.totalMensagens) * 100 : 0,
+      leitura: totals.totalMensagens > 0 ? (totals.lido / totals.totalMensagens) * 100 : 0,
+      conversao: totals.totalMensagens > 0 ? (totals.acordos / totals.totalMensagens) * 100 : 0,
+    };
+  }
+
+  function getPocStatus(record) {
+    return record?.status || record?.record_data?.general?.status || "Em avaliação";
+  }
+
+  function getPocRecommendation(record) {
+    return record?.recommendation || record?.record_data?.evaluation?.recommendation || "Em avaliação";
+  }
+
+  async function carregarDashboard() {
+    setLoading(true);
+
+    const [projectsRes, pocsRes, suppliersRes] = await Promise.all([
+      supabase.from("projects").select("*"),
+      supabase.from("poc_records").select("*"),
+      supabase.from("fornecedores").select("*"),
+    ]);
+
+    if (projectsRes.error) console.log("Erro ao carregar projetos no dashboard:", projectsRes.error);
+    if (pocsRes.error) console.log("Erro ao carregar POCs no dashboard:", pocsRes.error);
+    if (suppliersRes.error) console.log("Erro ao carregar fornecedores no dashboard:", suppliersRes.error);
+
+    setProjetos(projectsRes.data || []);
+    setPocsRegistros(pocsRes.data || []);
+    setFornecedoresDb(suppliersRes.data || []);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    carregarDashboard();
+  }, []);
+
+  const hoje = new Date().toISOString().slice(0, 10);
+
+  const totalProjetos = projetos.length;
+  const projetosExecucao = projetos.filter((p) => normalizarEtapa(p.current_stage || p.status) === "Execução").length;
+  const projetosMonitoramento = projetos.filter((p) => normalizarEtapa(p.current_stage || p.status) === "Monitoramento").length;
+  const projetosEncerrados = projetos.filter((p) => normalizarEtapa(p.current_stage || p.status) === "Encerramento").length;
+  const projetosAtrasados = projetos.filter((p) => {
+    const etapa = normalizarEtapa(p.current_stage || p.status);
+    return p.end_date && p.end_date < hoje && etapa !== "Encerramento";
+  }).length;
+
+  const progressoMedio =
+    totalProjetos > 0
+      ? Math.round(projetos.reduce((acc, p) => acc + progressoPorEtapa(p.current_stage || p.status), 0) / totalProjetos)
+      : 0;
+
+  const etapasProjeto = ["Backlog", "Planejamento", "Execução", "Monitoramento", "Encerramento"].map((etapa) => {
+    const qtd = projetos.filter((p) => normalizarEtapa(p.current_stage || p.status) === etapa).length;
+    const perc = totalProjetos ? (qtd / totalProjetos) * 100 : 0;
+
+    const color =
+      etapa === "Backlog"
+        ? C.t3
+        : etapa === "Planejamento"
+        ? C.violet
+        : etapa === "Execução"
+        ? C.blue
+        : etapa === "Monitoramento"
+        ? C.amber
+        : C.emerald;
+
+    return { name: etapa, qtd, perc, value: qtd, fill: color };
+  });
+
+  const totalPocs = pocsRegistros.length;
+  const pocsExecucao = pocsRegistros.filter((p) => getPocStatus(p) === "Em Execução").length;
+  const pocsCondicoes = pocsRegistros.filter((p) => getPocRecommendation(p) === "Aprovado com condições").length;
+
+  const pocTotals = pocsRegistros.reduce(
+    (acc, poc) => {
+      const metrics = calcPoc(poc);
+      acc.totalMensagens += metrics.totalMensagens;
+      acc.entregue += metrics.entregue;
+      acc.lido += metrics.lido;
+      acc.retorno += metrics.retorno;
+      acc.acordos += metrics.acordos;
+      return acc;
+    },
+    { totalMensagens: 0, entregue: 0, lido: 0, retorno: 0, acordos: 0 }
+  );
+
+  const pocEntrega = pocTotals.totalMensagens > 0 ? (pocTotals.entregue / pocTotals.totalMensagens) * 100 : 0;
+  const pocLeitura = pocTotals.totalMensagens > 0 ? (pocTotals.lido / pocTotals.totalMensagens) * 100 : 0;
+  const pocConversao = pocTotals.totalMensagens > 0 ? (pocTotals.acordos / pocTotals.totalMensagens) * 100 : 0;
+
+  const totalFornecedores = fornecedoresDb.length;
+  const fornecedoresAtivos = fornecedoresDb.filter((f) => f.status === "Ativo").length;
+  const fornecedoresAltoRisco = fornecedoresDb.filter((f) => f.risco === "Alto").length;
+  const incidentesFornecedores = fornecedoresDb.reduce((acc, f) => acc + toNum(f.incidentes_abertos), 0);
+  const scoreMedioFornecedor =
+    totalFornecedores > 0
+      ? Math.round(fornecedoresDb.reduce((acc, f) => acc + toNum(f.performance_score), 0) / totalFornecedores)
+      : 0;
+
+  const scoreProjetos = totalProjetos ? progressoMedio : 0;
+  const scorePocs = totalPocs
+    ? Math.min(100, pocEntrega * 0.45 + pocLeitura * 0.45 + Math.min(100, pocConversao * 30) * 0.10)
+    : 0;
+  const scoreFornecedores = totalFornecedores ? scoreMedioFornecedor : 0;
+
+  const totalAlertas = projetosAtrasados + pocsCondicoes + fornecedoresAltoRisco + incidentesFornecedores;
+  const scoreRisco = Math.max(0, 100 - Math.min(100, totalAlertas * 18));
+
+  const scoresValidos = [
+    totalProjetos ? scoreProjetos : null,
+    totalPocs ? scorePocs : null,
+    totalFornecedores ? scoreFornecedores : null,
+    scoreRisco,
+  ].filter((s) => s !== null);
+
+  const saudeGeral = scoresValidos.length
+    ? Math.round(scoresValidos.reduce((acc, item) => acc + item, 0) / scoresValidos.length)
+    : 0;
+
+  const saudeColor = saudeGeral >= 80 ? C.emerald : saudeGeral >= 60 ? C.amber : C.rose;
+
+  const radarData = [
+    { eixo: "Projetos", valor: scoreProjetos },
+    { eixo: "POCs", valor: Math.round(scorePocs) },
+    { eixo: "Fornecedores", valor: scoreFornecedores },
+    { eixo: "Risco", valor: scoreRisco },
+  ];
+
+  const funnelData = [
+    { etapa: "Mensagens", valor: pocTotals.totalMensagens, fill: C.violet },
+    { etapa: "Entregues", valor: pocTotals.entregue, fill: C.emerald },
+    { etapa: "Lidos", valor: pocTotals.lido, fill: C.blue },
+    { etapa: "Retornos", valor: pocTotals.retorno, fill: C.amber },
+    { etapa: "Acordos", valor: pocTotals.acordos, fill: C.rose },
+  ];
+
+  const pipelineChartData = etapasProjeto.some((item) => item.value > 0)
+    ? etapasProjeto
+    : [{ name: "Sem dados", value: 1, fill: C.t3 }];
+
+  const topFornecedor = [...fornecedoresDb].sort((a, b) => toNum(b.performance_score) - toNum(a.performance_score))[0];
+
+  const decisionItems = [
+    {
+      label: "Prioridade de gestão",
+      value: totalAlertas > 0 ? "Acompanhar alertas" : "Operação estável",
+      color: totalAlertas > 0 ? C.rose : C.emerald,
+    },
+    {
+      label: "Projetos em foco",
+      value: projetosAtrasados > 0 ? `${projetosAtrasados} atrasado(s)` : `${projetosExecucao + projetosMonitoramento} em andamento`,
+      color: projetosAtrasados > 0 ? C.rose : C.blue,
+    },
+    {
+      label: "Validações",
+      value: totalPocs > 0 ? `${totalPocs} POC(s) cadastrada(s)` : "Sem POCs cadastradas",
+      color: C.violet,
+    },
+    {
+      label: "Fornecedor destaque",
+      value: topFornecedor ? `${topFornecedor.nome} · ${toNum(topFornecedor.performance_score)}%` : "Sem fornecedor",
+      color: C.emerald,
+    },
+  ];
+
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
-      <SectionHeader title="Painel Executivo" sub="Transformação Digital — Visão Consolidada · Q4 2024" C={C} />
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16 }}>
-        <KPICard icon={FolderKanban} label="Projetos Ativos"   value="12"    sub="2 críticos em atenção"       trend="up" trendVal="+3 vs Q3" color={C.blue}   glow={C.blueGlow}   C={C} />
-        <KPICard icon={TrendingUp}   label="ROI Acumulado"     value="61%"   sub="Meta: 30% — superada"        trend="up" trendVal="+103%"    color={C.emerald} glow={C.emeraldGlow} C={C} />
-        <KPICard icon={Shield}       label="SLA Compliance"    value="94.2%" sub="↑ 2.1pp vs mês anterior"    trend="up" trendVal="+2.1pp"   color={C.violet}  glow={C.violetGlow}  C={C} />
-        <KPICard icon={Activity}     label="Produtividade"     value="97%"   sub="Índice equipe técnica"       trend="up" trendVal="+4%"      color={C.cyan}    glow={C.cyanGlow}    C={C} />
-      </div>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16 }}>
-        <KPICard icon={CheckCircle2} label="Entregas no Prazo" value="89.3%" sub="338 de 379 entregas"         trend="up" trendVal="+3.7%"    color={C.emerald} glow={C.emeraldGlow} C={C} />
-        <KPICard icon={AlertTriangle}label="Incidentes Abertos"value="7"     sub="3 críticos, 4 médios"        trend="down" trendVal="-5"     color={C.amber}   glow={C.amberGlow}   C={C} />
-        <KPICard icon={Target}       label="Budget Utilizado"  value="68%"   sub="R$ 12.4M de R$ 18.2M"                                      color={C.blue}    glow={C.blueGlow}    C={C} />
-        <KPICard icon={Users}        label="Fornecedores"      value="6"     sub="SLA médio: 98.2%"                                           color={C.violet}  glow={C.violetGlow}  C={C} />
-      </div>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
-        <div style={{ ...card(C), padding:"22px 24px" }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
-            <div><div style={{ fontSize:14, fontWeight:600, color:C.t1 }}>Evolução do ROI</div><div style={{ fontSize:12, color:C.t3 }}>Real vs Meta — 2024</div></div>
-            <Chip label="↑ 103% vs meta" color={C.emerald} bg={C.emeraldGlow} />
+    <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+      <SectionHeader
+        title="Control Tower Digital"
+        sub="Visão executiva da Transformação Digital — status, riscos, validações e fornecedores"
+        actions={[
+          <Btn
+            key="refresh"
+            label={loading ? "Atualizando..." : "Atualizar"}
+            icon={RefreshCw}
+            C={C}
+            onClick={carregarDashboard}
+          />,
+        ]}
+        C={C}
+      />
+
+      <div style={{ display: "grid", gridTemplateColumns: "1.35fr 0.65fr", gap: 16 }}>
+        <div
+          style={{
+            ...card(C),
+            padding: "28px 30px",
+            minHeight: 245,
+            position: "relative",
+            overflow: "hidden",
+            background: `linear-gradient(135deg, ${C.blueGlow}, ${C.card}, ${C.violetGlow})`,
+          }}
+        >
+          <div style={{ position: "absolute", top: -70, right: -60, width: 210, height: 210, borderRadius: "50%", background: C.blueGlow, filter: "blur(20px)" }} />
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 12, color: C.t3, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 900 }}>
+                  Saúde operacional
+                </div>
+                <div style={{ fontSize: 64, lineHeight: 1, fontWeight: 950, color: saudeColor, marginTop: 8 }}>
+                  {saudeGeral}%
+                </div>
+                <div style={{ fontSize: 15, color: C.t1, fontWeight: 900, marginTop: 8 }}>
+                  {saudeGeral >= 80 ? "Operação saudável" : saudeGeral >= 60 ? "Atenção moderada" : "Atenção crítica"}
+                </div>
+              </div>
+
+              <Chip
+                label={`${totalAlertas} alerta(s)`}
+                color={totalAlertas > 0 ? C.rose : C.emerald}
+                bg={totalAlertas > 0 ? C.roseGlow : C.emeraldGlow}
+              />
+            </div>
+
+            <div style={{ marginTop: 24, maxWidth: 780, fontSize: 14, color: C.t2, lineHeight: 1.7 }}>
+              A plataforma consolida projetos, POCs e fornecedores em uma visão única para tomada de decisão.
+              Hoje existem <strong style={{ color: C.t1 }}>{totalProjetos}</strong> projetos,
+              <strong style={{ color: C.t1 }}> {totalPocs}</strong> POC(s) e
+              <strong style={{ color: C.t1 }}> {totalFornecedores}</strong> fornecedor(es) cadastrados.
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginTop: 24 }}>
+              {[
+                ["Projetos", totalProjetos, C.blue],
+                ["POCs", totalPocs, C.violet],
+                ["Fornecedores", totalFornecedores, C.emerald],
+                ["Alertas", totalAlertas, totalAlertas > 0 ? C.rose : C.emerald],
+              ].map(([label, value, color]) => (
+                <div key={label} style={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 14, padding: "13px 14px" }}>
+                  <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 900 }}>{label}</div>
+                  <div style={{ fontSize: 22, color, fontWeight: 950, marginTop: 4 }}>{value}</div>
+                </div>
+              ))}
+            </div>
           </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={roiData}>
-              <defs>
-                <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={C.emerald} stopOpacity={0.18}/>
-                  <stop offset="95%" stopColor={C.emerald} stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={C.blue} stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor={C.blue} stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
-              <XAxis dataKey="m" tick={{ fill:C.t3, fontSize:11 }} axisLine={false} tickLine={false}/>
-              <YAxis tick={{ fill:C.t3, fontSize:11 }} axisLine={false} tickLine={false} unit="%"/>
-              <Tooltip content={<CT C={C}/>}/>
-              <Area type="monotone" dataKey="meta" name="Meta" stroke={C.blue}   strokeWidth={1.5} fill="url(#g2)" strokeDasharray="4 2"/>
-              <Area type="monotone" dataKey="roi"  name="ROI"  stroke={C.emerald} strokeWidth={2}  fill="url(#g1)"/>
-            </AreaChart>
+        </div>
+
+        <div style={{ ...card(C), padding: "22px 24px", minHeight: 245 }}>
+          <div style={{ fontSize: 16, fontWeight: 900, color: C.t1, marginBottom: 4 }}>
+            Radar de Saúde
+          </div>
+          <div style={{ fontSize: 12, color: C.t3, marginBottom: 10 }}>
+            Equilíbrio entre operação, validações e risco
+          </div>
+
+          <ResponsiveContainer width="100%" height={185}>
+            <RadarChart data={radarData}>
+              <PolarGrid stroke={C.border} />
+              <PolarAngleAxis dataKey="eixo" tick={{ fill: C.t2, fontSize: 11 }} />
+              <Radar dataKey="valor" stroke={saudeColor} fill={saudeColor} fillOpacity={0.22} strokeWidth={2} />
+              <Tooltip formatter={(v) => `${v}%`} />
+            </RadarChart>
           </ResponsiveContainer>
         </div>
-        <div style={{ ...card(C), padding:"22px 24px" }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
-            <div><div style={{ fontSize:14, fontWeight:600, color:C.t1 }}>Entregas Mensais</div><div style={{ fontSize:12, color:C.t3 }}>No prazo vs Atrasadas</div></div>
-            <Chip label="378 total" color={C.t2} bg={C.surface} />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}>
+        <KPICard icon={FolderKanban} label="Projetos em andamento" value={projetosExecucao + projetosMonitoramento} sub={`${projetosEncerrados} encerrado(s)`} color={C.blue} glow={C.blueGlow} C={C} />
+        <KPICard icon={FlaskConical} label="POCs registradas" value={totalPocs} sub={`${pocsExecucao} em execução`} color={C.violet} glow={C.violetGlow} C={C} />
+        <KPICard icon={Users} label="Fornecedores ativos" value={fornecedoresAtivos} sub={`Score médio ${scoreMedioFornecedor}%`} color={C.emerald} glow={C.emeraldGlow} C={C} />
+        <KPICard icon={AlertTriangle} label="Pontos de atenção" value={totalAlertas} sub={totalAlertas > 0 ? "Exigem acompanhamento" : "Sem alertas críticos"} color={totalAlertas > 0 ? C.rose : C.emerald} glow={totalAlertas > 0 ? C.roseGlow : C.emeraldGlow} C={C} />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div style={{ ...card(C), padding: "22px 24px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
+            <div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: C.t1 }}>
+                Distribuição do Portfólio
+              </div>
+              <div style={{ fontSize: 12, color: C.t3, marginTop: 3 }}>
+                Projetos por etapa do ciclo de vida
+              </div>
+            </div>
+            <Chip label={`${totalProjetos} projeto(s)`} color={C.blue} bg={C.blueGlow} />
           </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={deliveryData} barGap={2}>
-              <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
-              <XAxis dataKey="m" tick={{ fill:C.t3, fontSize:11 }} axisLine={false} tickLine={false}/>
-              <YAxis tick={{ fill:C.t3, fontSize:11 }} axisLine={false} tickLine={false}/>
-              <Tooltip content={<CT C={C}/>}/>
-              <Bar dataKey="ok"  name="No Prazo"  fill={C.emerald} radius={[3,3,0,0]}/>
-              <Bar dataKey="atr" name="Atrasadas" fill={C.rose}    radius={[3,3,0,0]}/>
+
+          <div style={{ display: "grid", gridTemplateColumns: "210px 1fr", gap: 18, alignItems: "center" }}>
+            <ResponsiveContainer width="100%" height={205}>
+              <PieChart>
+                <Pie
+                  data={pipelineChartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={54}
+                  outerRadius={84}
+                  paddingAngle={3}
+                  dataKey="value"
+                  strokeWidth={0}
+                >
+                  {pipelineChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {etapasProjeto.map((item) => (
+                <div key={item.name}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                    <span style={{ fontSize: 12, color: C.t2, fontWeight: 900 }}>{item.name}</span>
+                    <span style={{ fontSize: 12, color: item.fill, fontWeight: 900 }}>{item.qtd} · {pct(item.perc)}</span>
+                  </div>
+                  <div style={{ height: 5, background: C.bg3, borderRadius: 999, overflow: "hidden" }}>
+                    <div style={{ width: `${Math.max(0, Math.min(100, item.perc))}%`, height: "100%", background: item.fill, borderRadius: 999 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ ...card(C), padding: "22px 24px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
+            <div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: C.t1 }}>
+                Funil Consolidado das POCs
+              </div>
+              <div style={{ fontSize: 12, color: C.t3, marginTop: 3 }}>
+                Leitura visual do desempenho das validações
+              </div>
+            </div>
+            <Chip label={pct(pocEntrega)} color={C.emerald} bg={C.emeraldGlow} />
+          </div>
+
+          <ResponsiveContainer width="100%" height={205}>
+            <BarChart data={funnelData} layout="vertical" margin={{ left: 16, right: 30 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={C.border} horizontal={false} />
+              <XAxis type="number" tick={{ fill: C.t3, fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="etapa" tick={{ fill: C.t2, fontSize: 11, fontWeight: 700 }} axisLine={false} tickLine={false} width={80} />
+              <Tooltip />
+              <Bar dataKey="valor" radius={[0, 8, 8, 0]}>
+                {funnelData.map((entry, index) => (
+                  <Cell key={`funnel-${index}`} fill={entry.fill} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16 }}>
-        <div style={{ ...card(C), padding:"22px 24px" }}>
-          <div style={{ marginBottom:16 }}><div style={{ fontSize:14, fontWeight:600, color:C.t1 }}>Produtividade</div><div style={{ fontSize:12, color:C.t3 }}>Índice mensal</div></div>
-          <ResponsiveContainer width="100%" height={160}>
-            <LineChart data={prodData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
-              <XAxis dataKey="m" tick={{ fill:C.t3, fontSize:10 }} axisLine={false} tickLine={false}/>
-              <YAxis domain={[60,100]} tick={{ fill:C.t3, fontSize:10 }} axisLine={false} tickLine={false} unit="%"/>
-              <Tooltip content={<CT C={C}/>}/>
-              <Line type="monotone" dataKey="prod" name="Prod" stroke={C.cyan} strokeWidth={2} dot={false}/>
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        <div style={{ ...card(C), padding:"22px 24px" }}>
-          <div style={{ marginBottom:8 }}><div style={{ fontSize:14, fontWeight:600, color:C.t1 }}>SLA Compliance</div><div style={{ fontSize:12, color:C.t3 }}>Conformidade geral</div></div>
-          <div style={{ position:"relative", display:"flex", justifyContent:"center" }}>
-            <ResponsiveContainer width="100%" height={160}>
-              <PieChart>
-                <Pie data={slaData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} dataKey="value" startAngle={90} endAngle={-270} strokeWidth={0}>
-                  {slaData.map((d,i) => <Cell key={i} fill={d.fill}/>)}
-                </Pie>
-                <Tooltip formatter={(v) => `${v}%`}/>
-              </PieChart>
-            </ResponsiveContainer>
-            <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", textAlign:"center" }}>
-              <div style={{ fontSize:22, fontWeight:700, color:C.emerald }}>94%</div>
-              <div style={{ fontSize:10, color:C.t3 }}>conformidade</div>
-            </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div style={{ ...card(C), padding: "22px 24px" }}>
+          <div style={{ fontSize: 17, fontWeight: 900, color: C.t1, marginBottom: 4 }}>
+            Decisões Executivas
           </div>
-          <div style={{ display:"flex", justifyContent:"center", gap:16, marginTop:4 }}>
-            {slaData.map((d,i)=>(
-              <div key={i} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:C.t2 }}>
-                <span style={{ width:8, height:8, borderRadius:2, background:d.fill }}/>{d.name}: {d.value}%
-              </div>
-            ))}
+          <div style={{ fontSize: 12, color: C.t3, marginBottom: 16 }}>
+            Pontos que orientam a condução da liderança
           </div>
-        </div>
-        <div style={{ ...card(C), padding:"20px" }}>
-          <div style={{ marginBottom:14 }}><div style={{ fontSize:14, fontWeight:600, color:C.t1 }}>Atividades Recentes</div><div style={{ fontSize:12, color:C.t3 }}>Últimas 48h</div></div>
-          <div style={{ display:"flex", flexDirection:"column", gap:11 }}>
-            {activities.slice(0,5).map((a,i)=>(
-              <div key={i} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-                <div style={{ padding:5, borderRadius:7, background:`${a.color}18`, flexShrink:0 }}><a.icon size={12} color={a.color}/></div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:11, color:C.t2, lineHeight:1.4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{a.text}</div>
-                  <div style={{ fontSize:10, color:C.t3, marginTop:1 }}>{a.time} atrás</div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {decisionItems.map((item) => (
+              <div key={item.label} style={{ background: `${item.color}12`, border: `1px solid ${item.color}36`, borderRadius: 14, padding: "14px 15px" }}>
+                <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 900 }}>
+                  {item.label}
+                </div>
+                <div style={{ fontSize: 14, color: item.color, fontWeight: 950, marginTop: 7 }}>
+                  {item.value}
                 </div>
               </div>
             ))}
           </div>
         </div>
+
+        <div style={{ ...card(C), padding: "22px 24px" }}>
+          <div style={{ fontSize: 17, fontWeight: 900, color: C.t1, marginBottom: 4 }}>
+            Performance de Fornecedores
+          </div>
+          <div style={{ fontSize: 12, color: C.t3, marginBottom: 16 }}>
+            Visão resumida da base cadastrada
+          </div>
+
+          {topFornecedor ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 14, color: C.t1, fontWeight: 950 }}>{topFornecedor.nome}</div>
+                  <div style={{ fontSize: 11, color: C.t3, marginTop: 3 }}>Fornecedor com melhor score cadastrado</div>
+                </div>
+                <div style={{ fontSize: 34, color: scoreMedioFornecedor >= 80 ? C.emerald : C.amber, fontWeight: 950 }}>
+                  {scoreMedioFornecedor}%
+                </div>
+              </div>
+
+              <div style={{ height: 8, background: C.bg3, borderRadius: 999, overflow: "hidden" }}>
+                <div
+                  style={{
+                    width: `${Math.max(0, Math.min(100, scoreMedioFornecedor))}%`,
+                    height: "100%",
+                    background: scoreMedioFornecedor >= 80 ? C.emerald : scoreMedioFornecedor >= 60 ? C.amber : C.rose,
+                    borderRadius: 999,
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginTop: 8 }}>
+                <div style={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12 }}>
+                  <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase" }}>Ativos</div>
+                  <div style={{ fontSize: 20, color: C.emerald, fontWeight: 950 }}>{fornecedoresAtivos}</div>
+                </div>
+                <div style={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12 }}>
+                  <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase" }}>Alto risco</div>
+                  <div style={{ fontSize: 20, color: fornecedoresAltoRisco > 0 ? C.rose : C.emerald, fontWeight: 950 }}>{fornecedoresAltoRisco}</div>
+                </div>
+                <div style={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12 }}>
+                  <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase" }}>Incidentes</div>
+                  <div style={{ fontSize: 20, color: incidentesFornecedores > 0 ? C.rose : C.emerald, fontWeight: 950 }}>{incidentesFornecedores}</div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: 13, color: C.t3 }}>
+              Nenhum fornecedor cadastrado.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
+
 
 function ProjectsView({ C }) {
   const etapasCiclo = ["Backlog", "Planejamento", "Execução", "Monitoramento", "Encerramento"];
@@ -2105,8 +2473,8 @@ function IndicatorsView({ C }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
       <SectionHeader
-        title="Indicadores Executivos"
-        sub="Visão consolidada da Transformação Digital: projetos, POCs, fornecedores, riscos e performance"
+        title="Control Tower"
+        sub="Central de acompanhamento da Transformação Digital: projetos, POCs, fornecedores, riscos e performance."
         actions={[
           <Btn
             key="refresh"
@@ -2374,16 +2742,7 @@ function IndicatorsView({ C }) {
         </div>
       </div>
 
-      <div style={{ ...card(C), padding: "20px 24px" }}>
-        <div style={{ fontSize: 16, fontWeight: 900, color: C.t1, marginBottom: 4 }}>
-          Leitura Executiva
-        </div>
-        <div style={{ fontSize: 13, color: C.t2, lineHeight: 1.6 }}>
-          A plataforma consolida o acompanhamento de projetos, POCs e fornecedores em uma única visão executiva.
-          O objetivo desta tela é apoiar a liderança na identificação rápida de evolução, riscos, gargalos e pontos
-          de atenção que precisam de decisão ou acompanhamento.
-        </div>
-      </div>
+      
     </div>
   );
 }
@@ -2615,12 +2974,11 @@ function PocView({ C }) {
 
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 const navItems = [
-  { id:"dashboard",  label:"Dashboard",   icon:LayoutDashboard },
-  { id:"projects",   label:"Projetos",    icon:FolderKanban    },
-  { id:"scrum",      label:"Scrum",      icon:Layers          },
-  { id:"poc",        label:"POCs",        icon:FlaskConical, badge:"Novo" },
-  { id:"suppliers",  label:"Fornecedores",icon:Globe           },
-  { id:"indicators", label:"Indicadores", icon:BarChart3       },
+  { id:"indicators", label:"Control Tower", icon:BarChart3       },
+  { id:"projects",   label:"Projetos",      icon:FolderKanban    },
+  { id:"scrum",      label:"Scrum",         icon:Layers          },
+  { id:"poc",        label:"POCs",          icon:FlaskConical, badge:"Novo" },
+  { id:"suppliers",  label:"Fornecedores", icon:Globe           },
 ];
 
 function Sidebar({ active, setActive, C }) {
@@ -2691,7 +3049,7 @@ function Topbar({ page, C, dark, toggleTheme }) {
       <div style={{ display:"flex", alignItems:"center", gap:7, fontSize:13, color:C.t3 }}>
         <span style={{ fontWeight:600 }}>Bellinati Perez</span>
         <ChevronRight size={13}/>
-        <span style={{ color:C.t1, fontWeight:500 }}>{navItems.find(n=>n.id===page)?.label||"Dashboard"}</span>
+        <span style={{ color:C.t1, fontWeight:500 }}>{navItems.find(n=>n.id===page)?.label||"Control Tower"}</span>
       </div>
       <div style={{ display:"flex", alignItems:"center", gap:12 }}>
         <span style={{ fontSize:11, color:C.t3 }}>{now}</span>
@@ -2740,7 +3098,7 @@ export default function App() {
   testarConexao();
 }, []);
   const [dark, setDark] = useState(true);
-  const [active, setActive] = useState("dashboard");
+  const [active, setActive] = useState("indicators");
   const C = getC(dark);
 
   useEffect(() => {
@@ -2758,8 +3116,8 @@ export default function App() {
     try { await window.storage.set("bp-theme", next ? "dark" : "light"); } catch {}
   }, [dark]);
 
-  const views = { dashboard:Dashboard, projects:ProjectsView, scrum:ScrumView, poc:PocView, suppliers:SuppliersView, indicators:IndicatorsView };
-  const View = views[active] || Dashboard;
+  const views = { indicators:IndicatorsView, projects:ProjectsView, scrum:ScrumView, poc:PocView, suppliers:SuppliersView };
+  const View = views[active] || IndicatorsView;
 
   return (
     <ThemeCtx.Provider value={{ dark, toggle: toggleTheme }}>
