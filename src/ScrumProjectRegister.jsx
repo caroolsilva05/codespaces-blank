@@ -18,6 +18,7 @@ const theme = {
   textMuted: "#94a3b8",
   phases: {
     0: { bg: "#0f766e", light: "#ccfbf1", label: "Orçamento" },
+    A: { bg: "#7c3aed", light: "#ede9fe", label: "Aprovação" },
     1: { bg: "#1d4ed8", light: "#dbeafe", label: "Backlog" },
     2: { bg: "#047857", light: "#d1fae5", label: "Planejamento" },
     3: { bg: "#b45309", light: "#fef3c7", label: "Execução" },
@@ -69,6 +70,12 @@ const initialData = {
     valorDisparoUnitario: "",
     carteiraBanco: "",
     quantidadeDisparosDia: "",
+  },
+  aprovacaoProjeto: {
+    statusAprovacao: "Em Análise",
+    evidenciaDeAcordo: "",
+    evidenciaArquivo: "",
+    aprovador: "",
   },
   phase1: {
     objetivo: "",
@@ -188,11 +195,13 @@ const PhaseSection = ({ phaseNum, title, expanded, onToggle, children }) => {
         cursor: "pointer", userSelect: "none",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{
-            background: "rgba(255,255,255,0.18)", borderRadius: 6,
-            width: 30, height: 30, display: "flex", alignItems: "center",
-            justifyContent: "center", fontSize: 13, fontWeight: 800,
-          }}>{phaseNum}</span>
+          {phaseNum !== "A" && phaseNum !== 0 && (
+            <span style={{
+              background: "rgba(255,255,255,0.18)", borderRadius: 6,
+              width: 30, height: 30, display: "flex", alignItems: "center",
+              justifyContent: "center", fontSize: 13, fontWeight: 800,
+            }}>{phaseNum}</span>
+          )}
           <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase" }}>
             {title}
           </span>
@@ -350,7 +359,7 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
 
     return dadosSalvos || initialData;
   });
-  const [phases, setPhases] = useState({ 0: true, 1: true, 2: true, 3: true, 4: true, 5: true });
+  const [phases, setPhases] = useState({ 0: true, A: true, 1: true, 2: true, 3: true, 4: true, 5: true });
   const [flash, setFlash]   = useState("");
   const [saving, setSaving] = useState(false);
   const printRef = useRef(null);
@@ -368,6 +377,36 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
         [field]: val,
       },
     }));
+
+  const setAprovacao = (field, val) =>
+    setData(d => ({
+      ...d,
+      aprovacaoProjeto: {
+        ...(d.aprovacaoProjeto || {}),
+        [field]: val,
+      },
+    }));
+
+  function aprovacaoCompleta(aprovacao = data.aprovacaoProjeto || {}) {
+    const statusOk = aprovacao.statusAprovacao === "Aprovado pela Diretoria";
+    const evidenciaOk = Boolean(String(aprovacao.evidenciaArquivo || "").trim());
+    const aprovadorOk = Boolean(String(aprovacao.aprovador || "").trim());
+
+    return statusOk && evidenciaOk && aprovadorOk;
+  }
+
+  function faseRequerAprovacao(fase) {
+    return !["Início", "Backlog"].includes(fase);
+  }
+
+  function setFaseAtualComValidacao(fase) {
+    if (faseRequerAprovacao(fase) && !aprovacaoCompleta()) {
+      alert("Para avançar o projeto, é necessário registrar o De Acordo com status aprovado, anexo e aprovador.");
+      return;
+    }
+
+    setPI("faseAtual", fase);
+  }
 
   function parseMoney(value) {
     const normalizado = String(value || "")
@@ -425,6 +464,19 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
   const handleSave = async () => {
   if (!data.projectInfo.nome || !data.projectInfo.nome.trim()) {
     alert("Informe o nome do projeto antes de salvar.");
+    return;
+  }
+
+  const aprovacaoAtual = data.aprovacaoProjeto || {};
+  const fasePrecisaAprovacao = faseRequerAprovacao(data.projectInfo.faseAtual || "Início");
+
+  if (fasePrecisaAprovacao && !aprovacaoCompleta(aprovacaoAtual)) {
+    alert("Para salvar o projeto em fase avançada, registre o De Acordo com status aprovado, anexo e aprovador.");
+    return;
+  }
+
+  if (aprovacaoAtual.statusAprovacao === "Aprovado pela Diretoria" && !aprovacaoCompleta(aprovacaoAtual)) {
+    alert("Para marcar como aprovado, informe o anexo do De Acordo e o aprovador.");
     return;
   }
 
@@ -577,7 +629,7 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
     janela.document.close();
   };
 
-  const { projectInfo: pi, orcamentoProjeto = {}, phase1, phase2, phase3, phase4, phase5 } = data;
+  const { projectInfo: pi, orcamentoProjeto = {}, aprovacaoProjeto = {}, phase1, phase2, phase3, phase4, phase5 } = data;
 
   const custoDisparosMensal =
     parseMoney(orcamentoProjeto.valorDisparoUnitario) *
@@ -803,7 +855,7 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
                     {["Início", "Planejamento", "Execução", "Monitoramento", "Encerramento"].map(opt => (
                       <label key={opt} style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", fontSize: 12 }}>
                         <input type="radio" name="fase" value={opt} checked={pi.faseAtual === opt}
-                          onChange={() => setPI("faseAtual", opt)} style={{ accentColor: theme.navy }} />
+                          onChange={() => setFaseAtualComValidacao(opt)} style={{ accentColor: theme.navy }} />
                         {opt}
                       </label>
                     ))}
@@ -827,7 +879,7 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
 
 
         {/* ===== FASE 0 — ORÇAMENTO DO PROJETO ===== */}
-        <PhaseSection phaseNum={0} title="Fase 0 — Orçamento do Projeto" expanded={phases[0]} onToggle={() => toggle(0)}>
+        <PhaseSection phaseNum={0} title="Orçamento do Projeto" expanded={phases[0]} onToggle={() => toggle(0)}>
 
           <SubSection title="0.1 Planejamento financeiro">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 48px" }}>
@@ -944,6 +996,122 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
               ))}
             </div>
 
+          </SubSection>
+        </PhaseSection>
+
+
+        {/* ===== DE ACORDO — APROVAÇÃO EXECUTIVA ===== */}
+        <PhaseSection phaseNum="A" title="De Acordo — Aprovação Executiva" expanded={phases.A} onToggle={() => toggle("A")}>
+
+          <SubSection title="Aprovação da Diretoria/ Superintendentes">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 48px" }}>
+              <div>
+                <FieldRow label="Status de aprovação">
+                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap", paddingLeft: 2 }}>
+                    {["Em Análise", "Aprovado pela Diretoria", "Reprovado/Ajustes Necessários"].map(opt => {
+                      const color =
+                        opt === "Aprovado pela Diretoria"
+                          ? "#047857"
+                          : opt === "Reprovado/Ajustes Necessários"
+                          ? "#be123c"
+                          : "#b45309";
+
+                      const bg =
+                        opt === "Aprovado pela Diretoria"
+                          ? "#d1fae5"
+                          : opt === "Reprovado/Ajustes Necessários"
+                          ? "#ffe4e6"
+                          : "#fef3c7";
+
+                      return (
+                        <label key={opt} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                          <input
+                            type="radio"
+                            name="statusAprovacao"
+                            value={opt}
+                            checked={(aprovacaoProjeto.statusAprovacao || "Em Análise") === opt}
+                            onChange={() => setAprovacao("statusAprovacao", opt)}
+                            style={{ accentColor: color }}
+                          />
+                          <span
+                            style={{
+                              background: bg,
+                              color,
+                              borderRadius: 20,
+                              padding: "3px 10px",
+                              fontSize: 11,
+                              fontWeight: 800,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {opt}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </FieldRow>
+
+                <FieldRow label="Aprovador">
+                  <EditField
+                    value={aprovacaoProjeto.aprovador || ""}
+                    onChange={v => setAprovacao("aprovador", v)}
+                    placeholder="Nome do Diretor ou Superintendente"
+                  />
+                </FieldRow>
+              </div>
+
+              <div>
+
+                <FieldRow label="Anexo De Acordo">
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <input
+                      type="file"
+                      accept=".pdf,image/*"
+                      onChange={e => setAprovacao("evidenciaArquivo", e.target.files?.[0]?.name || "")}
+                      style={{
+                        fontSize: 12,
+                        color: theme.textSecondary,
+                        maxWidth: 260,
+                      }}
+                    />
+
+                    {aprovacaoProjeto.evidenciaArquivo && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: theme.phases.A.bg,
+                          background: theme.phases.A.light,
+                          borderRadius: 20,
+                          padding: "4px 10px",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {aprovacaoProjeto.evidenciaArquivo}
+                      </span>
+                    )}
+                  </div>
+                </FieldRow>
+              </div>
+            </div>
+
+            <div
+              style={{
+                marginTop: 16,
+                border: `1px solid ${aprovacaoCompleta(aprovacaoProjeto) ? "#86efac" : "#fde68a"}`,
+                background: aprovacaoCompleta(aprovacaoProjeto) ? "#f0fdf4" : "#fffbeb",
+                borderRadius: 8,
+                padding: "12px 16px",
+                fontSize: 12,
+                color: aprovacaoCompleta(aprovacaoProjeto) ? "#166534" : "#92400e",
+                lineHeight: 1.5,
+                fontWeight: 700,
+              }}
+            >
+              {aprovacaoCompleta(aprovacaoProjeto)
+                ? "✓ De Acordo registrado. Projeto liberado para avançar no fluxo técnico."
+                : "⚠ Projeto aguardando validação executiva. Para avançar, registre status aprovado, anexo De Acordo e aprovador."}
+            </div>
           </SubSection>
         </PhaseSection>
 
