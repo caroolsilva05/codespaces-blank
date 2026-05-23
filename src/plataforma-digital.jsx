@@ -1993,24 +1993,6 @@ function ScrumView({ C }) {
                 );
               })}
 
-              <button
-                onClick={abrirNovoRegistro}
-                style={{
-                  padding: "9px",
-                  borderRadius: 8,
-                  border: `1px dashed ${C.border}`,
-                  background: "transparent",
-                  color: C.t3,
-                  cursor: "pointer",
-                  fontSize: 12,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 5,
-                }}
-              >
-                <Plus size={12} /> Adicionar
-              </button>
             </div>
           );
         })}
