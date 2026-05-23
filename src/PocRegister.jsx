@@ -60,9 +60,10 @@ const emptyPoc = {
         registrosEnriquecidos: "",
         naoLocalizados: "",
         invalidos: "",
+        retorno: "",
+        cpcNovo: "",
         telefonesNovos: "",
         emailsNovos: "",
-        scoreQualidade: "",
         observation: "",
       },
     ],
@@ -197,10 +198,10 @@ function calcEnrichmentMetrics(rows) {
       acc.registrosEnriquecidos += toNum(row.registrosEnriquecidos);
       acc.naoLocalizados += toNum(row.naoLocalizados);
       acc.invalidos += toNum(row.invalidos);
+      acc.retorno += toNum(row.retorno);
+      acc.cpcNovo += toNum(row.cpcNovo);
       acc.telefonesNovos += toNum(row.telefonesNovos);
       acc.emailsNovos += toNum(row.emailsNovos);
-      acc.scoreQualidadeSoma += toNum(row.scoreQualidade);
-      acc.scoreQualidadeQtd += String(row.scoreQualidade || "").trim() ? 1 : 0;
       return acc;
     },
     {
@@ -209,10 +210,10 @@ function calcEnrichmentMetrics(rows) {
       registrosEnriquecidos: 0,
       naoLocalizados: 0,
       invalidos: 0,
+      retorno: 0,
+      cpcNovo: 0,
       telefonesNovos: 0,
       emailsNovos: 0,
-      scoreQualidadeSoma: 0,
-      scoreQualidadeQtd: 0,
     }
   );
 
@@ -225,15 +226,27 @@ function calcEnrichmentMetrics(rows) {
   const taxaInvalidos =
     totals.baseProcessada > 0 ? (totals.invalidos / totals.baseProcessada) * 100 : 0;
 
-  const scoreQualidadeMedio =
-    totals.scoreQualidadeQtd > 0 ? totals.scoreQualidadeSoma / totals.scoreQualidadeQtd : 0;
+  const taxaRetorno =
+    totals.baseProcessada > 0 ? (totals.retorno / totals.baseProcessada) * 100 : 0;
+
+  const taxaCpcNovo =
+    totals.baseProcessada > 0 ? (totals.cpcNovo / totals.baseProcessada) * 100 : 0;
+
+  const metaCpcNovo = 15;
+
+  const percentualMeta =
+    metaCpcNovo > 0 ? (taxaCpcNovo / metaCpcNovo) * 100 : 0;
+
 
   return {
     ...totals,
     taxaProcessamento,
     taxaEnriquecimento,
     taxaInvalidos,
-    scoreQualidadeMedio,
+    taxaRetorno,
+    taxaCpcNovo,
+    metaCpcNovo,
+    percentualMeta,
   };
 }
 
@@ -1380,7 +1393,6 @@ export default function PocRegister({ C, registroInicial = null, pocTypeInicial 
             <MetricCard label="Base recebida" value={enrichmentMetrics.baseRecebida} sub="Registros enviados" color={C.violet} />
             <MetricCard label="Processados" value={enrichmentMetrics.baseProcessada} sub={pct(enrichmentMetrics.taxaProcessamento)} color={C.blue} />
             <MetricCard label="Enriquecidos" value={enrichmentMetrics.registrosEnriquecidos} sub={pct(enrichmentMetrics.taxaEnriquecimento)} color={C.emerald} />
-            <MetricCard label="Score qualidade" value={pct(enrichmentMetrics.scoreQualidadeMedio)} sub="Média informada" color={enrichmentMetrics.scoreQualidadeMedio >= 80 ? C.emerald : enrichmentMetrics.scoreQualidadeMedio >= 60 ? C.amber : C.rose} />
           </div>
 
           <Section
@@ -1398,9 +1410,10 @@ export default function PocRegister({ C, registroInicial = null, pocTypeInicial 
                       "Registros enriquecidos",
                       "Não localizados",
                       "Inválidos",
+                      "Retorno",
+                      "CPC Novo",
                       "Telefones novos",
                       "E-mails novos",
-                      "Score qualidade",
                       "Tx. enriquecimento",
                       "",
                     ].map((h) => (
@@ -1446,9 +1459,10 @@ export default function PocRegister({ C, registroInicial = null, pocTypeInicial 
                           "registrosEnriquecidos",
                           "naoLocalizados",
                           "invalidos",
+                          "retorno",
+                          "cpcNovo",
                           "telefonesNovos",
                           "emailsNovos",
-                          "scoreQualidade",
                         ].map((key) => (
                           <td key={key} style={{ padding: 6 }}>
                             <input
@@ -1482,9 +1496,10 @@ export default function PocRegister({ C, registroInicial = null, pocTypeInicial 
                     <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.emerald }}>{enrichmentMetrics.registrosEnriquecidos}</td>
                     <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{enrichmentMetrics.naoLocalizados}</td>
                     <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.rose }}>{enrichmentMetrics.invalidos}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.amber }}>{enrichmentMetrics.retorno}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.emerald }}>{enrichmentMetrics.cpcNovo}</td>
                     <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{enrichmentMetrics.telefonesNovos}</td>
                     <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{enrichmentMetrics.emailsNovos}</td>
-                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.blue }}>{pct(enrichmentMetrics.scoreQualidadeMedio)}</td>
                     <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.emerald }}>{pct(enrichmentMetrics.taxaEnriquecimento)}</td>
                     <td />
                   </tr>
@@ -1501,10 +1516,11 @@ export default function PocRegister({ C, registroInicial = null, pocTypeInicial 
                   registrosEnriquecidos: "",
                   naoLocalizados: "",
                   invalidos: "",
+                  retorno: "",
+                  cpcNovo: "",
                   telefonesNovos: "",
                   emailsNovos: "",
-                  scoreQualidade: "",
-                  observation: "",
+                            observation: "",
                 })
               }
               style={{ ...field, marginTop: 12, cursor: "pointer", fontWeight: 800 }}
@@ -1514,110 +1530,126 @@ export default function PocRegister({ C, registroInicial = null, pocTypeInicial 
           </Section>
 
           <Section
-            title="Critérios de Validação do Enriquecimento"
-            sub="Indicadores específicos para avaliar qualidade, cobertura, compliance e viabilidade da solução"
+            title="Funil do Enriquecimento"
+            sub="Visão executiva dos principais percentuais da POC de enriquecimento de dados"
           >
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
-                <thead>
-                  <tr>
-                    {["Indicador", "Meta", "Resultado", "Status", ""].map((h) => (
-                      <th
-                        key={h}
+            {(() => {
+              const funil = [
+                {
+                  label: "% Base",
+                  value: enrichmentMetrics.taxaProcessamento,
+                  volume: `${enrichmentMetrics.baseProcessada} / ${enrichmentMetrics.baseRecebida}`,
+                  desc: "Base processada sobre a base recebida",
+                  color: C.violet,
+                },
+                {
+                  label: "% Retorno",
+                  value: enrichmentMetrics.taxaRetorno,
+                  volume: enrichmentMetrics.retorno,
+                  desc: "Retornos obtidos sobre a base processada",
+                  color: C.amber,
+                },
+                {
+                  label: "Meta 15%",
+                  value: enrichmentMetrics.metaCpcNovo,
+                  volume: "15%",
+                  desc: "Meta mínima definida para CPC novo",
+                  color: C.blue,
+                },
+                {
+                  label: "% CPC Novo",
+                  value: enrichmentMetrics.taxaCpcNovo,
+                  volume: enrichmentMetrics.cpcNovo,
+                  desc: "CPC novo identificado sobre a base processada",
+                  color: C.emerald,
+                },
+                {
+                  label: "% Meta",
+                  value: enrichmentMetrics.percentualMeta,
+                  volume: pct(enrichmentMetrics.percentualMeta),
+                  desc: "Atingimento da meta de 15%",
+                  color:
+                    enrichmentMetrics.percentualMeta >= 100
+                      ? C.emerald
+                      : enrichmentMetrics.percentualMeta >= 70
+                      ? C.amber
+                      : C.rose,
+                },
+              ];
+
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {funil.map((item) => {
+                    const width = Math.max(1, Math.min(100, item.value || 0));
+
+                    return (
+                      <div
+                        key={item.label}
                         style={{
-                          padding: 9,
-                          fontSize: 11,
-                          color: C.t3,
-                          textAlign: "left",
-                          borderBottom: `1px solid ${C.border}`,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.06em",
+                          background: C.bg3,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 14,
+                          padding: "13px 14px",
                         }}
                       >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {(data.enrichment?.criteria || []).map((row) => (
-                    <tr key={row.id}>
-                      <td style={{ padding: 6 }}>
-                        <input
-                          defaultValue={row.indicador}
-                          onBlur={(e) => updateRow("enrichment", "criteria", row.id, "indicador", e.target.value)}
-                          style={smallField}
-                        />
-                      </td>
-
-                      <td style={{ padding: 6 }}>
-                        <input
-                          placeholder="Meta esperada"
-                          defaultValue={row.meta}
-                          onBlur={(e) => updateRow("enrichment", "criteria", row.id, "meta", e.target.value)}
-                          style={smallField}
-                        />
-                      </td>
-
-                      <td style={{ padding: 6 }}>
-                        <input
-                          placeholder="Resultado observado"
-                          defaultValue={row.resultado}
-                          onBlur={(e) => updateRow("enrichment", "criteria", row.id, "resultado", e.target.value)}
-                          style={smallField}
-                        />
-                      </td>
-
-                      <td style={{ padding: 6 }}>
-                        <select
-                          defaultValue={row.status}
-                          onBlur={(e) => updateRow("enrichment", "criteria", row.id, "status", e.target.value)}
-                          style={smallField}
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "150px 100px 1fr 95px",
+                            gap: 12,
+                            alignItems: "center",
+                          }}
                         >
-                          <option>Pendente</option>
-                          <option>Atendido</option>
-                          <option>Parcial</option>
-                          <option>Não atendido</option>
-                        </select>
-                      </td>
+                          <div>
+                            <div style={{ fontSize: 13, color: C.t1, fontWeight: 950 }}>
+                              {item.label}
+                            </div>
+                            <div style={{ fontSize: 10, color: C.t3, marginTop: 3, lineHeight: 1.35 }}>
+                              {item.desc}
+                            </div>
+                          </div>
 
-                      <td style={{ padding: 6 }}>
-                        <button
-                          onClick={() => removeRow("enrichment", "criteria", row.id)}
-                          style={{ ...smallField, cursor: "pointer" }}
-                        >
-                          Excluir
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                          <div>
+                            <div style={{ fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                              Volume
+                            </div>
+                            <div style={{ fontSize: 15, color: item.color, fontWeight: 950 }}>
+                              {item.volume}
+                            </div>
+                          </div>
 
-            <button
-              onClick={() =>
-                addRow("enrichment", "criteria", {
-                  indicador: "",
-                  meta: "",
-                  resultado: "",
-                  status: "Pendente",
-                })
-              }
-              style={{ ...field, marginTop: 12, cursor: "pointer", fontWeight: 800 }}
-            >
-              + Adicionar critério
-            </button>
-          </Section>
+                          <div>
+                            <div
+                              style={{
+                                height: 13,
+                                background: C.bg1,
+                                border: `1px solid ${C.border}`,
+                                borderRadius: 999,
+                                overflow: "hidden",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: `${width}%`,
+                                  height: "100%",
+                                  background: item.color,
+                                  borderRadius: 999,
+                                  transition: "width 0.5s ease",
+                                }}
+                              />
+                            </div>
+                          </div>
 
-          <Section title="Análise Executiva do Enriquecimento" sub="Conclusão técnica e recomendação sobre qualidade da base enriquecida">
-            <textarea
-              placeholder="Escreva a análise do enriquecimento: qualidade da base, cobertura obtida, dados inválidos, aderência LGPD, riscos e recomendação executiva."
-              defaultValue={data.enrichment?.executiveAnalysis || ""}
-              onBlur={(e) => update("enrichment.executiveAnalysis", e.target.value)}
-              style={{ ...field, minHeight: 130, resize: "vertical", lineHeight: 1.6 }}
-            />
+                          <div style={{ textAlign: "right", fontSize: 15, color: item.color, fontWeight: 950 }}>
+                            {pct(item.value)}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </Section>
         </div>
       )}
