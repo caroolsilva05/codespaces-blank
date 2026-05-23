@@ -142,6 +142,65 @@ const emptyPoc = {
     ],
     executiveAnalysis: "",
   },
+  orchestration: {
+    strategy: {
+      nomeRegua: "",
+      objetivoRegua: "",
+      faixaAtraso: "",
+      cronogramaDias: "",
+      observacoes: "",
+    },
+    baseGeneration: {
+      segmentacao: "",
+      precisaEnriquecimento: "Não",
+      cenariosExclusao: "",
+      volumePrevisto: "",
+      origemBase: "",
+    },
+    executionBase: {
+      sms: false,
+      email: false,
+      wpp: false,
+      rcs: false,
+      discador: false,
+      ura: false,
+      observacoes: "",
+    },
+    returnMatrix: {
+      retornoPositivo: "",
+      retornoNegativo: "",
+      retornoNeutro: "",
+      criterioConversao: "",
+    },
+    decisionEngine: {
+      rules: [
+        {
+          id: 1,
+          fase: "Fase 1",
+          condicao: "",
+          acao: "",
+          canal: "",
+          tom: "",
+          observacao: "",
+        },
+      ],
+    },
+    report: {
+      rows: [
+        {
+          id: 1,
+          fase: "Fase 1",
+          baseElegivel: "",
+          acionados: "",
+          retornoPositivo: "",
+          retornoNegativo: "",
+          avancaramFase: "",
+          acordos: "",
+          observacao: "",
+        },
+      ],
+    },
+  },
   incidents: {
     rows: [
       {
@@ -380,6 +439,58 @@ function calcEnrichmentMetrics(rows) {
     percentualMeta,
   };
 }
+function calcOrchestrationMetrics(rows) {
+  const totals = rows.reduce(
+    (acc, row) => {
+      acc.baseElegivel += toNum(row.baseElegivel);
+      acc.acionados += toNum(row.acionados);
+      acc.retornoPositivo += toNum(row.retornoPositivo);
+      acc.retornoNegativo += toNum(row.retornoNegativo);
+      acc.avancaramFase += toNum(row.avancaramFase);
+      acc.acordos += toNum(row.acordos);
+      return acc;
+    },
+    {
+      baseElegivel: 0,
+      acionados: 0,
+      retornoPositivo: 0,
+      retornoNegativo: 0,
+      avancaramFase: 0,
+      acordos: 0,
+    },
+  );
+
+  const taxaAcionamento =
+    totals.baseElegivel > 0
+      ? (totals.acionados / totals.baseElegivel) * 100
+      : 0;
+
+  const taxaRetornoPositivo =
+    totals.acionados > 0
+      ? (totals.retornoPositivo / totals.acionados) * 100
+      : 0;
+
+  const taxaRetornoNegativo =
+    totals.acionados > 0
+      ? (totals.retornoNegativo / totals.acionados) * 100
+      : 0;
+
+  const taxaAvanco =
+    totals.acionados > 0 ? (totals.avancaramFase / totals.acionados) * 100 : 0;
+
+  const taxaAcordo =
+    totals.acionados > 0 ? (totals.acordos / totals.acionados) * 100 : 0;
+
+  return {
+    ...totals,
+    taxaAcionamento,
+    taxaRetornoPositivo,
+    taxaRetornoNegativo,
+    taxaAvanco,
+    taxaAcordo,
+  };
+}
+
 function cloneData(data) {
   return JSON.parse(JSON.stringify(data));
 }
@@ -431,6 +542,17 @@ export default function PocRegister({
     () => calcEnrichmentMetrics(data.enrichment?.rows || []),
     [data.enrichment?.rows],
   );
+
+  const orchestrationMetrics = useMemo(
+    () => calcOrchestrationMetrics(data.orchestration?.report?.rows || []),
+    [data.orchestration?.report?.rows],
+  );
+
+  const isPocOrquestracao = String(
+    data.general?.pocType || pocTypeInicial || "",
+  )
+    .toLowerCase()
+    .includes("orquestra");
   const averageScore = useMemo(() => {
     const values = [
       toNum(data.evaluation.functionality),
@@ -736,9 +858,11 @@ export default function PocRegister({
           <TabButton
             id="analytics"
             label={
-              data.general.pocType === "Enriquecimento de Dados"
-                ? "Relatório de Enriquecimento"
-                : "Relatório Analítico"
+              isPocOrquestracao
+                ? "Relatório da Régua"
+                : data.general.pocType === "Enriquecimento de Dados"
+                  ? "Relatório de Enriquecimento"
+                  : "Relatório Analítico"
             }
           />{" "}
           <TabButton id="incidents" label="Incidentes" />{" "}
