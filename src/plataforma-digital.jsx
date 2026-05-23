@@ -1579,6 +1579,14 @@ function ScrumView({ C }) {
   const [scrumRecords, setScrumRecords] = useState([]);
   const [loadingScrum, setLoadingScrum] = useState(false);
 
+  const isAdminScrum = (() => {
+    try {
+      return (window.localStorage.getItem("bp-demo-email") || "").toLowerCase() === "teste@digital.com.br";
+    } catch {
+      return false;
+    }
+  })();
+
   async function carregarRegistrosScrum() {
     setLoadingScrum(true);
 
@@ -1620,6 +1628,52 @@ function ScrumView({ C }) {
     setShowScrumRegister(false);
     setSelectedScrumRecord(null);
     carregarRegistrosScrum();
+  }
+
+  async function excluirRegistroScrum(registro, nomeProjeto) {
+    if (!isAdminScrum) {
+      alert("Apenas administradores podem excluir registros do Scrum.");
+      return;
+    }
+
+    if (!registro?.id) {
+      alert("Registro sem ID para exclusão.");
+      return;
+    }
+
+    const senhaAdmin = window.prompt(
+      `Para excluir o projeto "${nomeProjeto}", informe sua senha de administrador.`
+    );
+
+    if (senhaAdmin !== "Teste@2026") {
+      alert("Senha de administrador inválida. Exclusão cancelada.");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("registros_do_projeto_scrum")
+      .delete()
+      .eq("id", registro.id)
+      .select("id");
+
+    if (error) {
+      console.log("Erro ao excluir registro Scrum:", error);
+      alert("Erro ao excluir projeto. Veja o console.");
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      alert("Nenhum registro foi excluído. Verifique se o projeto ainda existe ou se há permissão de exclusão.");
+      return;
+    }
+
+    setScrumRecords((prev) =>
+      prev.filter((item) => String(item.id) !== String(registro.id))
+    );
+
+    alert("Projeto excluído com sucesso.");
+
+    await carregarRegistrosScrum();
   }
 
   const fases = ["Backlog", "Planejamento", "Execução", "Monitoramento", "Encerramento"];
@@ -1666,7 +1720,9 @@ function ScrumView({ C }) {
 
       <SectionHeader
         title="Scrum de Projetos"
-        sub="Ciclo de vida dos projetos · Backlog, Planejamento, Execução, Monitoramento e Encerramento"
+        sub={isAdminScrum
+          ? "Ciclo de vida dos projetos · Exclusão restrita ao administrador"
+          : "Ciclo de vida dos projetos · Backlog, Planejamento, Execução, Monitoramento e Encerramento"}
         actions={[
           <Btn
             key="n"
@@ -1891,23 +1947,47 @@ function ScrumView({ C }) {
                         {responsavel}
                       </span>
 
-                      <Chip
-                        label={status}
-                        color={
-                          status === "Atrasado"
-                            ? C.rose
-                            : status === "Atenção"
-                            ? C.amber
-                            : C.emerald
-                        }
-                        bg={
-                          status === "Atrasado"
-                            ? C.roseGlow
-                            : status === "Atenção"
-                            ? C.amberGlow
-                            : C.emeraldGlow
-                        }
-                      />
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <Chip
+                          label={status}
+                          color={
+                            status === "Atrasado"
+                              ? C.rose
+                              : status === "Atenção"
+                              ? C.amber
+                              : C.emerald
+                          }
+                          bg={
+                            status === "Atrasado"
+                              ? C.roseGlow
+                              : status === "Atenção"
+                              ? C.amberGlow
+                              : C.emeraldGlow
+                          }
+                        />
+
+                        {isAdminScrum && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              excluirRegistroScrum(registro, nome);
+                            }}
+                            title="Excluir duplicidade"
+                            style={{
+                              border: `1px solid ${C.rose}44`,
+                              background: C.roseGlow,
+                              color: C.rose,
+                              borderRadius: 7,
+                              padding: "3px 7px",
+                              fontSize: 10,
+                              fontWeight: 900,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Excluir
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
