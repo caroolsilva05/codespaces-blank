@@ -678,7 +678,7 @@ function Dashboard({ C }) {
         <KPICard icon={AlertTriangle} label="Pontos de atenção" value={totalAlertas} sub={totalAlertas > 0 ? "Exigem acompanhamento" : "Sem alertas críticos"} color={totalAlertas > 0 ? C.rose : C.emerald} glow={totalAlertas > 0 ? C.roseGlow : C.emeraldGlow} C={C} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 16 }}>
         <div style={{ ...card(C), padding: "22px 24px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
             <div>
@@ -3037,7 +3037,7 @@ function PocView({ C }) {
             style={{
               ...card(C),
               width: "100%",
-              maxWidth: 720,
+              maxWidth: 980,
               padding: 24,
               borderRadius: 22,
               background: C.bg1,
@@ -3085,6 +3085,13 @@ function PocView({ C }) {
                   desc: "Modelo específico para bases processadas, taxa de enriquecimento, dados inválidos, qualidade e critérios de validação.",
                   color: C.emerald,
                   bg: C.emeraldGlow,
+                },
+                {
+                  tipo: "Orquestração",
+                  titulo: "Orquestração",
+                  desc: "Modelo para régua de cobrança, linha do tempo, matriz de retorno e motor de decisão Se/Então.",
+                  color: C.violet,
+                  bg: C.violetGlow,
                 },
               ].map((item) => (
                 <button
