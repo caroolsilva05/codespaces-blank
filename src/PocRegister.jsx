@@ -869,6 +869,325 @@ export default function PocRegister({
           <TabButton id="evaluation" label="Avaliação Final" />{" "}
         </div>{" "}
       </div>{" "}
+      {tab === "overview" && isPocOrquestracao && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 12,
+            }}
+          >
+            <MetricCard
+              label="Base elegível"
+              value={orchestrationMetrics.baseElegivel}
+              sub="Clientes na régua"
+              color={C.violet}
+            />
+
+            <MetricCard
+              label="Acionados"
+              value={orchestrationMetrics.acionados}
+              sub={pct(orchestrationMetrics.taxaAcionamento)}
+              color={C.blue}
+            />
+
+            <MetricCard
+              label="Retorno positivo"
+              value={orchestrationMetrics.retornoPositivo}
+              sub={pct(orchestrationMetrics.taxaRetornoPositivo)}
+              color={C.emerald}
+            />
+
+            <MetricCard
+              label="Retorno negativo"
+              value={orchestrationMetrics.retornoNegativo}
+              sub={pct(orchestrationMetrics.taxaRetornoNegativo)}
+              color={C.amber}
+            />
+
+            <MetricCard
+              label="Conversão final"
+              value={orchestrationMetrics.acordos}
+              sub={pct(orchestrationMetrics.taxaAcordo)}
+              color={C.rose}
+            />
+          </div>
+
+          <div
+            style={{
+              height: 4,
+              borderRadius: 999,
+              background:
+                "linear-gradient(90deg, " +
+                C.violet +
+                ", " +
+                C.blue +
+                ", " +
+                C.emerald +
+                ")",
+              opacity: 0.22,
+              margin: "2px 0 4px",
+            }}
+          />
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.15fr 0.85fr",
+              gap: 12,
+            }}
+          >
+            <Section
+              title="Visão Geral da Régua"
+              sub="Acompanhamento da jornada de cobrança, canais utilizados, retornos e decisões da régua"
+            >
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: 12,
+                }}
+              >
+                {[
+                  ["Fornecedor", data.general.supplier || "-"],
+                  ["Carteira / Cliente", data.general.wallet || "-"],
+                  ["Solução testada", data.general.product || "-"],
+                  ["Responsável", data.general.responsible || "-"],
+                  [
+                    "Período",
+                    brDate(data.general.periodStart) +
+                      " a " +
+                      brDate(data.general.periodEnd),
+                  ],
+                  ["Tipo de POC", "Orquestração"],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    style={{
+                      background: C.bg3,
+                      border: "1px solid " + C.border,
+                      borderRadius: 12,
+                      padding: "12px 14px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: C.t3,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                        marginBottom: 5,
+                      }}
+                    >
+                      {label}
+                    </div>
+
+                    <div style={{ fontSize: 13, color: C.t1, fontWeight: 800 }}>
+                      {value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Section>
+
+            <Section
+              title="Conformidade e Regras de Contato"
+              sub="Controle de frequência, horário, opt-out, LGPD e regras do CDC"
+            >
+              <div style={{ fontSize: 13, color: C.t2, lineHeight: 1.7 }}>
+                Validar horários de acionamento, limite de tentativas, opt-out,
+                exclusões de clientes com acordo ativo, promessa de pagamento e
+                cuidados para evitar contato excessivo ou abordagem indevida.
+              </div>
+
+              <button
+                onClick={() => setTab("planning")}
+                style={{
+                  marginTop: 16,
+                  width: "100%",
+                  border: "1px solid " + C.border,
+                  background: C.surface,
+                  color: C.blue,
+                  borderRadius: 12,
+                  padding: "11px 14px",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 900,
+                }}
+              >
+                Configurar régua
+              </button>
+            </Section>
+          </div>
+
+          <Section
+            title="Funil da Orquestração"
+            sub="Base elegível → acionados → retorno positivo → avanço de fase → conversão"
+          >
+            {(() => {
+              const funil = [
+                {
+                  label: "Base elegível",
+                  value: 100,
+                  volume: orchestrationMetrics.baseElegivel,
+                  color: C.violet,
+                },
+                {
+                  label: "Acionados",
+                  value: orchestrationMetrics.taxaAcionamento,
+                  volume: orchestrationMetrics.acionados,
+                  color: C.blue,
+                },
+                {
+                  label: "Retorno positivo",
+                  value: orchestrationMetrics.taxaRetornoPositivo,
+                  volume: orchestrationMetrics.retornoPositivo,
+                  color: C.emerald,
+                },
+                {
+                  label: "Avançaram fase",
+                  value: orchestrationMetrics.taxaAvanco,
+                  volume: orchestrationMetrics.avancaramFase,
+                  color: C.amber,
+                },
+                {
+                  label: "Conversão final",
+                  value: orchestrationMetrics.taxaAcordo,
+                  volume: orchestrationMetrics.acordos,
+                  color: C.rose,
+                },
+              ];
+
+              return (
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 12 }}
+                >
+                  {funil.map((item) => {
+                    const width = Math.max(1, Math.min(100, item.value || 0));
+
+                    return (
+                      <div
+                        key={item.label}
+                        style={{
+                          background: C.bg3,
+                          border: "1px solid " + C.border,
+                          borderRadius: 14,
+                          padding: "13px 14px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "180px 110px 1fr 90px",
+                            gap: 12,
+                            alignItems: "center",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: 13,
+                              color: C.t1,
+                              fontWeight: 950,
+                            }}
+                          >
+                            {item.label}
+                          </div>
+
+                          <div
+                            style={{
+                              fontSize: 15,
+                              color: item.color,
+                              fontWeight: 950,
+                            }}
+                          >
+                            {item.volume}
+                          </div>
+
+                          <div
+                            style={{
+                              height: 13,
+                              background: C.bg1,
+                              border: "1px solid " + C.border,
+                              borderRadius: 999,
+                              overflow: "hidden",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: width + "%",
+                                height: "100%",
+                                background: item.color,
+                                borderRadius: 999,
+                              }}
+                            />
+                          </div>
+
+                          <div
+                            style={{
+                              textAlign: "right",
+                              fontSize: 15,
+                              color: item.color,
+                              fontWeight: 950,
+                            }}
+                          >
+                            {pct(item.value)}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </Section>
+
+          <Section
+            title="Mapa de Decisão"
+            sub="Lógica de continuidade da régua conforme comportamento do cliente"
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
+                gap: 10,
+              }}
+            >
+              {[
+                ["Se positivo", "Remove da régua e envia confirmação"],
+                ["Se negativo", "Avança fase e muda canal/tom"],
+                ["Se sem resposta", "Aguarda intervalo e tenta novo canal"],
+                ["Se pagamento", "Encerra jornada e remove da base"],
+              ].map(([title, desc]) => (
+                <div
+                  key={title}
+                  style={{
+                    background: C.bg3,
+                    border: "1px solid " + C.border,
+                    borderRadius: 14,
+                    padding: "13px 14px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: C.t1,
+                      fontWeight: 950,
+                      marginBottom: 6,
+                    }}
+                  >
+                    {title}
+                  </div>
+
+                  <div style={{ fontSize: 12, color: C.t2, lineHeight: 1.5 }}>
+                    {desc}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        </div>
+      )}
       {tab === "overview" &&
         data.general.pocType === "Enriquecimento de Dados" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -1437,7 +1756,8 @@ export default function PocRegister({
           </div>
         )}{" "}
       {tab === "overview" &&
-        data.general.pocType !== "Enriquecimento de Dados" && (
+        data.general.pocType !== "Enriquecimento de Dados" &&
+        !isPocOrquestracao && (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {" "}
             <style>{` @keyframes pocPulseAlert { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.28); } 70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } } `}</style>{" "}
