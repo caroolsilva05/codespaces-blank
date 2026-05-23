@@ -1720,9 +1720,7 @@ function ScrumView({ C }) {
 
       <SectionHeader
         title="Scrum de Projetos"
-        sub={isAdminScrum
-          ? "Ciclo de vida dos projetos · Exclusão restrita ao administrador"
-          : "Ciclo de vida dos projetos · Backlog, Planejamento, Execução, Monitoramento e Encerramento"}
+        sub="Ciclo de vida dos projetos"
         actions={[
           <Btn
             key="n"
