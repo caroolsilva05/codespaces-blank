@@ -676,6 +676,59 @@ export default function PocRegister({
     });
   }
 
+  function updateOrchestrationReportRow(id, fieldName, value) {
+    setData((prev) => {
+      const next = cloneData(prev);
+
+      next.orchestration = next.orchestration || {};
+      next.orchestration.report = next.orchestration.report || { rows: [] };
+
+      next.orchestration.report.rows = (
+        next.orchestration.report.rows || []
+      ).map((row) => (row.id === id ? { ...row, [fieldName]: value } : row));
+
+      return next;
+    });
+  }
+
+  function addOrchestrationReportRow() {
+    setData((prev) => {
+      const next = cloneData(prev);
+
+      next.orchestration = next.orchestration || {};
+      next.orchestration.report = next.orchestration.report || { rows: [] };
+
+      next.orchestration.report.rows.push({
+        id: Date.now(),
+        fase: "",
+        baseElegivel: "",
+        acionados: "",
+        retornoPositivo: "",
+        retornoNegativo: "",
+        avancaramFase: "",
+        acordos: "",
+        observacao: "",
+      });
+
+      return next;
+    });
+  }
+
+  function removeOrchestrationReportRow(id) {
+    setData((prev) => {
+      const next = cloneData(prev);
+
+      next.orchestration = next.orchestration || {};
+      next.orchestration.report = next.orchestration.report || { rows: [] };
+
+      next.orchestration.report.rows = (
+        next.orchestration.report.rows || []
+      ).filter((row) => row.id !== id);
+
+      return next;
+    });
+  }
+
   async function savePoc() {
     if (!data.general.pocName.trim()) {
       alert("Informe o nome da POC antes de salvar.");
@@ -3672,6 +3725,389 @@ export default function PocRegister({
           </Section>{" "}
         </div>
       )}{" "}
+      {tab === "analytics" && isPocOrquestracao && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 12,
+            }}
+          >
+            <MetricCard
+              label="Base elegível"
+              value={orchestrationMetrics.baseElegivel}
+              sub="Clientes aptos para régua"
+              color={C.violet}
+            />
+
+            <MetricCard
+              label="Acionados"
+              value={orchestrationMetrics.acionados}
+              sub={pct(orchestrationMetrics.taxaAcionamento)}
+              color={C.blue}
+            />
+
+            <MetricCard
+              label="Retorno positivo"
+              value={orchestrationMetrics.retornoPositivo}
+              sub={pct(orchestrationMetrics.taxaRetornoPositivo)}
+              color={C.emerald}
+            />
+
+            <MetricCard
+              label="Avançaram fase"
+              value={orchestrationMetrics.avancaramFase}
+              sub={pct(orchestrationMetrics.taxaAvanco)}
+              color={C.amber}
+            />
+
+            <MetricCard
+              label="Acordos"
+              value={orchestrationMetrics.acordos}
+              sub={pct(orchestrationMetrics.taxaAcordo)}
+              color={C.rose}
+            />
+          </div>
+
+          <Section
+            title="Relatório da Régua de Orquestração"
+            sub="Acompanhamento por fase: base, acionamentos, retornos, avanço de fase e acordos"
+          >
+            <div style={{ overflowX: "auto" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  minWidth: 1450,
+                }}
+              >
+                <thead>
+                  <tr>
+                    {[
+                      "Fase",
+                      "Base elegível",
+                      "Acionados",
+                      "Retorno positivo",
+                      "Retorno negativo",
+                      "Avançaram fase",
+                      "Acordos",
+                      "Tx. positivo",
+                      "Tx. avanço",
+                      "Tx. acordo",
+                      "Observação",
+                      "",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: "10px 8px",
+                          fontSize: 10,
+                          color: C.t3,
+                          textAlign: "left",
+                          borderBottom: "1px solid " + C.border,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {(data.orchestration?.report?.rows || []).map((row) => {
+                    const acionados = toNum(row.acionados);
+                    const retornoPositivo = toNum(row.retornoPositivo);
+                    const avancaramFase = toNum(row.avancaramFase);
+                    const acordos = toNum(row.acordos);
+
+                    const txPositivo =
+                      acionados > 0 ? (retornoPositivo / acionados) * 100 : 0;
+
+                    const txAvanco =
+                      acionados > 0 ? (avancaramFase / acionados) * 100 : 0;
+
+                    const txAcordo =
+                      acionados > 0 ? (acordos / acionados) * 100 : 0;
+
+                    return (
+                      <tr
+                        key={row.id}
+                        style={{ borderBottom: "1px solid " + C.border }}
+                      >
+                        <td style={{ padding: 6 }}>
+                          <input
+                            placeholder="Fase 1"
+                            defaultValue={row.fase}
+                            onBlur={(e) =>
+                              updateOrchestrationReportRow(
+                                row.id,
+                                "fase",
+                                e.target.value,
+                              )
+                            }
+                            style={smallField}
+                          />
+                        </td>
+
+                        {[
+                          "baseElegivel",
+                          "acionados",
+                          "retornoPositivo",
+                          "retornoNegativo",
+                          "avancaramFase",
+                          "acordos",
+                        ].map((key) => (
+                          <td key={key} style={{ padding: 6 }}>
+                            <input
+                              defaultValue={row[key]}
+                              onBlur={(e) =>
+                                updateOrchestrationReportRow(
+                                  row.id,
+                                  key,
+                                  e.target.value,
+                                )
+                              }
+                              style={smallField}
+                            />
+                          </td>
+                        ))}
+
+                        <td
+                          style={{
+                            padding: 6,
+                            fontSize: 12,
+                            fontWeight: 900,
+                            color:
+                              txPositivo >= 30
+                                ? C.emerald
+                                : txPositivo >= 15
+                                  ? C.amber
+                                  : C.rose,
+                          }}
+                        >
+                          {pct(txPositivo)}
+                        </td>
+
+                        <td
+                          style={{
+                            padding: 6,
+                            fontSize: 12,
+                            fontWeight: 900,
+                            color: C.amber,
+                          }}
+                        >
+                          {pct(txAvanco)}
+                        </td>
+
+                        <td
+                          style={{
+                            padding: 6,
+                            fontSize: 12,
+                            fontWeight: 900,
+                            color:
+                              txAcordo >= 10
+                                ? C.emerald
+                                : txAcordo >= 5
+                                  ? C.amber
+                                  : C.rose,
+                          }}
+                        >
+                          {pct(txAcordo)}
+                        </td>
+
+                        <td style={{ padding: 6, minWidth: 220 }}>
+                          <input
+                            placeholder="Observação da fase"
+                            defaultValue={row.observacao}
+                            onBlur={(e) =>
+                              updateOrchestrationReportRow(
+                                row.id,
+                                "observacao",
+                                e.target.value,
+                              )
+                            }
+                            style={smallField}
+                          />
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <button
+                            onClick={() => removeOrchestrationReportRow(row.id)}
+                            style={{ ...smallField, cursor: "pointer" }}
+                          >
+                            Excluir
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  <tr
+                    style={{
+                      background: C.bg2,
+                      borderTop: "2px solid " + C.borderStrong,
+                    }}
+                  >
+                    <td
+                      style={{
+                        padding: "12px 8px",
+                        fontSize: 12,
+                        fontWeight: 900,
+                        color: C.t1,
+                      }}
+                    >
+                      TOTAL
+                    </td>
+
+                    <td
+                      style={{
+                        padding: "12px 8px",
+                        fontSize: 12,
+                        fontWeight: 900,
+                        color: C.violet,
+                      }}
+                    >
+                      {orchestrationMetrics.baseElegivel}
+                    </td>
+
+                    <td
+                      style={{
+                        padding: "12px 8px",
+                        fontSize: 12,
+                        fontWeight: 900,
+                        color: C.blue,
+                      }}
+                    >
+                      {orchestrationMetrics.acionados}
+                    </td>
+
+                    <td
+                      style={{
+                        padding: "12px 8px",
+                        fontSize: 12,
+                        fontWeight: 900,
+                        color: C.emerald,
+                      }}
+                    >
+                      {orchestrationMetrics.retornoPositivo}
+                    </td>
+
+                    <td
+                      style={{
+                        padding: "12px 8px",
+                        fontSize: 12,
+                        fontWeight: 900,
+                        color: C.rose,
+                      }}
+                    >
+                      {orchestrationMetrics.retornoNegativo}
+                    </td>
+
+                    <td
+                      style={{
+                        padding: "12px 8px",
+                        fontSize: 12,
+                        fontWeight: 900,
+                        color: C.amber,
+                      }}
+                    >
+                      {orchestrationMetrics.avancaramFase}
+                    </td>
+
+                    <td
+                      style={{
+                        padding: "12px 8px",
+                        fontSize: 12,
+                        fontWeight: 900,
+                        color: C.rose,
+                      }}
+                    >
+                      {orchestrationMetrics.acordos}
+                    </td>
+
+                    <td
+                      style={{
+                        padding: "12px 8px",
+                        fontSize: 12,
+                        fontWeight: 900,
+                        color: C.emerald,
+                      }}
+                    >
+                      {pct(orchestrationMetrics.taxaRetornoPositivo)}
+                    </td>
+
+                    <td
+                      style={{
+                        padding: "12px 8px",
+                        fontSize: 12,
+                        fontWeight: 900,
+                        color: C.amber,
+                      }}
+                    >
+                      {pct(orchestrationMetrics.taxaAvanco)}
+                    </td>
+
+                    <td
+                      style={{
+                        padding: "12px 8px",
+                        fontSize: 12,
+                        fontWeight: 900,
+                        color: C.rose,
+                      }}
+                    >
+                      {pct(orchestrationMetrics.taxaAcordo)}
+                    </td>
+
+                    <td />
+                    <td />
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <button
+              onClick={addOrchestrationReportRow}
+              style={{
+                ...field,
+                marginTop: 12,
+                cursor: "pointer",
+                fontWeight: 800,
+              }}
+            >
+              + Adicionar fase da régua
+            </button>
+          </Section>
+
+          <Section
+            title="Leitura da Régua"
+            sub="Resumo automático para análise dos resultados da orquestração"
+          >
+            <div style={{ fontSize: 13, color: C.t2, lineHeight: 1.7 }}>
+              A régua possui{" "}
+              <strong style={{ color: C.t1 }}>
+                {orchestrationMetrics.baseElegivel}
+              </strong>{" "}
+              clientes elegíveis, com{" "}
+              <strong style={{ color: C.blue }}>
+                {pct(orchestrationMetrics.taxaAcionamento)}
+              </strong>{" "}
+              de acionamento. O retorno positivo está em{" "}
+              <strong style={{ color: C.emerald }}>
+                {pct(orchestrationMetrics.taxaRetornoPositivo)}
+              </strong>
+              , enquanto{" "}
+              <strong style={{ color: C.amber }}>
+                {pct(orchestrationMetrics.taxaAvanco)}
+              </strong>{" "}
+              avançaram para outra fase da régua.
+            </div>
+          </Section>
+        </div>
+      )}
       {tab === "analytics" &&
         data.general.pocType === "Enriquecimento de Dados" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -4167,7 +4603,8 @@ export default function PocRegister({
           </div>
         )}{" "}
       {tab === "analytics" &&
-        data.general.pocType !== "Enriquecimento de Dados" && (
+        data.general.pocType !== "Enriquecimento de Dados" &&
+        !isPocOrquestracao && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {" "}
             <Section
