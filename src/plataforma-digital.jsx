@@ -416,7 +416,7 @@ function Dashboard({ C }) {
     setLoading(true);
 
     const [projectsRes, pocsRes, suppliersRes] = await Promise.all([
-      supabase.from("projects").select("*"),
+      supabase.from("registros_do_projeto_scrum").select("*"),
       supabase.from("poc_records").select("*"),
       supabase.from("fornecedores").select("*"),
     ]);
@@ -425,7 +425,21 @@ function Dashboard({ C }) {
     if (pocsRes.error) console.log("Erro ao carregar POCs no dashboard:", pocsRes.error);
     if (suppliersRes.error) console.log("Erro ao carregar fornecedores no dashboard:", suppliersRes.error);
 
-    setProjetos(projectsRes.data || []);
+    const projetosNormalizados = (projectsRes.data || []).map((registro) => {
+      const dados = registro.dados_do_registro || registro.record_data || {};
+      const info = dados.projectInfo || {};
+
+      return {
+        id: registro.id,
+        name: registro.nome_do_projeto || registro.project_name || info.nome || "Projeto sem nome",
+        responsible: registro.responsavel || registro.responsible || info.responsavel || "-",
+        current_stage: registro.fase_atual || registro.current_phase || info.faseAtual || "Backlog",
+        status: registro.fase_atual || registro.current_phase || info.faseAtual || "Backlog",
+        end_date: info.previsaoEncerramento || registro.end_date || null,
+      };
+    });
+
+    setProjetos(projetosNormalizados);
     setPocsRegistros(pocsRes.data || []);
     setFornecedoresDb(suppliersRes.data || []);
     setLoading(false);
@@ -830,23 +844,9 @@ function ProjectsView({ C }) {
 
   const [filter, setFilter] = useState("Todos");
   const [showFilters, setShowFilters] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [dbProjects, setDbProjects] = useState([]);
+  const [scrumProjects, setScrumProjects] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
-  const [savingProject, setSavingProject] = useState(false);
-
-  const emptyForm = {
-    nome: "",
-    responsavel: "",
-    fornecedor: "",
-    canal: "",
-    prioridade: "Média",
-    statusCiclo: "Backlog",
-    descricao: "",
-    prazo: "",
-  };
-
-  const [form, setForm] = useState(emptyForm);
+  const [expandedTasks, setExpandedTasks] = useState({});
 
   const filters = ["Todos", ...etapasCiclo];
 
@@ -860,17 +860,15 @@ function ProjectsView({ C }) {
     fontSize: 13,
   };
 
-  function calcularProgressoPorEtapa(etapa) {
-    const etapas = {
-      "Backlog": 10,
-      "Início": 10,
-      "Planejamento": 30,
-      "Execução": 60,
-      "Monitoramento": 85,
-      "Encerramento": 100,
-    };
+  function getProjectKey(projeto) {
+    return String(projeto?.dbId || projeto?.id || projeto?.name || "");
+  }
 
-    return etapas[etapa] || 0;
+  function toggleSubtarefa(projectKey) {
+    setExpandedTasks((prev) => ({
+      ...prev,
+      [projectKey]: !prev[projectKey],
+    }));
   }
 
   function normalizarEtapa(valor) {
@@ -885,6 +883,19 @@ function ProjectsView({ C }) {
     return "Backlog";
   }
 
+  function calcularProgressoPorEtapa(etapa) {
+    const etapas = {
+      "Backlog": 10,
+      "Início": 10,
+      "Planejamento": 30,
+      "Execução": 60,
+      "Monitoramento": 85,
+      "Encerramento": 100,
+    };
+
+    return etapas[normalizarEtapa(etapa)] || 0;
+  }
+
   function corEtapa(etapa) {
     const etapaNormalizada = normalizarEtapa(etapa);
 
@@ -895,158 +906,212 @@ function ProjectsView({ C }) {
     return { color: C.emerald, bg: C.emeraldGlow };
   }
 
-  function handleChange(campo, valor) {
-    setForm((prev) => ({
-      ...prev,
-      [campo]: valor,
-    }));
+  function formatarData(valor) {
+    if (!valor) return "-";
+
+    try {
+      return String(valor).includes("-")
+        ? new Date(valor + "T00:00:00").toLocaleDateString("pt-BR")
+        : String(valor);
+    } catch {
+      return String(valor);
+    }
   }
 
-  async function carregarProjetos() {
+  function getDados(registro) {
+    return registro?.dados_do_registro || registro?.record_data || {};
+  }
+
+  function getProjectInfo(registro) {
+    const dados = getDados(registro);
+    return dados.projectInfo || {};
+  }
+
+  function ordenarPorDataOuId(a, b) {
+    const dataA = new Date(a.data || a.realizado || a.prazo || a.updated_at || a.criado_em || 0).getTime();
+    const dataB = new Date(b.data || b.realizado || b.prazo || b.updated_at || b.criado_em || 0).getTime();
+
+    if (dataA !== dataB) return dataB - dataA;
+
+    return Number(b.id || 0) - Number(a.id || 0);
+  }
+
+  function getUltimaAtualizacao(registro) {
+    const dados = getDados(registro);
+    const relatorios = Array.isArray(dados.phase4?.relatorioStatus)
+      ? dados.phase4.relatorioStatus
+      : [];
+
+    const validos = relatorios
+      .filter((item) =>
+        item &&
+        (
+          String(item.statusGeral || "").trim() ||
+          String(item.feito || "").trim() ||
+          String(item.proximos || "").trim()
+        )
+      )
+      .sort(ordenarPorDataOuId);
+
+    if (validos.length === 0) {
+      const dadosInfo = getProjectInfo(registro);
+      return dadosInfo.status ? `Status: ${dadosInfo.status}` : "Sem atualização registrada";
+    }
+
+    const ultimo = validos[0];
+    const partes = [];
+
+    if (ultimo.statusGeral) partes.push(`Status: ${ultimo.statusGeral}`);
+    if (ultimo.feito) partes.push(`Feito: ${ultimo.feito}`);
+    if (ultimo.proximos) partes.push(`Próximo: ${ultimo.proximos}`);
+
+    return partes.join(" · ") || "Sem atualização registrada";
+  }
+
+  function getUltimaSubtarefa(registro) {
+    const dados = getDados(registro);
+    const atividades = Array.isArray(dados.phase3?.atividades)
+      ? dados.phase3.atividades
+      : [];
+
+    const validas = atividades
+      .filter((item) =>
+        item &&
+        (
+          String(item.atividade || "").trim() ||
+          String(item.tarefa || "").trim() ||
+          String(item.status || "").trim()
+        )
+      )
+      .sort(ordenarPorDataOuId);
+
+    if (validas.length === 0) {
+      return {
+        texto: "Sem subtarefa registrada",
+        status: "Pendente",
+        responsavel: "-",
+        prazo: "",
+        prioridade: "Baixa",
+        notas: "",
+      };
+    }
+
+    const ultima = validas[0];
+
+    return {
+      texto: ultima.atividade || ultima.tarefa || "Subtarefa sem descrição",
+      status: ultima.status || "Pendente",
+      responsavel: ultima.responsavel || "",
+      prazo: ultima.prazo || "",
+      prioridade: ultima.prioridade || ultima.priority || "Baixa",
+      notas: ultima.notas || ultima.notes || ultima.observacao || "",
+    };
+  }
+
+  function normalizarRegistroScrum(registro, index) {
+    const dados = getDados(registro);
+    const info = dados.projectInfo || {};
+
+    const nome =
+      registro.nome_do_projeto ||
+      registro.project_name ||
+      info.nome ||
+      "Projeto sem nome";
+
+    const codigo =
+      registro.codigo_do_projeto ||
+      registro["código_do_projeto"] ||
+      registro.project_code ||
+      info.codigoId ||
+      `SCRUM-${String(index + 1).padStart(3, "0")}`;
+
+    const etapaAtual =
+      registro.fase_atual ||
+      registro.current_phase ||
+      info.faseAtual ||
+      "Backlog";
+
+    const responsavel =
+      registro.responsavel ||
+      registro.responsible ||
+      info.responsavel ||
+      "-";
+
+    const fornecedor =
+      registro.fornecedor ||
+      registro.supplier ||
+      info.fornecedor ||
+      "-";
+
+    const prazo =
+      info.previsaoEncerramento ||
+      registro.end_date ||
+      registro.data_prevista ||
+      "";
+
+    const statusGeral =
+      registro.status_geral ||
+      registro.general_status ||
+      info.status ||
+      "Em dia";
+
+    return {
+      dbId: registro.id,
+      id: codigo,
+      name: nome,
+      resp: responsavel,
+      fornecedor,
+      etapa: normalizarEtapa(etapaAtual),
+      prog: calcularProgressoPorEtapa(etapaAtual),
+      prazo: formatarData(prazo),
+      statusGeral,
+      observacao: getUltimaAtualizacao(registro),
+      subtarefa: getUltimaSubtarefa(registro),
+      updatedAt: registro.updated_at || registro.atualizado_em || registro.created_at || registro.criado_em || "",
+    };
+  }
+
+  async function carregarProjetosDoScrum() {
     setLoadingProjects(true);
 
     const { data, error } = await supabase
-      .from("projects")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .from("registros_do_projeto_scrum")
+      .select("*");
+
+    setLoadingProjects(false);
 
     if (error) {
-      console.log("Erro ao carregar projetos:", error);
-      setLoadingProjects(false);
+      console.log("Erro ao carregar projetos a partir do Scrum:", error);
       return;
     }
 
-    const projetosFormatados = (data || []).map((p, index) => {
-      const etapaAtual = normalizarEtapa(p.current_stage || p.status);
-
-      return {
-        dbId: p.id,
-        id: `BP-${String(index + 1).padStart(3, "0")}`,
-        name: p.name || "-",
-        resp: p.responsible || "-",
-        fornecedor: p.supplier || "-",
-        canal: p.channel || "-",
-        etapa: etapaAtual,
-        prog: calcularProgressoPorEtapa(etapaAtual),
-        prazo: p.end_date ? p.end_date.split("-").reverse().join("/") : "-",
-        prioridade: p.priority || "Média",
-        orcamento: "-",
-        statusCiclo: etapaAtual,
-      };
+    const registrosOrdenados = [...(data || [])].sort((a, b) => {
+      const dataA = new Date(a.updated_at || a.atualizado_em || a.created_at || a.criado_em || 0).getTime();
+      const dataB = new Date(b.updated_at || b.atualizado_em || b.created_at || b.criado_em || 0).getTime();
+      return dataB - dataA;
     });
 
-    setDbProjects(projetosFormatados);
-    setLoadingProjects(false);
+    setScrumProjects(registrosOrdenados.map(normalizarRegistroScrum));
   }
 
   useEffect(() => {
-    carregarProjetos();
+    carregarProjetosDoScrum();
   }, []);
 
-  async function salvarProjeto() {
-    if (!form.nome || !form.nome.trim()) {
-      alert("Informe o nome do projeto antes de salvar.");
-      return;
-    }
-
-    setSavingProject(true);
-
-    const etapaSelecionada = normalizarEtapa(form.statusCiclo);
-
-    const payloadBase = {
-      name: form.nome,
-      description: form.descricao,
-      responsible: form.responsavel,
-      supplier: form.fornecedor,
-      channel: form.canal,
-      priority: form.prioridade || "Média",
-      status: etapaSelecionada,
-      current_stage: etapaSelecionada,
-    };
-
-    const tentativas = [
-      { ...payloadBase, end_date: form.prazo || null },
-      payloadBase,
-    ];
-
-    let ultimoErro = null;
-
-    for (const payload of tentativas) {
-      const { error } = await supabase.from("projects").insert([payload]);
-
-      if (!error) {
-        ultimoErro = null;
-        break;
-      }
-
-      ultimoErro = error;
-      console.log("Tentativa de salvar projeto falhou:", error);
-    }
-
-    setSavingProject(false);
-
-    if (ultimoErro) {
-      console.log("Erro ao salvar projeto:", ultimoErro);
-      alert("Erro ao salvar projeto. Veja o console.");
-      return;
-    }
-
-    alert("Projeto salvo com sucesso!");
-
-    setForm(emptyForm);
-    setShowForm(false);
-    await carregarProjetos();
-  }
-
-  async function atualizarStatusCicloProjeto(dbId, novaEtapa) {
-    if (!dbId) {
-      alert("Este projeto ainda não possui ID do Supabase.");
-      return;
-    }
-
-    const etapaNormalizada = normalizarEtapa(novaEtapa);
-
-    const { error } = await supabase
-      .from("projects")
-      .update({
-        current_stage: etapaNormalizada,
-        status: etapaNormalizada,
-      })
-      .eq("id", dbId);
-
-    if (error) {
-      console.log("Erro ao atualizar status do ciclo:", error);
-      alert("Erro ao atualizar status do ciclo do projeto.");
-      return;
-    }
-
-    await carregarProjetos();
-  }
-
-  const sourceProjects =
-    dbProjects.length > 0
-      ? dbProjects
-      : projects.map((p) => {
-          const etapaAtual = normalizarEtapa(p.etapa || p.status);
-          return {
-            ...p,
-            etapa: etapaAtual,
-            statusCiclo: etapaAtual,
-            prog: calcularProgressoPorEtapa(etapaAtual),
-          };
-        });
+  const sourceProjects = scrumProjects;
 
   const filtered =
     filter === "Todos"
       ? sourceProjects
-      : sourceProjects.filter((p) => normalizarEtapa(p.statusCiclo || p.etapa || p.status) === filter);
+      : sourceProjects.filter((p) => normalizarEtapa(p.etapa) === filter);
 
   const totalPorFiltro = filters.reduce((acc, item) => {
     if (item === "Todos") {
       acc[item] = sourceProjects.length;
     } else {
-      acc[item] = sourceProjects.filter((p) => normalizarEtapa(p.statusCiclo || p.etapa || p.status) === item).length;
+      acc[item] = sourceProjects.filter((p) => normalizarEtapa(p.etapa) === item).length;
     }
+
     return acc;
   }, {});
 
@@ -1059,12 +1124,14 @@ function ProjectsView({ C }) {
           </div>
           <div style={{ fontSize: 13, color: C.t3, marginTop: 4 }}>
             {loadingProjects
-              ? "Carregando projetos..."
-              : `${filtered.length} projetos · Portfólio Transformação Digital`}
+              ? "Carregando projetos do Scrum..."
+              : `${filtered.length} projetos · Sincronizados automaticamente do Scrum`}
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 10, position: "relative" }}>
+        <div style={{ display: "flex", gap: 10, position: "relative", alignItems: "center" }}>
+          <Chip label="Fonte única: Scrum" color={C.emerald} bg={C.emeraldGlow} />
+
           <button
             onClick={() => setShowFilters((prev) => !prev)}
             style={{
@@ -1084,12 +1151,31 @@ function ProjectsView({ C }) {
             Filtros
           </button>
 
+          <button
+            onClick={carregarProjetosDoScrum}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 14px",
+              borderRadius: 10,
+              background: C.surface,
+              border: `1px solid ${C.border}`,
+              color: C.t2,
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            Atualizar
+          </button>
+
           {showFilters && (
             <div
               style={{
                 position: "absolute",
                 top: 44,
-                right: 150,
+                right: 0,
                 width: 260,
                 zIndex: 20,
                 ...card(C),
@@ -1138,205 +1224,18 @@ function ProjectsView({ C }) {
               </div>
             </div>
           )}
-
-          <button
-            onClick={() => setShowForm(true)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "8px 14px",
-              borderRadius: 10,
-              background: C.blue,
-              border: "none",
-              color: "#fff",
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 700,
-              boxShadow: "0 10px 24px rgba(37,99,235,0.18)",
-            }}
-          >
-            Novo Projeto
-          </button>
         </div>
       </div>
 
-      {showForm && (
-        <div
-          style={{
-            ...card(C),
-            padding: 0,
-            borderRadius: 22,
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              padding: "24px 26px 8px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              gap: 16,
-            }}
-          >
-            <div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: C.t1 }}>
-                Novo Projeto
-              </div>
-              <div style={{ fontSize: 12, color: C.t3, marginTop: 4 }}>
-                Cadastre um novo projeto da Transformação Digital
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowForm(false)}
-              style={{
-                background: C.surface,
-                border: `1px solid ${C.border}`,
-                color: C.t2,
-                borderRadius: 12,
-                padding: "8px 14px",
-                cursor: "pointer",
-                fontWeight: 600,
-              }}
-            >
-              Fechar
-            </button>
-          </div>
-
-          <div
-            style={{
-              maxWidth: 1160,
-              margin: "0 auto",
-              padding: "12px 26px 26px",
-            }}
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                gap: 14,
-                alignItems: "start",
-              }}
-            >
-              <input
-                placeholder="Nome do projeto"
-                value={form.nome}
-                onChange={(e) => handleChange("nome", e.target.value)}
-                style={fieldBase}
-              />
-
-              <input
-                placeholder="Responsável"
-                value={form.responsavel}
-                onChange={(e) => handleChange("responsavel", e.target.value)}
-                style={fieldBase}
-              />
-
-              <input
-                placeholder="Fornecedor"
-                value={form.fornecedor}
-                onChange={(e) => handleChange("fornecedor", e.target.value)}
-                style={fieldBase}
-              />
-
-              <input
-                placeholder="Canal: WhatsApp, RCS, SMS, E-mail..."
-                value={form.canal}
-                onChange={(e) => handleChange("canal", e.target.value)}
-                style={fieldBase}
-              />
-
-              <select
-                value={form.prioridade}
-                onChange={(e) => handleChange("prioridade", e.target.value)}
-                style={fieldBase}
-              >
-                <option value="Baixa">Prioridade: Baixa</option>
-                <option value="Média">Prioridade: Média</option>
-                <option value="Alta">Prioridade: Alta</option>
-                <option value="Crítica">Prioridade: Crítica</option>
-              </select>
-
-              <select
-                value={form.statusCiclo}
-                onChange={(e) => handleChange("statusCiclo", e.target.value)}
-                style={fieldBase}
-              >
-                {etapasCiclo.map((etapa) => (
-                  <option key={etapa} value={etapa}>
-                    Status do ciclo: {etapa}
-                  </option>
-                ))}
-              </select>
-
-              <input
-                type="date"
-                value={form.prazo}
-                onChange={(e) => handleChange("prazo", e.target.value)}
-                style={{ ...fieldBase, gridColumn: "1 / -1" }}
-              />
-
-              <textarea
-                placeholder="Descrição do projeto"
-                value={form.descricao}
-                onChange={(e) => handleChange("descricao", e.target.value)}
-                style={{
-                  ...fieldBase,
-                  gridColumn: "1 / -1",
-                  minHeight: 136,
-                  resize: "vertical",
-                  lineHeight: 1.5,
-                }}
-              />
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 12,
-                marginTop: 18,
-                paddingTop: 18,
-                borderTop: `1px solid ${C.border}`,
-              }}
-            >
-              <button
-                onClick={() => setShowForm(false)}
-                style={{
-                  background: C.surface,
-                  border: `1px solid ${C.border}`,
-                  color: C.t2,
-                  borderRadius: 12,
-                  padding: "11px 18px",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                }}
-              >
-                Cancelar
-              </button>
-
-              <button
-                onClick={salvarProjeto}
-                disabled={savingProject}
-                style={{
-                  background: C.blue,
-                  border: "none",
-                  color: "#fff",
-                  borderRadius: 12,
-                  padding: "11px 20px",
-                  cursor: savingProject ? "not-allowed" : "pointer",
-                  fontWeight: 800,
-                  opacity: savingProject ? 0.7 : 1,
-                  boxShadow: "0 10px 24px rgba(37,99,235,0.18)",
-                }}
-              >
-                {savingProject ? "Salvando..." : "Salvar Projeto"}
-              </button>
-            </div>
-          </div>
+      <div style={{ ...card(C), padding: "12px 14px", borderColor: C.blue + "33", background: C.blueGlow }}>
+        <div style={{ fontSize: 12, color: C.blue, fontWeight: 900 }}>
+          Integração ativa
         </div>
-      )}
+        <div style={{ fontSize: 12, color: C.t2, marginTop: 4, lineHeight: 1.5 }}>
+          Esta tela é somente uma visão consolidada. Para criar ou alterar um projeto, utilize o módulo Scrum. 
+          Qualquer projeto salvo no Scrum aparece automaticamente aqui.
+        </div>
+      </div>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {filters.map((f) => {
@@ -1364,11 +1263,11 @@ function ProjectsView({ C }) {
         })}
       </div>
 
-      <div style={{ ...card(C), padding: 0, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ ...card(C), padding: 0, overflowX: "auto", overflowY: "hidden" }}>
+        <table style={{ width: "100%", minWidth: 1080, borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-              {["ID", "Projeto", "Responsável", "Status do Ciclo", "Progresso", "Prazo", "Prioridade", "Orçamento"].map((h, i) => (
+              {["ID", "Projeto", "Responsável", "Status do Ciclo", "Progresso", "Prazo", "Observação"].map((h, i) => (
                 <th
                   key={i}
                   style={{
@@ -1389,17 +1288,69 @@ function ProjectsView({ C }) {
 
           <tbody>
             {filtered.map((p) => {
-              const etapaAtual = normalizarEtapa(p.statusCiclo || p.etapa || p.status);
+              const etapaAtual = normalizarEtapa(p.etapa);
               const cores = corEtapa(etapaAtual);
+              const statusSubtarefa = p.subtarefa.status || "Pendente";
+              const subtarefaStatus =
+                statusSubtarefa === "Concluída" || statusSubtarefa === "Feito"
+                  ? { color: C.emerald, bg: C.emeraldGlow }
+                  : statusSubtarefa === "Em andamento"
+                  ? { color: C.amber, bg: C.amberGlow }
+                  : statusSubtarefa === "Parado" || statusSubtarefa === "Atrasado"
+                  ? { color: C.rose, bg: C.roseGlow }
+                  : { color: C.t3, bg: C.bg3 };
+
+              const prioridadeSubtarefa = p.subtarefa.prioridade || "Baixa";
+              const prioridadeStyle =
+                prioridadeSubtarefa === "Alta"
+                  ? { color: C.violet, bg: C.violetGlow }
+                  : prioridadeSubtarefa === "Média" || prioridadeSubtarefa === "Media"
+                  ? { color: C.blue, bg: C.blueGlow }
+                  : { color: C.t3, bg: C.bg3 };
+
+              const projectKey = getProjectKey(p);
+              const subtarefaAberta = !!expandedTasks[projectKey];
 
               return (
-                <tr key={p.dbId || p.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                <React.Fragment key={projectKey}>
+                <tr style={{ borderBottom: `1px solid ${C.border}` }}>
                   <td style={{ padding: "14px 16px", fontSize: 12, color: C.t3 }}>
                     {p.id}
                   </td>
 
-                  <td style={{ padding: "14px 16px", fontSize: 13, color: C.t1, fontWeight: 700 }}>
-                    {p.name}
+                  <td style={{ padding: "14px 16px", minWidth: 220 }}>
+                    <div style={{ fontSize: 13, color: C.t1, fontWeight: 800 }}>
+                      {p.name}
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+                      <div style={{ fontSize: 11, color: C.t3 }}>
+                        {p.fornecedor}
+                      </div>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSubtarefa(projectKey);
+                        }}
+                        style={{
+                          border: `1px solid ${subtarefaAberta ? C.blue : C.border}`,
+                          background: subtarefaAberta ? C.blueGlow : C.surface,
+                          color: subtarefaAberta ? C.blue : C.t3,
+                          borderRadius: 999,
+                          padding: "4px 9px",
+                          fontSize: 10,
+                          fontWeight: 900,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 5,
+                        }}
+                      >
+                        <span>{subtarefaAberta ? "⌃" : "⌄"}</span>
+                        {subtarefaAberta ? "Ocultar subtarefa" : "Ver subtarefa"}
+                      </button>
+                    </div>
                   </td>
 
                   <td style={{ padding: "14px 16px", fontSize: 12, color: C.t2 }}>
@@ -1407,26 +1358,7 @@ function ProjectsView({ C }) {
                   </td>
 
                   <td style={{ padding: "14px 16px" }}>
-                    <select
-                      value={etapaAtual}
-                      onChange={(e) => atualizarStatusCicloProjeto(p.dbId, e.target.value)}
-                      style={{
-                        ...fieldBase,
-                        minWidth: 170,
-                        padding: "8px 10px",
-                        minHeight: 42,
-                        background: C.surface,
-                        color: C.t1,
-                        cursor: "pointer",
-                        borderColor: cores.color + "66",
-                      }}
-                    >
-                      {etapasCiclo.map((etapa) => (
-                        <option key={etapa} value={etapa}>
-                          {etapa}
-                        </option>
-                      ))}
-                    </select>
+                    <Chip label={etapaAtual} color={cores.color} bg={cores.bg} />
                   </td>
 
                   <td style={{ padding: "14px 16px", minWidth: 140 }}>
@@ -1441,21 +1373,195 @@ function ProjectsView({ C }) {
                     {p.prazo}
                   </td>
 
-                  <td style={{ padding: "14px 16px" }}>
-                    <Chip label={p.prioridade} color={C.amber} bg={C.amberGlow} />
+                  <td style={{ padding: "14px 16px", maxWidth: 320 }}>
+                    <div
+                      title={p.observacao}
+                      style={{
+                        fontSize: 12,
+                        color: C.t2,
+                        lineHeight: 1.45,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {p.observacao}
+                    </div>
                   </td>
 
-                  <td style={{ padding: "14px 16px", fontSize: 12, color: C.t2 }}>
-                    {p.orcamento}
-                  </td>
                 </tr>
-              );
+
+                  {subtarefaAberta && (
+                  <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                    <td colSpan={7} style={{ padding: "0 14px 14px 44px", background: C.bg0 }}>
+                      <div
+                        style={{
+                          border: `1px solid ${C.border}`,
+                          borderLeft: `4px solid ${subtarefaStatus.color}`,
+                          borderRadius: 12,
+                          overflow: "hidden",
+                          background: C.surface,
+                          boxShadow: "0 6px 18px rgba(15,23,42,0.05)",
+                        }}
+                      >
+                        <div
+                          style={{
+                            padding: "9px 12px",
+                            background: C.blueGlow,
+                            borderBottom: `1px solid ${C.border}`,
+                            color: C.blue,
+                            fontSize: 12,
+                            fontWeight: 900,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 7,
+                          }}
+                        >
+                          <span style={{ fontSize: 14 }}>↳</span>
+                          Última tarefa atualizada no Scrum
+                        </div>
+
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "32px 1.8fr 0.9fr 0.9fr 0.85fr 0.85fr",
+                            alignItems: "center",
+                            minHeight: 34,
+                            background: C.bg3,
+                            borderBottom: `1px solid ${C.border}`,
+                            fontSize: 10,
+                            color: C.t3,
+                            fontWeight: 900,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.04em",
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "center" }}>
+                            <input
+                              type="checkbox"
+                              checked={statusSubtarefa === "Concluída" || statusSubtarefa === "Feito"}
+                              readOnly
+                              style={{ width: 13, height: 13, accentColor: C.emerald }}
+                            />
+                          </div>
+                          <div style={{ padding: "0 10px" }}>Tarefa</div>
+                          <div style={{ padding: "0 10px", borderLeft: `1px solid ${C.border}` }}>Responsável</div>
+                          <div style={{ padding: "0 10px", borderLeft: `1px solid ${C.border}` }}>Status</div>
+                          <div style={{ padding: "0 10px", borderLeft: `1px solid ${C.border}` }}>Prazo</div>
+                          <div style={{ padding: "0 10px", borderLeft: `1px solid ${C.border}` }}>Prioridade</div>
+
+                        </div>
+
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "32px 1.8fr 0.9fr 0.9fr 0.85fr 0.85fr",
+                            alignItems: "center",
+                            minHeight: 42,
+                            fontSize: 12,
+                            color: C.t2,
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "center" }}>
+                            <input
+                              type="checkbox"
+                              checked={statusSubtarefa === "Concluída" || statusSubtarefa === "Feito"}
+                              readOnly
+                              style={{ width: 13, height: 13, accentColor: C.emerald }}
+                            />
+                          </div>
+
+                          <div
+                            title={p.subtarefa.texto}
+                            style={{
+                              padding: "0 10px",
+                              color: C.t1,
+                              fontWeight: 800,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {p.subtarefa.texto}
+                          </div>
+
+                          <div
+                            title={p.subtarefa.responsavel || "-"}
+                            style={{
+                              padding: "0 10px",
+                              borderLeft: `1px solid ${C.border}`,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {p.subtarefa.responsavel || "-"}
+                          </div>
+
+                          <div style={{ padding: "0 10px", borderLeft: `1px solid ${C.border}` }}>
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: "100%",
+                                minHeight: 26,
+                                borderRadius: 6,
+                                background: subtarefaStatus.bg,
+                                color: subtarefaStatus.color,
+                                fontSize: 11,
+                                fontWeight: 900,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {statusSubtarefa}
+                            </span>
+                          </div>
+
+                          <div
+                            style={{
+                              padding: "0 10px",
+                              borderLeft: `1px solid ${C.border}`,
+                              whiteSpace: "nowrap",
+                              color: C.t2,
+                            }}
+                          >
+                            {formatarData(p.subtarefa.prazo)}
+                          </div>
+
+                          <div style={{ padding: "0 10px", borderLeft: `1px solid ${C.border}` }}>
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: "100%",
+                                minHeight: 26,
+                                borderRadius: 6,
+                                background: prioridadeStyle.bg,
+                                color: prioridadeStyle.color,
+                                fontSize: 11,
+                                fontWeight: 900,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {prioridadeSubtarefa}
+                            </span>
+                          </div>
+
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  )}
+                </React.Fragment>              );
             })}
 
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={8} style={{ padding: "26px 16px", textAlign: "center", color: C.t3, fontSize: 13 }}>
-                  Nenhum projeto encontrado para este filtro.
+                <td colSpan={7} style={{ padding: "26px 16px", textAlign: "center", color: C.t3, fontSize: 13 }}>
+                  Nenhum projeto encontrado no Scrum para este filtro.
                 </td>
               </tr>
             )}
@@ -1465,6 +1571,7 @@ function ProjectsView({ C }) {
     </div>
   );
 }
+
 
 function ScrumView({ C }) {
   const [showScrumRegister, setShowScrumRegister] = useState(false);
@@ -2154,8 +2261,8 @@ function SuppliersView({ C }) {
         })}
       </div>
 
-      <div style={{ ...card(C), padding: 0, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ ...card(C), padding: 0, overflowX: "auto", overflowY: "hidden" }}>
+        <table style={{ width: "100%", minWidth: 1380, borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
               {["Fornecedor", "Canais", "Responsável", "SLA", "Score", "Risco", "Projetos", "Incidentes", "Status"].map((h) => (
@@ -2355,7 +2462,7 @@ function IndicatorsView({ C }) {
     setLoading(true);
 
     const [projectsRes, pocsRes, suppliersRes] = await Promise.all([
-      supabase.from("projects").select("*"),
+      supabase.from("registros_do_projeto_scrum").select("*"),
       supabase.from("poc_records").select("*"),
       supabase.from("fornecedores").select("*"),
     ]);
@@ -2364,7 +2471,21 @@ function IndicatorsView({ C }) {
     if (pocsRes.error) console.log("Erro ao carregar POCs:", pocsRes.error);
     if (suppliersRes.error) console.log("Erro ao carregar fornecedores:", suppliersRes.error);
 
-    setProjetos(projectsRes.data || []);
+    const projetosNormalizados = (projectsRes.data || []).map((registro) => {
+      const dados = registro.dados_do_registro || registro.record_data || {};
+      const info = dados.projectInfo || {};
+
+      return {
+        id: registro.id,
+        name: registro.nome_do_projeto || registro.project_name || info.nome || "Projeto sem nome",
+        responsible: registro.responsavel || registro.responsible || info.responsavel || "-",
+        current_stage: registro.fase_atual || registro.current_phase || info.faseAtual || "Backlog",
+        status: registro.fase_atual || registro.current_phase || info.faseAtual || "Backlog",
+        end_date: info.previsaoEncerramento || registro.end_date || null,
+      };
+    });
+
+    setProjetos(projetosNormalizados);
     setPocs(pocsRes.data || []);
     setFornecedores(suppliersRes.data || []);
     setLoading(false);
@@ -2870,8 +2991,8 @@ function PocView({ C }) {
         <KPICard icon={AlertTriangle} label="Com condições" value={comCondicoes} sub="Atenção executiva" color={C.amber} glow={C.amberGlow} C={C} />
       </div>
 
-      <div style={{ ...card(C), padding: 0, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ ...card(C), padding: 0, overflowX: "auto", overflowY: "hidden" }}>
+        <table style={{ width: "100%", minWidth: 1380, borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
               {["POC", "Fornecedor", "Responsável", "Status", "Entrega", "Leitura", "Conversão", "Recomendação"].map((h) => (
