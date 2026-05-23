@@ -2935,6 +2935,8 @@ function PocView({ C }) {
   const [loading, setLoading] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [showTypeSelector, setShowTypeSelector] = useState(false);
+  const [newPocType, setNewPocType] = useState("Canais Digitais");
 
   function toNum(value) {
     const parsed = Number(String(value || "0").replace(",", "."));
@@ -2988,11 +2990,20 @@ function PocView({ C }) {
 
   function abrirNovaPoc() {
     setSelectedRecord(null);
+    setNewPocType("Canais Digitais");
+    setShowTypeSelector(true);
+  }
+
+  function confirmarTipoPoc(tipo) {
+    setSelectedRecord(null);
+    setNewPocType(tipo);
+    setShowTypeSelector(false);
     setShowRegister(true);
   }
 
   function abrirPoc(record) {
     setSelectedRecord(record);
+    setNewPocType(record?.record_data?.general?.pocType || "Canais Digitais");
     setShowRegister(true);
   }
 
@@ -3009,6 +3020,103 @@ function PocView({ C }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+
+      {showTypeSelector && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9998,
+            background: "rgba(2,6,23,0.72)",
+            display: "grid",
+            placeItems: "center",
+            padding: 24,
+          }}
+        >
+          <div
+            style={{
+              ...card(C),
+              width: "100%",
+              maxWidth: 720,
+              padding: 24,
+              borderRadius: 22,
+              background: C.bg1,
+              boxShadow: "0 24px 70px rgba(0,0,0,0.35)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, marginBottom: 18 }}>
+              <div>
+                <div style={{ fontSize: 20, color: C.t1, fontWeight: 950 }}>
+                  Selecionar tipo de POC
+                </div>
+                <div style={{ fontSize: 13, color: C.t3, marginTop: 5, lineHeight: 1.5 }}>
+                  Escolha o modelo antes de iniciar. O layout do relatório será carregado conforme a categoria.
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowTypeSelector(false)}
+                style={{
+                  border: `1px solid ${C.border}`,
+                  background: C.surface,
+                  color: C.t2,
+                  borderRadius: 10,
+                  padding: "8px 12px",
+                  cursor: "pointer",
+                  fontWeight: 800,
+                }}
+              >
+                Fechar
+              </button>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              {[
+                {
+                  tipo: "Canais Digitais",
+                  titulo: "Canais Digitais",
+                  desc: "WhatsApp, RCS, SMS e E-mail. Mantém o relatório atual de disparos, entrega, leitura, retorno e conversão.",
+                  color: C.blue,
+                  bg: C.blueGlow,
+                },
+                {
+                  tipo: "Enriquecimento de Dados",
+                  titulo: "Enriquecimento de Dados",
+                  desc: "Modelo específico para bases processadas, taxa de enriquecimento, dados inválidos, qualidade e critérios de validação.",
+                  color: C.emerald,
+                  bg: C.emeraldGlow,
+                },
+              ].map((item) => (
+                <button
+                  key={item.tipo}
+                  onClick={() => confirmarTipoPoc(item.tipo)}
+                  style={{
+                    textAlign: "left",
+                    border: `1px solid ${item.color}55`,
+                    background: item.bg,
+                    color: C.t1,
+                    borderRadius: 18,
+                    padding: 18,
+                    cursor: "pointer",
+                    minHeight: 160,
+                  }}
+                >
+                  <div style={{ fontSize: 15, fontWeight: 950, color: item.color, marginBottom: 8 }}>
+                    {item.titulo}
+                  </div>
+                  <div style={{ fontSize: 12, color: C.t2, lineHeight: 1.55 }}>
+                    {item.desc}
+                  </div>
+                  <div style={{ marginTop: 18, fontSize: 12, fontWeight: 900, color: item.color }}>
+                    Iniciar POC →
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {showRegister && (
         <div
           style={{
@@ -3022,6 +3130,7 @@ function PocView({ C }) {
           <PocRegister
             C={C}
             registroInicial={selectedRecord}
+            pocTypeInicial={newPocType}
             onSaved={carregarPocs}
             onClose={fecharRegistro}
           />

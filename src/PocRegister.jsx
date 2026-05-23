@@ -14,6 +14,7 @@ const emptyPoc = {
     dailyGoal: "",
     pocDays: "",
     status: "Em Planejamento",
+    pocType: "Canais Digitais",
   },
   planning: {
     businessProblem: "",
@@ -48,6 +49,30 @@ const emptyPoc = {
     rows: [
       { id: 1, date: "", disparado: "", totalMensagens: "", entregue: "", naoEntregue: "", emProcesso: "", lido: "", cliques: "", retornoCliente: "", acordos: "", observation: "" },
     ],
+  },
+  enrichment: {
+    rows: [
+      {
+        id: 1,
+        date: "",
+        baseRecebida: "",
+        baseProcessada: "",
+        registrosEnriquecidos: "",
+        naoLocalizados: "",
+        invalidos: "",
+        telefonesNovos: "",
+        emailsNovos: "",
+        scoreQualidade: "",
+        observation: "",
+      },
+    ],
+    criteria: [
+      { id: 1, indicador: "Cobertura de enriquecimento", meta: "", resultado: "", status: "Pendente" },
+      { id: 2, indicador: "Qualidade / assertividade dos dados", meta: "", resultado: "", status: "Pendente" },
+      { id: 3, indicador: "Aderência LGPD / compliance", meta: "", resultado: "", status: "Pendente" },
+      { id: 4, indicador: "Tempo de processamento", meta: "", resultado: "", status: "Pendente" },
+    ],
+    executiveAnalysis: "",
   },
   incidents: {
     rows: [
@@ -164,6 +189,54 @@ function calcMetrics(rows) {
   };
 }
 
+function calcEnrichmentMetrics(rows) {
+  const totals = rows.reduce(
+    (acc, row) => {
+      acc.baseRecebida += toNum(row.baseRecebida);
+      acc.baseProcessada += toNum(row.baseProcessada);
+      acc.registrosEnriquecidos += toNum(row.registrosEnriquecidos);
+      acc.naoLocalizados += toNum(row.naoLocalizados);
+      acc.invalidos += toNum(row.invalidos);
+      acc.telefonesNovos += toNum(row.telefonesNovos);
+      acc.emailsNovos += toNum(row.emailsNovos);
+      acc.scoreQualidadeSoma += toNum(row.scoreQualidade);
+      acc.scoreQualidadeQtd += String(row.scoreQualidade || "").trim() ? 1 : 0;
+      return acc;
+    },
+    {
+      baseRecebida: 0,
+      baseProcessada: 0,
+      registrosEnriquecidos: 0,
+      naoLocalizados: 0,
+      invalidos: 0,
+      telefonesNovos: 0,
+      emailsNovos: 0,
+      scoreQualidadeSoma: 0,
+      scoreQualidadeQtd: 0,
+    }
+  );
+
+  const taxaProcessamento =
+    totals.baseRecebida > 0 ? (totals.baseProcessada / totals.baseRecebida) * 100 : 0;
+
+  const taxaEnriquecimento =
+    totals.baseProcessada > 0 ? (totals.registrosEnriquecidos / totals.baseProcessada) * 100 : 0;
+
+  const taxaInvalidos =
+    totals.baseProcessada > 0 ? (totals.invalidos / totals.baseProcessada) * 100 : 0;
+
+  const scoreQualidadeMedio =
+    totals.scoreQualidadeQtd > 0 ? totals.scoreQualidadeSoma / totals.scoreQualidadeQtd : 0;
+
+  return {
+    ...totals,
+    taxaProcessamento,
+    taxaEnriquecimento,
+    taxaInvalidos,
+    scoreQualidadeMedio,
+  };
+}
+
 function cloneData(data) {
   return JSON.parse(JSON.stringify(data));
 }
@@ -192,16 +265,24 @@ function deepMerge(base, extra) {
   return merge(output, extra);
 }
 
-export default function PocRegister({ C, registroInicial = null, onSaved = null, onClose = null } = {}) {
+export default function PocRegister({ C, registroInicial = null, pocTypeInicial = "Canais Digitais", onSaved = null, onClose = null } = {}) {
   const [tab, setTab] = useState("overview");
   const [saving, setSaving] = useState(false);
   const [lastEditedAt, setLastEditedAt] = useState(null);
   const [data, setData] = useState(() => {
     const saved = registroInicial?.record_data || registroInicial?.dados_do_registro || null;
-    return saved ? deepMerge(emptyPoc, saved) : emptyPoc;
+
+    if (saved) {
+      return deepMerge(emptyPoc, saved);
+    }
+
+    const novaPoc = cloneData(emptyPoc);
+    novaPoc.general.pocType = pocTypeInicial || "Canais Digitais";
+    return novaPoc;
   });
 
   const metrics = useMemo(() => calcMetrics(data.analytics.rows || []), [data.analytics.rows]);
+  const enrichmentMetrics = useMemo(() => calcEnrichmentMetrics(data.enrichment?.rows || []), [data.enrichment?.rows]);
 
   const averageScore = useMemo(() => {
     const values = [
@@ -467,7 +548,7 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
           <TabButton id="general" label="Cadastro" />
           <TabButton id="planning" label="Planejamento" />
           <TabButton id="execution" label="Execução" />
-          <TabButton id="analytics" label="Relatório Analítico" />
+          <TabButton id="analytics" label={data.general.pocType === "Enriquecimento de Dados" ? "Relatório de Enriquecimento" : "Relatório Analítico"} />
           <TabButton id="incidents" label="Incidentes" />
           <TabButton id="evaluation" label="Avaliação Final" />
         </div>
@@ -937,6 +1018,10 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
       {tab === "general" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <Section title="Informações Gerais da POC" sub="Dados de alinhamento inicial com o fornecedor e acompanhamento executivo">
+            <div style={{ marginBottom: 14, display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 999, background: C.blueGlow, border: `1px solid ${C.blue}33`, color: C.blue, fontSize: 12, fontWeight: 900 }}>
+              Tipo de POC: {data.general.pocType || "Canais Digitais"}
+            </div>
+
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
               <input
                 placeholder="Nome da POC"
@@ -1288,7 +1373,257 @@ export default function PocRegister({ C, registroInicial = null, onSaved = null,
         </div>
       )}
 
-      {tab === "analytics" && (
+
+      {tab === "analytics" && data.general.pocType === "Enriquecimento de Dados" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
+            <MetricCard label="Base recebida" value={enrichmentMetrics.baseRecebida} sub="Registros enviados" color={C.violet} />
+            <MetricCard label="Processados" value={enrichmentMetrics.baseProcessada} sub={pct(enrichmentMetrics.taxaProcessamento)} color={C.blue} />
+            <MetricCard label="Enriquecidos" value={enrichmentMetrics.registrosEnriquecidos} sub={pct(enrichmentMetrics.taxaEnriquecimento)} color={C.emerald} />
+            <MetricCard label="Score qualidade" value={pct(enrichmentMetrics.scoreQualidadeMedio)} sub="Média informada" color={enrichmentMetrics.scoreQualidadeMedio >= 80 ? C.emerald : enrichmentMetrics.scoreQualidadeMedio >= 60 ? C.amber : C.rose} />
+          </div>
+
+          <Section
+            title="Relatório Analítico de Enriquecimento de Dados"
+            sub="Controle da base processada, taxa de enriquecimento, qualidade dos dados e inconsistências"
+          >
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1250 }}>
+                <thead>
+                  <tr>
+                    {[
+                      "Data",
+                      "Base recebida",
+                      "Base processada",
+                      "Registros enriquecidos",
+                      "Não localizados",
+                      "Inválidos",
+                      "Telefones novos",
+                      "E-mails novos",
+                      "Score qualidade",
+                      "Tx. enriquecimento",
+                      "",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: "10px 8px",
+                          fontSize: 10,
+                          color: C.t3,
+                          textAlign: "left",
+                          borderBottom: `1px solid ${C.border}`,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {(data.enrichment?.rows || []).map((row) => {
+                    const baseProcessada = toNum(row.baseProcessada);
+                    const enriquecidos = toNum(row.registrosEnriquecidos);
+                    const txEnriquecimento = baseProcessada > 0 ? (enriquecidos / baseProcessada) * 100 : 0;
+
+                    return (
+                      <tr key={row.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                        <td style={{ padding: 6 }}>
+                          <input
+                            type="date"
+                            defaultValue={row.date}
+                            onBlur={(e) => updateRow("enrichment", "rows", row.id, "date", e.target.value)}
+                            style={smallField}
+                          />
+                        </td>
+
+                        {[
+                          "baseRecebida",
+                          "baseProcessada",
+                          "registrosEnriquecidos",
+                          "naoLocalizados",
+                          "invalidos",
+                          "telefonesNovos",
+                          "emailsNovos",
+                          "scoreQualidade",
+                        ].map((key) => (
+                          <td key={key} style={{ padding: 6 }}>
+                            <input
+                              defaultValue={row[key]}
+                              onBlur={(e) => updateRow("enrichment", "rows", row.id, key, e.target.value)}
+                              style={smallField}
+                            />
+                          </td>
+                        ))}
+
+                        <td style={{ padding: 6, fontSize: 12, fontWeight: 900, color: txEnriquecimento >= 80 ? C.emerald : txEnriquecimento >= 60 ? C.amber : C.rose }}>
+                          {pct(txEnriquecimento)}
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <button
+                            onClick={() => removeRow("enrichment", "rows", row.id)}
+                            style={{ ...smallField, cursor: "pointer" }}
+                          >
+                            Excluir
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  <tr style={{ background: C.bg2, borderTop: `2px solid ${C.borderStrong}` }}>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>TOTAL / MÉDIA</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{enrichmentMetrics.baseRecebida}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{enrichmentMetrics.baseProcessada}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.emerald }}>{enrichmentMetrics.registrosEnriquecidos}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{enrichmentMetrics.naoLocalizados}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.rose }}>{enrichmentMetrics.invalidos}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{enrichmentMetrics.telefonesNovos}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.t1 }}>{enrichmentMetrics.emailsNovos}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.blue }}>{pct(enrichmentMetrics.scoreQualidadeMedio)}</td>
+                    <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 900, color: C.emerald }}>{pct(enrichmentMetrics.taxaEnriquecimento)}</td>
+                    <td />
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <button
+              onClick={() =>
+                addRow("enrichment", "rows", {
+                  date: "",
+                  baseRecebida: "",
+                  baseProcessada: "",
+                  registrosEnriquecidos: "",
+                  naoLocalizados: "",
+                  invalidos: "",
+                  telefonesNovos: "",
+                  emailsNovos: "",
+                  scoreQualidade: "",
+                  observation: "",
+                })
+              }
+              style={{ ...field, marginTop: 12, cursor: "pointer", fontWeight: 800 }}
+            >
+              + Adicionar processamento
+            </button>
+          </Section>
+
+          <Section
+            title="Critérios de Validação do Enriquecimento"
+            sub="Indicadores específicos para avaliar qualidade, cobertura, compliance e viabilidade da solução"
+          >
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
+                <thead>
+                  <tr>
+                    {["Indicador", "Meta", "Resultado", "Status", ""].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: 9,
+                          fontSize: 11,
+                          color: C.t3,
+                          textAlign: "left",
+                          borderBottom: `1px solid ${C.border}`,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {(data.enrichment?.criteria || []).map((row) => (
+                    <tr key={row.id}>
+                      <td style={{ padding: 6 }}>
+                        <input
+                          defaultValue={row.indicador}
+                          onBlur={(e) => updateRow("enrichment", "criteria", row.id, "indicador", e.target.value)}
+                          style={smallField}
+                        />
+                      </td>
+
+                      <td style={{ padding: 6 }}>
+                        <input
+                          placeholder="Meta esperada"
+                          defaultValue={row.meta}
+                          onBlur={(e) => updateRow("enrichment", "criteria", row.id, "meta", e.target.value)}
+                          style={smallField}
+                        />
+                      </td>
+
+                      <td style={{ padding: 6 }}>
+                        <input
+                          placeholder="Resultado observado"
+                          defaultValue={row.resultado}
+                          onBlur={(e) => updateRow("enrichment", "criteria", row.id, "resultado", e.target.value)}
+                          style={smallField}
+                        />
+                      </td>
+
+                      <td style={{ padding: 6 }}>
+                        <select
+                          defaultValue={row.status}
+                          onBlur={(e) => updateRow("enrichment", "criteria", row.id, "status", e.target.value)}
+                          style={smallField}
+                        >
+                          <option>Pendente</option>
+                          <option>Atendido</option>
+                          <option>Parcial</option>
+                          <option>Não atendido</option>
+                        </select>
+                      </td>
+
+                      <td style={{ padding: 6 }}>
+                        <button
+                          onClick={() => removeRow("enrichment", "criteria", row.id)}
+                          style={{ ...smallField, cursor: "pointer" }}
+                        >
+                          Excluir
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <button
+              onClick={() =>
+                addRow("enrichment", "criteria", {
+                  indicador: "",
+                  meta: "",
+                  resultado: "",
+                  status: "Pendente",
+                })
+              }
+              style={{ ...field, marginTop: 12, cursor: "pointer", fontWeight: 800 }}
+            >
+              + Adicionar critério
+            </button>
+          </Section>
+
+          <Section title="Análise Executiva do Enriquecimento" sub="Conclusão técnica e recomendação sobre qualidade da base enriquecida">
+            <textarea
+              placeholder="Escreva a análise do enriquecimento: qualidade da base, cobertura obtida, dados inválidos, aderência LGPD, riscos e recomendação executiva."
+              defaultValue={data.enrichment?.executiveAnalysis || ""}
+              onBlur={(e) => update("enrichment.executiveAnalysis", e.target.value)}
+              style={{ ...field, minHeight: 130, resize: "vertical", lineHeight: 1.6 }}
+            />
+          </Section>
+        </div>
+      )}
+
+
+      {tab === "analytics" && data.general.pocType !== "Enriquecimento de Dados" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <Section
             title="Relatório Analítico de Disparos"
