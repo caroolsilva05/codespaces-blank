@@ -172,6 +172,29 @@ const emptyPoc = {
       retornoNeutro: "",
       criterioConversao: "",
     },
+    executionTimeline: {
+      rows: [
+        {
+          id: 1,
+          fase: "Fase 1",
+          dia: "",
+          canal: "",
+          acao: "",
+          template: "",
+          status: "Pendente",
+          observacao: "",
+        },
+      ],
+    },
+    executionChecklist: {
+      horarioValidado: false,
+      limiteTentativas: false,
+      optOut: false,
+      exclusoesAplicadas: false,
+      comunicacaoAprovada: false,
+      cdcLgpdValidado: false,
+      observacoes: "",
+    },
     decisionEngine: {
       rules: [
         {
@@ -729,6 +752,61 @@ export default function PocRegister({
     });
   }
 
+  function updateOrchestrationExecutionRow(id, fieldName, value) {
+    setData((prev) => {
+      const next = cloneData(prev);
+
+      next.orchestration = next.orchestration || {};
+      next.orchestration.executionTimeline = next.orchestration
+        .executionTimeline || { rows: [] };
+
+      next.orchestration.executionTimeline.rows = (
+        next.orchestration.executionTimeline.rows || []
+      ).map((row) => (row.id === id ? { ...row, [fieldName]: value } : row));
+
+      return next;
+    });
+  }
+
+  function addOrchestrationExecutionRow() {
+    setData((prev) => {
+      const next = cloneData(prev);
+
+      next.orchestration = next.orchestration || {};
+      next.orchestration.executionTimeline = next.orchestration
+        .executionTimeline || { rows: [] };
+
+      next.orchestration.executionTimeline.rows.push({
+        id: Date.now(),
+        fase: "",
+        dia: "",
+        canal: "",
+        acao: "",
+        template: "",
+        status: "Pendente",
+        observacao: "",
+      });
+
+      return next;
+    });
+  }
+
+  function removeOrchestrationExecutionRow(id) {
+    setData((prev) => {
+      const next = cloneData(prev);
+
+      next.orchestration = next.orchestration || {};
+      next.orchestration.executionTimeline = next.orchestration
+        .executionTimeline || { rows: [] };
+
+      next.orchestration.executionTimeline.rows = (
+        next.orchestration.executionTimeline.rows || []
+      ).filter((row) => row.id !== id);
+
+      return next;
+    });
+  }
+
   async function savePoc() {
     if (!data.general.pocName.trim()) {
       alert("Informe o nome da POC antes de salvar.");
@@ -884,7 +962,32 @@ export default function PocRegister({
         padding: 24,
       }}
     >
-      {" "}
+      <style>{`
+        .poc-select-fix,
+        select {
+          color: #e5edf8 !important;
+          background-color: #111827 !important;
+          border-color: rgba(148, 163, 184, 0.22) !important;
+        }
+
+        .poc-select-fix option,
+        select option {
+          color: #e5edf8 !important;
+          background-color: #111827 !important;
+        }
+
+        .poc-select-fix option:checked,
+        select option:checked {
+          color: #ffffff !important;
+          background-color: #2563eb !important;
+        }
+
+        .poc-select-fix option:hover,
+        select option:hover {
+          color: #ffffff !important;
+          background-color: #1d4ed8 !important;
+        }
+      `}</style>{" "}
       <div
         style={{
           background: `linear-gradient(135deg, ${C.bg1}, ${C.bg2})`,
@@ -3552,7 +3655,356 @@ export default function PocRegister({
           </Section>{" "}
         </div>
       )}{" "}
-      {tab === "execution" && (
+      {tab === "execution" && isPocOrquestracao && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <Section
+            title="Execução da Régua"
+            sub="Acompanhamento da cadência operacional, canais utilizados e status das ações"
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                gap: 12,
+                marginBottom: 16,
+              }}
+            >
+              {[
+                ["SMS", data.orchestration?.executionBase?.sms],
+                ["E-mail", data.orchestration?.executionBase?.email],
+                ["WhatsApp", data.orchestration?.executionBase?.wpp],
+                ["RCS", data.orchestration?.executionBase?.rcs],
+                ["Discador", data.orchestration?.executionBase?.discador],
+                ["URA", data.orchestration?.executionBase?.ura],
+              ].map(([label, ativo]) => (
+                <div
+                  key={label}
+                  style={{
+                    background: ativo ? C.emeraldGlow : C.bg3,
+                    border:
+                      "1px solid " + (ativo ? C.emerald + "55" : C.border),
+                    borderRadius: 14,
+                    padding: "13px 14px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: C.t3,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      marginBottom: 5,
+                    }}
+                  >
+                    Canal
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 15,
+                      color: ativo ? C.emerald : C.t2,
+                      fontWeight: 950,
+                    }}
+                  >
+                    {label}
+                  </div>
+
+                  <div style={{ fontSize: 11, color: C.t3, marginTop: 4 }}>
+                    {ativo ? "Ativo na régua" : "Não selecionado"}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ overflowX: "auto" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  minWidth: 1250,
+                }}
+              >
+                <thead>
+                  <tr>
+                    {[
+                      "Fase",
+                      "Dia / Janela",
+                      "Canal",
+                      "Ação",
+                      "Template / Mensagem",
+                      "Status",
+                      "Observação",
+                      "",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: 9,
+                          fontSize: 11,
+                          color: C.t3,
+                          textAlign: "left",
+                          borderBottom: "1px solid " + C.border,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {(data.orchestration?.executionTimeline?.rows || []).map(
+                    (row) => (
+                      <tr
+                        key={row.id}
+                        style={{ borderBottom: "1px solid " + C.border }}
+                      >
+                        <td style={{ padding: 6 }}>
+                          <input
+                            placeholder="Fase 1"
+                            defaultValue={row.fase}
+                            onBlur={(e) =>
+                              updateOrchestrationExecutionRow(
+                                row.id,
+                                "fase",
+                                e.target.value,
+                              )
+                            }
+                            style={smallField}
+                          />
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <input
+                            placeholder="D+1 / D+3"
+                            defaultValue={row.dia}
+                            onBlur={(e) =>
+                              updateOrchestrationExecutionRow(
+                                row.id,
+                                "dia",
+                                e.target.value,
+                              )
+                            }
+                            style={smallField}
+                          />
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <select
+                            defaultValue={row.canal}
+                            onBlur={(e) =>
+                              updateOrchestrationExecutionRow(
+                                row.id,
+                                "canal",
+                                e.target.value,
+                              )
+                            }
+                            style={smallField}
+                          >
+                            <option value="">Selecione</option>
+                            <option>SMS</option>
+                            <option>E-mail</option>
+                            <option>WhatsApp</option>
+                            <option>RCS</option>
+                            <option>Discador</option>
+                            <option>URA</option>
+                          </select>
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <input
+                            placeholder="Ex: Enviar link de negociação"
+                            defaultValue={row.acao}
+                            onBlur={(e) =>
+                              updateOrchestrationExecutionRow(
+                                row.id,
+                                "acao",
+                                e.target.value,
+                              )
+                            }
+                            style={smallField}
+                          />
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <input
+                            placeholder="Template, script ou mensagem"
+                            defaultValue={row.template}
+                            onBlur={(e) =>
+                              updateOrchestrationExecutionRow(
+                                row.id,
+                                "template",
+                                e.target.value,
+                              )
+                            }
+                            style={smallField}
+                          />
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <select
+                            defaultValue={row.status}
+                            onBlur={(e) =>
+                              updateOrchestrationExecutionRow(
+                                row.id,
+                                "status",
+                                e.target.value,
+                              )
+                            }
+                            style={smallField}
+                          >
+                            <option>Pendente</option>
+                            <option>Programado</option>
+                            <option>Executado</option>
+                            <option>Em análise</option>
+                            <option>Bloqueado</option>
+                          </select>
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <input
+                            placeholder="Observação da ação"
+                            defaultValue={row.observacao}
+                            onBlur={(e) =>
+                              updateOrchestrationExecutionRow(
+                                row.id,
+                                "observacao",
+                                e.target.value,
+                              )
+                            }
+                            style={smallField}
+                          />
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <button
+                            onClick={() =>
+                              removeOrchestrationExecutionRow(row.id)
+                            }
+                            style={{ ...smallField, cursor: "pointer" }}
+                          >
+                            Excluir
+                          </button>
+                        </td>
+                      </tr>
+                    ),
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <button
+              onClick={addOrchestrationExecutionRow}
+              style={{
+                ...field,
+                marginTop: 12,
+                cursor: "pointer",
+                fontWeight: 800,
+              }}
+            >
+              + Adicionar ação da régua
+            </button>
+          </Section>
+
+          <Section
+            title="Checklist de Execução e Conformidade"
+            sub="Validações operacionais antes de ativar ou escalar a régua"
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: 10,
+                marginBottom: 14,
+              }}
+            >
+              {[
+                ["horarioValidado", "Horário de acionamento validado"],
+                ["limiteTentativas", "Limite de tentativas definido"],
+                ["optOut", "Opt-out respeitado"],
+                ["exclusoesAplicadas", "Exclusões aplicadas na base"],
+                ["comunicacaoAprovada", "Comunicação aprovada"],
+                ["cdcLgpdValidado", "CDC / LGPD validado"],
+              ].map(([key, label]) => (
+                <label
+                  key={key}
+                  style={{
+                    display: "flex",
+                    gap: 9,
+                    alignItems: "center",
+                    color: C.t2,
+                    fontSize: 13,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={Boolean(
+                      data.orchestration?.executionChecklist?.[key],
+                    )}
+                    onChange={(e) =>
+                      update(
+                        "orchestration.executionChecklist." + key,
+                        e.target.checked,
+                      )
+                    }
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+
+            <textarea
+              placeholder="Observações de execução, conformidade, risco operacional ou ajustes necessários antes da ativação da régua"
+              defaultValue={data.orchestration?.executionChecklist?.observacoes}
+              onBlur={(e) =>
+                update(
+                  "orchestration.executionChecklist.observacoes",
+                  e.target.value,
+                )
+              }
+              style={{
+                ...field,
+                minHeight: 100,
+                resize: "vertical",
+                lineHeight: 1.6,
+              }}
+            />
+          </Section>
+
+          <Section
+            title="Próximo Passo da Régua"
+            sub="A execução deve alimentar o relatório e a tomada de decisão"
+          >
+            <div style={{ fontSize: 13, color: C.t2, lineHeight: 1.7 }}>
+              Após configurar e acompanhar as ações da régua, registre os
+              volumes executados no Relatório da Régua para medir retorno
+              positivo, retorno negativo, avanço de fase e conversão.
+            </div>
+
+            <button
+              onClick={() => setTab("analytics")}
+              style={{
+                marginTop: 16,
+                width: "100%",
+                border: "1px solid " + C.border,
+                background: C.surface,
+                color: C.blue,
+                borderRadius: 12,
+                padding: "11px 14px",
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: 900,
+              }}
+            >
+              Ir para Relatório da Régua
+            </button>
+          </Section>
+        </div>
+      )}
+      {tab === "execution" && !isPocOrquestracao && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {" "}
           <Section
