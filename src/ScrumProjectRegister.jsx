@@ -17,6 +17,7 @@ const theme = {
   textSecondary: "#475569",
   textMuted: "#94a3b8",
   phases: {
+    0: { bg: "#0f766e", light: "#ccfbf1", label: "Orçamento" },
     1: { bg: "#1d4ed8", light: "#dbeafe", label: "Backlog" },
     2: { bg: "#047857", light: "#d1fae5", label: "Planejamento" },
     3: { bg: "#b45309", light: "#fef3c7", label: "Execução" },
@@ -51,6 +52,7 @@ const initialData = {
     codigoId: "",
     tipo: "Fornecedor",
     canais: [],
+    outroCanalProduto: "",
     fornecedor: "",
     responsavel: "",
     solicitante: "",
@@ -59,6 +61,14 @@ const initialData = {
     previsaoEncerramento: "",
     faseAtual: "Backlog",
     status: "Em dia",
+  },
+  orcamentoProjeto: {
+    orcamentoTotal: "",
+    custoImplementacao: "",
+    cobrancaMensal: "",
+    valorDisparoUnitario: "",
+    fornecedorSolucao: "",
+    quantidadeDisparosDia: "",
   },
   phase1: {
     objetivo: "",
@@ -340,7 +350,7 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
 
     return dadosSalvos || initialData;
   });
-  const [phases, setPhases] = useState({ 1: true, 2: true, 3: true, 4: true, 5: true });
+  const [phases, setPhases] = useState({ 0: true, 1: true, 2: true, 3: true, 4: true, 5: true });
   const [flash, setFlash]   = useState("");
   const [saving, setSaving] = useState(false);
   const printRef = useRef(null);
@@ -349,6 +359,50 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
 
   const setPI = (field, val) =>
     setData(d => ({ ...d, projectInfo: { ...d.projectInfo, [field]: val } }));
+
+  const setOrcamento = (field, val) =>
+    setData(d => ({
+      ...d,
+      orcamentoProjeto: {
+        ...(d.orcamentoProjeto || {}),
+        [field]: val,
+      },
+    }));
+
+  function parseMoney(value) {
+    const normalizado = String(value || "")
+      .replace(/R\$/g, "")
+      .replace(/\s/g, "")
+      .replace(/\./g, "")
+      .replace(",", ".");
+
+    const numero = Number(normalizado);
+    return Number.isFinite(numero) ? numero : 0;
+  }
+
+  function formatMoney(value) {
+    return Number(value || 0).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+  }
+
+  function formatCurrencyInput(value) {
+    const onlyDigits = String(value || "").replace(/\D/g, "");
+
+    if (!onlyDigits) return "";
+
+    const numero = Number(onlyDigits) / 100;
+
+    return numero.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+  }
+
+  function setOrcamentoMoeda(field, value) {
+    setOrcamento(field, formatCurrencyInput(value));
+  }
 
   const setP1 = (field, val) =>
     setData(d => ({ ...d, phase1: { ...d.phase1, [field]: val } }));
@@ -523,7 +577,18 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
     janela.document.close();
   };
 
-  const { projectInfo: pi, phase1, phase2, phase3, phase4, phase5 } = data;
+  const { projectInfo: pi, orcamentoProjeto = {}, phase1, phase2, phase3, phase4, phase5 } = data;
+
+  const custoDisparosMensal =
+    parseMoney(orcamentoProjeto.valorDisparoUnitario) *
+    parseMoney(orcamentoProjeto.quantidadeDisparosDia) *
+    22;
+
+  const custoRecorrenteMensal =
+    parseMoney(orcamentoProjeto.cobrancaMensal) + custoDisparosMensal;
+
+  const custoPrimeiroMes =
+    parseMoney(orcamentoProjeto.custoImplementacao) + custoRecorrenteMensal;
 
   const p1Done = Object.values(phase1.checklist).filter(Boolean).length;
   const p5Done = Object.values(phase5.checklist).filter(Boolean).length;
@@ -655,15 +720,61 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
                 </FieldRow>
                 <FieldRow label="Canal / Produto">
                   <div style={{ display: "flex", gap: 12, flexWrap: "wrap", paddingLeft: 2 }}>
-                    {["WhatsApp", "RCS", "SMS", "E-mail", "Portal", "IA", "N/A"].map(opt => (
+                    {["WhatsApp", "RCS", "SMS", "E-mail", "Portal", "IA", "Outros"].map(opt => (
                       <label key={opt} style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", fontSize: 12 }}>
-                        <input type="checkbox" value={opt}
+                        <input
+                          type="checkbox"
+                          value={opt}
                           checked={pi.canais.includes(opt)}
-                          onChange={e => setPI("canais", e.target.checked ? [...pi.canais, opt] : pi.canais.filter(c => c !== opt))}
-                          style={{ accentColor: theme.navy }} />
+                          onChange={e => {
+                            const canaisSemNA = pi.canais.filter(c => c !== "N/A");
+                            const canaisAtualizados = e.target.checked
+                              ? [...canaisSemNA, opt]
+                              : canaisSemNA.filter(c => c !== opt);
+
+                            setData(d => ({
+                              ...d,
+                              projectInfo: {
+                                ...d.projectInfo,
+                                canais: canaisAtualizados,
+                                ...(opt === "Outros" && !e.target.checked ? { outroCanalProduto: "" } : {}),
+                              },
+                            }));
+                          }}
+                          style={{ accentColor: theme.navy }}
+                        />
                         {opt}
                       </label>
                     ))}
+                    {pi.canais.includes("Outros") && (
+                      <input
+                        type="text"
+                        value={pi.outroCanalProduto || ""}
+                        onChange={e => setPI("outroCanalProduto", e.target.value)}
+                        placeholder="Qual?"
+                        style={{
+                          width: 180,
+                          height: 28,
+                          border: `1px solid ${theme.border}`,
+                          borderRadius: 6,
+                          padding: "4px 8px",
+                          fontSize: 12,
+                          color: theme.text,
+                          background: "#fff",
+                          outline: "none",
+                          fontFamily: "inherit",
+                          boxSizing: "border-box",
+                        }}
+                        onFocus={e => {
+                          e.target.style.border = `1px solid ${theme.navy}`;
+                          e.target.style.background = "#f8fafc";
+                        }}
+                        onBlur={e => {
+                          e.target.style.border = `1px solid ${theme.border}`;
+                          e.target.style.background = "#fff";
+                        }}
+                      />
+                    )}
                   </div>
                 </FieldRow>
                 <FieldRow label="Fornecedor">
@@ -713,6 +824,128 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
             </div>
           </div>
         </div>
+
+
+        {/* ===== FASE 0 — ORÇAMENTO DO PROJETO ===== */}
+        <PhaseSection phaseNum={0} title="Fase 0 — Orçamento do Projeto" expanded={phases[0]} onToggle={() => toggle(0)}>
+
+          <SubSection title="0.1 Pré-planejamento financeiro">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 48px" }}>
+              <div>
+                <FieldRow label="Orçamento total">
+                  <EditField
+                    value={orcamentoProjeto.orcamentoTotal || ""}
+                    onChange={v => setOrcamentoMoeda("orcamentoTotal", v)}
+                    placeholder="Ex: R$ 13.000,00"
+                  />
+                </FieldRow>
+
+                <FieldRow label="Custo de implementação">
+                  <EditField
+                    value={orcamentoProjeto.custoImplementacao || ""}
+                    onChange={v => setOrcamentoMoeda("custoImplementacao", v)}
+                    placeholder="Ex: R$ 5.000,00"
+                  />
+                </FieldRow>
+
+                <FieldRow label="Fornecedor do produto">
+                  <EditField
+                    value={orcamentoProjeto.fornecedorSolucao || pi.fornecedor || ""}
+                    onChange={v => setOrcamento("fornecedorSolucao", v)}
+                    placeholder="Fornecedor envolvido no produto"
+                  />
+                </FieldRow>
+              </div>
+
+              <div>
+                <FieldRow label="Cobrança mensal">
+                  <EditField
+                    value={orcamentoProjeto.cobrancaMensal || ""}
+                    onChange={v => setOrcamentoMoeda("cobrancaMensal", v)}
+                    placeholder="Ex: R$ 3.000,00"
+                  />
+                </FieldRow>
+
+                <FieldRow label="Valor dos disparos">
+                  <EditField
+                    value={orcamentoProjeto.valorDisparoUnitario || ""}
+                    onChange={v => setOrcamentoMoeda("valorDisparoUnitario", v)}
+                    placeholder="Ex: R$ 0,15"
+                  />
+                </FieldRow>
+
+                <FieldRow label="Disparos por dia">
+                  <EditField
+                    value={orcamentoProjeto.quantidadeDisparosDia || ""}
+                    onChange={v => setOrcamento("quantidadeDisparosDia", v)}
+                    placeholder="Ex: 300"
+                  />
+                </FieldRow>
+              </div>
+            </div>
+          </SubSection>
+
+          <SubSection title="0.2 Resumo financeiro estimado">
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: 14,
+                marginBottom: 16,
+              }}
+            >
+              {[
+                {
+                  label: "Custo mensal estimado de disparos",
+                  value: formatMoney(custoDisparosMensal),
+                  helper: "Valor unitário x disparos/dia x 22 dias úteis",
+                },
+                {
+                  label: "Custo recorrente mensal",
+                  value: formatMoney(custoRecorrenteMensal),
+                  helper: "Cobrança mensal + disparos estimados",
+                },
+                {
+                  label: "Estimativa do primeiro mês",
+                  value: formatMoney(custoPrimeiroMes),
+                  helper: "Implementação + custo recorrente mensal",
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  style={{
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: 8,
+                    background: "#f8fafc",
+                    padding: "14px 16px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: theme.textMuted,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.8px",
+                      fontWeight: 800,
+                      marginBottom: 6,
+                    }}
+                  >
+                    {item.label}
+                  </div>
+
+                  <div style={{ fontSize: 20, color: theme.phases[0].bg, fontWeight: 900 }}>
+                    {item.value}
+                  </div>
+
+                  <div style={{ fontSize: 11, color: theme.textSecondary, marginTop: 6, lineHeight: 1.4 }}>
+                    {item.helper}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </SubSection>
+        </PhaseSection>
 
         {/* ===== FASE 1 — BACKLOG ===== */}
         <PhaseSection phaseNum={1} title="Fase 1 — Backlog" expanded={phases[1]} onToggle={() => toggle(1)}>
