@@ -34,46 +34,8 @@ const emptyPoc = {
     notes: "",
   },
   execution: {
-    activities: [
-      {
-        id: 1,
-        activity: "Instalação, setup de infra e configuração inicial",
-        owner: "Fornecedor + DevOps",
-        status: "Pendente",
-        notes: "",
-      },
-      {
-        id: 2,
-        activity: "Testes de carga e performance",
-        owner: "Time técnico interno",
-        status: "Pendente",
-        notes: "",
-      },
-      {
-        id: 3,
-        activity: "Validação de integrações com sistemas legados",
-        owner: "Desenvolvedores internos",
-        status: "Pendente",
-        notes: "",
-      },
-      {
-        id: 4,
-        activity: "Testes de homologação pelo usuário (UAT)",
-        owner: "Usuários de negócio",
-        status: "Pendente",
-        notes: "",
-      },
-    ],
-    blockers: [
-      {
-        id: 1,
-        date: "",
-        blocker: "",
-        owner: "",
-        daysStopped: "",
-        status: "Aberto",
-      },
-    ],
+    activities: [],
+    blockers: [],
   },
   analytics: {
     rows: [
