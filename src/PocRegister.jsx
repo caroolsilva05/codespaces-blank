@@ -619,6 +619,63 @@ export default function PocRegister({
       return next;
     });
   }
+  function updateOrchestrationRule(id, fieldName, value) {
+    setData((prev) => {
+      const next = cloneData(prev);
+
+      next.orchestration = next.orchestration || {};
+      next.orchestration.decisionEngine = next.orchestration.decisionEngine || {
+        rules: [],
+      };
+
+      next.orchestration.decisionEngine.rules = (
+        next.orchestration.decisionEngine.rules || []
+      ).map((row) => (row.id === id ? { ...row, [fieldName]: value } : row));
+
+      return next;
+    });
+  }
+
+  function addOrchestrationRule() {
+    setData((prev) => {
+      const next = cloneData(prev);
+
+      next.orchestration = next.orchestration || {};
+      next.orchestration.decisionEngine = next.orchestration.decisionEngine || {
+        rules: [],
+      };
+
+      next.orchestration.decisionEngine.rules.push({
+        id: Date.now(),
+        fase: "",
+        condicao: "",
+        acao: "",
+        canal: "",
+        tom: "",
+        observacao: "",
+      });
+
+      return next;
+    });
+  }
+
+  function removeOrchestrationRule(id) {
+    setData((prev) => {
+      const next = cloneData(prev);
+
+      next.orchestration = next.orchestration || {};
+      next.orchestration.decisionEngine = next.orchestration.decisionEngine || {
+        rules: [],
+      };
+
+      next.orchestration.decisionEngine.rules = (
+        next.orchestration.decisionEngine.rules || []
+      ).filter((row) => row.id !== id);
+
+      return next;
+    });
+  }
+
   async function savePoc() {
     if (!data.general.pocName.trim()) {
       alert("Informe o nome da POC antes de salvar.");
@@ -2704,7 +2761,489 @@ export default function PocRegister({
           </Section>{" "}
         </div>
       )}{" "}
-      {tab === "planning" && (
+      {tab === "planning" && isPocOrquestracao && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <Section
+            title="Estratégia de Base (Régua de Cobrança)"
+            sub="Definição da régua, cronograma, faixas de atraso e objetivo da jornada"
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 12,
+              }}
+            >
+              <input
+                placeholder="Nome da régua. Ex: Régua D+1 a D+30"
+                defaultValue={data.orchestration?.strategy?.nomeRegua}
+                onBlur={(e) =>
+                  update("orchestration.strategy.nomeRegua", e.target.value)
+                }
+                style={field}
+              />
+
+              <input
+                placeholder="Faixa de atraso. Ex: D+1 a D+30"
+                defaultValue={data.orchestration?.strategy?.faixaAtraso}
+                onBlur={(e) =>
+                  update("orchestration.strategy.faixaAtraso", e.target.value)
+                }
+                style={field}
+              />
+
+              <textarea
+                placeholder="Objetivo da régua: o que essa orquestração precisa validar?"
+                defaultValue={data.orchestration?.strategy?.objetivoRegua}
+                onBlur={(e) =>
+                  update("orchestration.strategy.objetivoRegua", e.target.value)
+                }
+                style={{
+                  ...field,
+                  minHeight: 120,
+                  resize: "vertical",
+                  lineHeight: 1.6,
+                }}
+              />
+
+              <textarea
+                placeholder="Cronograma da régua. Ex: D+1 SMS, D+3 WhatsApp, D+5 E-mail, D+7 RCS..."
+                defaultValue={data.orchestration?.strategy?.cronogramaDias}
+                onBlur={(e) =>
+                  update(
+                    "orchestration.strategy.cronogramaDias",
+                    e.target.value,
+                  )
+                }
+                style={{
+                  ...field,
+                  minHeight: 120,
+                  resize: "vertical",
+                  lineHeight: 1.6,
+                }}
+              />
+
+              <textarea
+                placeholder="Observações da estratégia de base"
+                defaultValue={data.orchestration?.strategy?.observacoes}
+                onBlur={(e) =>
+                  update("orchestration.strategy.observacoes", e.target.value)
+                }
+                style={{
+                  ...field,
+                  minHeight: 90,
+                  resize: "vertical",
+                  lineHeight: 1.6,
+                  gridColumn: "1 / -1",
+                }}
+              />
+            </div>
+          </Section>
+
+          <Section
+            title="Geração de Base"
+            sub="Segmentação, origem da base, enriquecimento e cenários de exclusão"
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 12,
+              }}
+            >
+              <textarea
+                placeholder="Segmentação da base. Ex: carteira, faixa de atraso, valor da dívida, perfil do cliente..."
+                defaultValue={data.orchestration?.baseGeneration?.segmentacao}
+                onBlur={(e) =>
+                  update(
+                    "orchestration.baseGeneration.segmentacao",
+                    e.target.value,
+                  )
+                }
+                style={{
+                  ...field,
+                  minHeight: 120,
+                  resize: "vertical",
+                  lineHeight: 1.6,
+                }}
+              />
+
+              <textarea
+                placeholder="Cenários de exclusão. Ex: acordo ativo, promessa de pagamento, opt-out, contestação..."
+                defaultValue={
+                  data.orchestration?.baseGeneration?.cenariosExclusao
+                }
+                onBlur={(e) =>
+                  update(
+                    "orchestration.baseGeneration.cenariosExclusao",
+                    e.target.value,
+                  )
+                }
+                style={{
+                  ...field,
+                  minHeight: 120,
+                  resize: "vertical",
+                  lineHeight: 1.6,
+                }}
+              />
+
+              <input
+                placeholder="Origem da base. Ex: DW, CRM, ERP, fornecedor..."
+                defaultValue={data.orchestration?.baseGeneration?.origemBase}
+                onBlur={(e) =>
+                  update(
+                    "orchestration.baseGeneration.origemBase",
+                    e.target.value,
+                  )
+                }
+                style={field}
+              />
+
+              <input
+                placeholder="Volume previsto. Ex: 5.000 clientes"
+                defaultValue={
+                  data.orchestration?.baseGeneration?.volumePrevisto
+                }
+                onBlur={(e) =>
+                  update(
+                    "orchestration.baseGeneration.volumePrevisto",
+                    e.target.value,
+                  )
+                }
+                style={field}
+              />
+
+              <select
+                value={
+                  data.orchestration?.baseGeneration?.precisaEnriquecimento ||
+                  "Não"
+                }
+                onChange={(e) =>
+                  update(
+                    "orchestration.baseGeneration.precisaEnriquecimento",
+                    e.target.value,
+                  )
+                }
+                style={{ ...field, maxWidth: 360 }}
+              >
+                <option>Não</option>
+                <option>Sim</option>
+                <option>A definir</option>
+              </select>
+            </div>
+          </Section>
+
+          <Section
+            title="Execução da Base"
+            sub="Canais utilizados na régua e observações da cadência multicanal"
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gap: 10,
+                marginBottom: 14,
+              }}
+            >
+              {[
+                ["sms", "SMS"],
+                ["email", "E-mail"],
+                ["wpp", "WhatsApp"],
+                ["rcs", "RCS"],
+                ["discador", "Discador"],
+                ["ura", "URA"],
+              ].map(([key, label]) => (
+                <label
+                  key={key}
+                  style={{
+                    display: "flex",
+                    gap: 9,
+                    alignItems: "center",
+                    color: C.t2,
+                    fontSize: 13,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={Boolean(data.orchestration?.executionBase?.[key])}
+                    onChange={(e) =>
+                      update(
+                        "orchestration.executionBase." + key,
+                        e.target.checked,
+                      )
+                    }
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+
+            <textarea
+              placeholder="Observações da execução. Ex: ordem dos canais, horários de envio, limite diário, intervalo entre tentativas..."
+              defaultValue={data.orchestration?.executionBase?.observacoes}
+              onBlur={(e) =>
+                update(
+                  "orchestration.executionBase.observacoes",
+                  e.target.value,
+                )
+              }
+              style={{
+                ...field,
+                minHeight: 100,
+                resize: "vertical",
+                lineHeight: 1.6,
+              }}
+            />
+          </Section>
+
+          <Section
+            title="Matriz de Retorno"
+            sub="Classificação do que será considerado retorno positivo, negativo, neutro e conversão"
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 12,
+              }}
+            >
+              <textarea
+                placeholder="Retorno positivo. Ex: clique no link, resposta, negociação, promessa de pagamento ou pagamento."
+                defaultValue={data.orchestration?.returnMatrix?.retornoPositivo}
+                onBlur={(e) =>
+                  update(
+                    "orchestration.returnMatrix.retornoPositivo",
+                    e.target.value,
+                  )
+                }
+                style={{
+                  ...field,
+                  minHeight: 110,
+                  resize: "vertical",
+                  lineHeight: 1.6,
+                }}
+              />
+
+              <textarea
+                placeholder="Retorno negativo. Ex: bounce, número inválido, ignorado, caixa postal, opt-out."
+                defaultValue={data.orchestration?.returnMatrix?.retornoNegativo}
+                onBlur={(e) =>
+                  update(
+                    "orchestration.returnMatrix.retornoNegativo",
+                    e.target.value,
+                  )
+                }
+                style={{
+                  ...field,
+                  minHeight: 110,
+                  resize: "vertical",
+                  lineHeight: 1.6,
+                }}
+              />
+
+              <textarea
+                placeholder="Retorno neutro. Ex: entregue sem interação, aberto sem clique, ligação não atendida."
+                defaultValue={data.orchestration?.returnMatrix?.retornoNeutro}
+                onBlur={(e) =>
+                  update(
+                    "orchestration.returnMatrix.retornoNeutro",
+                    e.target.value,
+                  )
+                }
+                style={{
+                  ...field,
+                  minHeight: 100,
+                  resize: "vertical",
+                  lineHeight: 1.6,
+                }}
+              />
+
+              <textarea
+                placeholder="Critério de conversão. Ex: acordo gerado, pagamento confirmado, cliente removido da régua."
+                defaultValue={
+                  data.orchestration?.returnMatrix?.criterioConversao
+                }
+                onBlur={(e) =>
+                  update(
+                    "orchestration.returnMatrix.criterioConversao",
+                    e.target.value,
+                  )
+                }
+                style={{
+                  ...field,
+                  minHeight: 100,
+                  resize: "vertical",
+                  lineHeight: 1.6,
+                }}
+              />
+            </div>
+          </Section>
+
+          <Section
+            title="Motor de Decisão"
+            sub="Regras SE/ENTÃO para definir o próximo passo da régua"
+          >
+            <div style={{ overflowX: "auto" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  minWidth: 1150,
+                }}
+              >
+                <thead>
+                  <tr>
+                    {[
+                      "Fase",
+                      "Se acontecer",
+                      "Então fazer",
+                      "Canal",
+                      "Tom",
+                      "Observação",
+                      "",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: 9,
+                          fontSize: 11,
+                          color: C.t3,
+                          textAlign: "left",
+                          borderBottom: "1px solid " + C.border,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {(data.orchestration?.decisionEngine?.rules || []).map(
+                    (row) => (
+                      <tr key={row.id}>
+                        <td style={{ padding: 6 }}>
+                          <input
+                            placeholder="Fase 1"
+                            defaultValue={row.fase}
+                            onBlur={(e) =>
+                              updateOrchestrationRule(
+                                row.id,
+                                "fase",
+                                e.target.value,
+                              )
+                            }
+                            style={smallField}
+                          />
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <input
+                            placeholder="Se retorno negativo..."
+                            defaultValue={row.condicao}
+                            onBlur={(e) =>
+                              updateOrchestrationRule(
+                                row.id,
+                                "condicao",
+                                e.target.value,
+                              )
+                            }
+                            style={smallField}
+                          />
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <input
+                            placeholder="Avançar para Fase 2..."
+                            defaultValue={row.acao}
+                            onBlur={(e) =>
+                              updateOrchestrationRule(
+                                row.id,
+                                "acao",
+                                e.target.value,
+                              )
+                            }
+                            style={smallField}
+                          />
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <input
+                            placeholder="WhatsApp"
+                            defaultValue={row.canal}
+                            onBlur={(e) =>
+                              updateOrchestrationRule(
+                                row.id,
+                                "canal",
+                                e.target.value,
+                              )
+                            }
+                            style={smallField}
+                          />
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <input
+                            placeholder="Persuasivo"
+                            defaultValue={row.tom}
+                            onBlur={(e) =>
+                              updateOrchestrationRule(
+                                row.id,
+                                "tom",
+                                e.target.value,
+                              )
+                            }
+                            style={smallField}
+                          />
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <input
+                            placeholder="Observação"
+                            defaultValue={row.observacao}
+                            onBlur={(e) =>
+                              updateOrchestrationRule(
+                                row.id,
+                                "observacao",
+                                e.target.value,
+                              )
+                            }
+                            style={smallField}
+                          />
+                        </td>
+
+                        <td style={{ padding: 6 }}>
+                          <button
+                            onClick={() => removeOrchestrationRule(row.id)}
+                            style={{ ...smallField, cursor: "pointer" }}
+                          >
+                            Excluir
+                          </button>
+                        </td>
+                      </tr>
+                    ),
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <button
+              onClick={addOrchestrationRule}
+              style={{
+                ...field,
+                marginTop: 12,
+                cursor: "pointer",
+                fontWeight: 800,
+              }}
+            >
+              + Adicionar regra SE/ENTÃO
+            </button>
+          </Section>
+        </div>
+      )}
+      {tab === "planning" && !isPocOrquestracao && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {" "}
           <Section
