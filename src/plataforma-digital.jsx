@@ -2631,7 +2631,7 @@ function IndicatorsView({ C }) {
       label: "POCs com condições",
       value: pocsCondicoes,
       color: pocsCondicoes > 0 ? C.amber : C.emerald,
-      desc: "POCs aprovadas com ressalvas executivas",
+      desc: "POCs aprovadas com ressalvas",
     },
     {
       label: "Fornecedores alto risco",
@@ -3157,7 +3157,7 @@ function PocView({ C }) {
         <KPICard icon={FlaskConical} label="POCs registradas" value={total} sub={loading ? "Carregando..." : "Portfólio de validações"} color={C.blue} glow={C.blueGlow} C={C} />
         <KPICard icon={Activity} label="Em execução" value={emExecucao} sub="Testes ativos" color={C.emerald} glow={C.emeraldGlow} C={C} />
         <KPICard icon={CheckCircle2} label="Encerradas" value={encerradas} sub="POCs finalizadas" color={C.violet} glow={C.violetGlow} C={C} />
-        <KPICard icon={AlertTriangle} label="Com condições" value={comCondicoes} sub="Atenção executiva" color={C.amber} glow={C.amberGlow} C={C} />
+        <KPICard icon={AlertTriangle} label="Com condições" value={comCondicoes} sub="Atenção" color={C.amber} glow={C.amberGlow} C={C} />
       </div>
 
       <div style={{ ...card(C), padding: 0, overflowX: "auto", overflowY: "hidden" }}>
