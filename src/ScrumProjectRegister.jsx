@@ -67,7 +67,7 @@ const initialData = {
     custoImplementacao: "",
     cobrancaMensal: "",
     valorDisparoUnitario: "",
-    fornecedorSolucao: "",
+    carteiraBanco: "",
     quantidadeDisparosDia: "",
   },
   phase1: {
@@ -829,7 +829,7 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
         {/* ===== FASE 0 — ORÇAMENTO DO PROJETO ===== */}
         <PhaseSection phaseNum={0} title="Fase 0 — Orçamento do Projeto" expanded={phases[0]} onToggle={() => toggle(0)}>
 
-          <SubSection title="0.1 Pré-planejamento financeiro">
+          <SubSection title="0.1 Planejamento financeiro">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 48px" }}>
               <div>
                 <FieldRow label="Orçamento total">
@@ -848,11 +848,11 @@ export default function ScrumProjectRegister({ registroInicial = null, onSaved =
                   />
                 </FieldRow>
 
-                <FieldRow label="Fornecedor do produto">
+                <FieldRow label="Carteira / Banco">
                   <EditField
-                    value={orcamentoProjeto.fornecedorSolucao || pi.fornecedor || ""}
-                    onChange={v => setOrcamento("fornecedorSolucao", v)}
-                    placeholder="Fornecedor envolvido no produto"
+                    value={orcamentoProjeto.carteiraBanco || orcamentoProjeto.fornecedorSolucao || ""}
+                    onChange={v => setOrcamento("carteiraBanco", v)}
+                    placeholder="Ex: Bradesco, Santander, Renner, BV..."
                   />
                 </FieldRow>
               </div>
