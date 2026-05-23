@@ -3598,61 +3598,63 @@ export default function PocRegister({
               + Adicionar KPI / Critério de sucesso{" "}
             </button>{" "}
           </Section>{" "}
-          <Section
-            title="Infraestrutura e Segurança"
-            sub="Checklist obrigatório antes de liberar os testes com o fornecedor"
-          >
-            {" "}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                gap: 10,
-                marginBottom: 14,
-              }}
+          {data.general.pocType !== "Enriquecimento de Dados" && (
+            <Section
+              title="Infraestrutura e Segurança"
+              sub="Checklist obrigatório antes de liberar os testes com o fornecedor"
             >
               {" "}
-              {[
-                ["vpn", "VPN configurada"],
-                ["ips", "IPs liberados"],
-                ["credentials", "Credenciais temporárias criadas"],
-                ["maskedData", "Dados anonimizados / mascarados"],
-                ["cloudBudget", "Cloud com teto de gastos monitorado"],
-              ].map(([key, label]) => (
-                <label
-                  key={key}
-                  style={{
-                    display: "flex",
-                    gap: 9,
-                    alignItems: "center",
-                    color: C.t2,
-                    fontSize: 13,
-                  }}
-                >
-                  {" "}
-                  <input
-                    type="checkbox"
-                    checked={data.security[key]}
-                    onChange={(e) =>
-                      update(`security.${key}`, e.target.checked)
-                    }
-                  />{" "}
-                  {label}{" "}
-                </label>
-              ))}{" "}
-            </div>{" "}
-            <textarea
-              placeholder="Observações de infraestrutura, acessos, LGPD, dados de teste ou riscos de segurança"
-              value={data.security.notes}
-              onChange={(e) => update("security.notes", e.target.value)}
-              style={{
-                ...field,
-                minHeight: 100,
-                resize: "vertical",
-                lineHeight: 1.6,
-              }}
-            />{" "}
-          </Section>{" "}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  gap: 10,
+                  marginBottom: 14,
+                }}
+              >
+                {" "}
+                {[
+                  ["vpn", "VPN configurada"],
+                  ["ips", "IPs liberados"],
+                  ["credentials", "Credenciais temporárias criadas"],
+                  ["maskedData", "Dados anonimizados / mascarados"],
+                  ["cloudBudget", "Cloud com teto de gastos monitorado"],
+                ].map(([key, label]) => (
+                  <label
+                    key={key}
+                    style={{
+                      display: "flex",
+                      gap: 9,
+                      alignItems: "center",
+                      color: C.t2,
+                      fontSize: 13,
+                    }}
+                  >
+                    {" "}
+                    <input
+                      type="checkbox"
+                      checked={data.security[key]}
+                      onChange={(e) =>
+                        update(`security.${key}`, e.target.checked)
+                      }
+                    />{" "}
+                    {label}{" "}
+                  </label>
+                ))}{" "}
+              </div>{" "}
+              <textarea
+                placeholder="Observações de infraestrutura, acessos, LGPD, dados de teste ou riscos de segurança"
+                value={data.security.notes}
+                onChange={(e) => update("security.notes", e.target.value)}
+                style={{
+                  ...field,
+                  minHeight: 100,
+                  resize: "vertical",
+                  lineHeight: 1.6,
+                }}
+              />{" "}
+            </Section>
+          )}
         </div>
       )}{" "}
       {tab === "execution" && isPocOrquestracao && (
