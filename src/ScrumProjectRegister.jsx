@@ -1400,6 +1400,15 @@ export default function ScrumProjectRegister({
                   border: "1px solid rgba(255,255,255,0.2)",
                 },
               },
+              {
+                label: "Exportar PDF",
+                fn: handleExportPdf,
+                style: {
+                  background: theme.gold,
+                  color: theme.navyDark,
+                  border: "1px solid rgba(255,255,255,0.2)",
+                },
+              },
             ].map((btn) => (
               <button
                 key={btn.label}
