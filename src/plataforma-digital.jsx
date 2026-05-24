@@ -8152,7 +8152,7 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
                 maxWidth: 520,
               }}
             >
-              Plataforma de Projetos - Transformação Digital BP
+              Plataforma de Gestão - Transformação Digital
             </div>
 
             <div
@@ -8378,20 +8378,8 @@ export default function App() {
   }, []);
   const [dark, setDark] = useState(true);
   const [active, setActive] = useState("indicators");
-  const [auth, setAuth] = useState(() => {
-    try {
-      return window.localStorage.getItem("bp-demo-auth") === "true";
-    } catch {
-      return false;
-    }
-  });
-  const [authEmail, setAuthEmail] = useState(() => {
-    try {
-      return window.localStorage.getItem("bp-demo-email") || "";
-    } catch {
-      return "";
-    }
-  });
+  const [auth, setAuth] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
   const C = getC(dark);
 
   useEffect(() => {
@@ -8415,10 +8403,7 @@ export default function App() {
     setAuth(true);
     setAuthEmail(email);
 
-    try {
-      window.localStorage.setItem("bp-demo-auth", "true");
-      window.localStorage.setItem("bp-demo-email", email);
-    } catch {}
+    // Login demonstrativo não será persistido para garantir que a plataforma abra sempre na tela de login.
   }
 
   function handleLogout() {
