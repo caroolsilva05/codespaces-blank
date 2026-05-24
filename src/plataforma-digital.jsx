@@ -3334,6 +3334,7 @@ function SuppliersView({ C }) {
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState("Todos");
   const [form, setForm] = useState(emptyForm);
+  const [editingFornecedorId, setEditingFornecedorId] = useState(null);
 
   const field = {
     width: "100%",
@@ -3359,6 +3360,59 @@ function SuppliersView({ C }) {
       ...prev,
       [campo]: valor,
     }));
+  }
+
+  function abrirNovoFornecedor() {
+    setEditingFornecedorId(null);
+    setForm(emptyForm);
+    setShowForm(true);
+  }
+
+  function abrirFornecedorExistente(item) {
+    const canais = Array.isArray(item.canais)
+      ? item.canais.join(", ")
+      : item.canais || "";
+
+    setEditingFornecedorId(item.id || null);
+    setForm({
+      ...emptyForm,
+      nome: item.nome || "",
+      categoria: item.categoria || "",
+      canais,
+      responsavel: item.responsavel || "",
+      contato: item.contato || "",
+      email: item.email || "",
+      telefone: item.telefone || "",
+      status: item.status || "Ativo",
+      sla_meta:
+        item.sla_meta !== null && item.sla_meta !== undefined
+          ? String(item.sla_meta)
+          : "",
+      performance_score:
+        item.performance_score !== null && item.performance_score !== undefined
+          ? String(item.performance_score)
+          : "",
+      risco: item.risco || "Baixo",
+      projetos_ativos:
+        item.projetos_ativos !== null && item.projetos_ativos !== undefined
+          ? String(item.projetos_ativos)
+          : "",
+      incidentes_abertos:
+        item.incidentes_abertos !== null &&
+        item.incidentes_abertos !== undefined
+          ? String(item.incidentes_abertos)
+          : "",
+      avaliacao: item.avaliacao || "",
+      observacoes: item.observacoes || "",
+    });
+
+    setShowForm(true);
+  }
+
+  function fecharFormularioFornecedor() {
+    setShowForm(false);
+    setEditingFornecedorId(null);
+    setForm(emptyForm);
   }
 
   function statusColor(status) {
@@ -3430,19 +3484,29 @@ function SuppliersView({ C }) {
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from("fornecedores").insert([payload]);
+    const response = editingFornecedorId
+      ? await supabase
+          .from("fornecedores")
+          .update(payload)
+          .eq("id", editingFornecedorId)
+      : await supabase.from("fornecedores").insert([payload]);
 
     setSaving(false);
 
-    if (error) {
-      console.log("Erro ao salvar fornecedor:", error);
+    if (response.error) {
+      console.log("Erro ao salvar fornecedor:", response.error);
       alert("Erro ao salvar fornecedor. Veja o console.");
       return;
     }
 
-    alert("Fornecedor salvo com sucesso!");
+    alert(
+      editingFornecedorId
+        ? "Fornecedor atualizado com sucesso!"
+        : "Fornecedor salvo com sucesso!",
+    );
 
     setForm(emptyForm);
+    setEditingFornecedorId(null);
     setShowForm(false);
     carregarFornecedores();
   }
@@ -3495,7 +3559,7 @@ function SuppliersView({ C }) {
             icon={Plus}
             primary
             C={C}
-            onClick={() => setShowForm(true)}
+            onClick={abrirNovoFornecedor}
           />,
         ]}
         C={C}
@@ -3566,16 +3630,17 @@ function SuppliersView({ C }) {
           >
             <div>
               <div style={{ fontSize: 18, fontWeight: 900, color: C.t1 }}>
-                Novo Fornecedor
+                {editingFornecedorId ? "Editar Fornecedor" : "Novo Fornecedor"}
               </div>
               <div style={{ fontSize: 12, color: C.t3, marginTop: 4 }}>
-                Cadastre dados operacionais, canais, SLA, performance e riscos
-                do fornecedor
+                {editingFornecedorId
+                  ? "Atualize dados operacionais, canais, SLA, performance e riscos do fornecedor"
+                  : "Cadastre dados operacionais, canais, SLA, performance e riscos do fornecedor"}
               </div>
             </div>
 
             <button
-              onClick={() => setShowForm(false)}
+              onClick={fecharFormularioFornecedor}
               style={{
                 background: C.surface,
                 border: `1px solid ${C.border}`,
@@ -3731,7 +3796,7 @@ function SuppliersView({ C }) {
               }}
             >
               <button
-                onClick={() => setShowForm(false)}
+                onClick={fecharFormularioFornecedor}
                 style={{
                   background: C.surface,
                   border: `1px solid ${C.border}`,
@@ -3759,7 +3824,11 @@ function SuppliersView({ C }) {
                   opacity: saving ? 0.7 : 1,
                 }}
               >
-                {saving ? "Salvando..." : "Salvar Fornecedor"}
+                {saving
+                  ? "Salvando..."
+                  : editingFornecedorId
+                    ? "Atualizar Fornecedor"
+                    : "Salvar Fornecedor"}
               </button>
             </div>
           </div>
@@ -3840,9 +3909,12 @@ function SuppliersView({ C }) {
               return (
                 <tr
                   key={item.id}
+                  onClick={() => abrirFornecedorExistente(item)}
+                  title="Clique para editar o fornecedor"
                   style={{
                     borderBottom: `1px solid ${C.border}`,
                     transition: "background 0.15s",
+                    cursor: "pointer",
                   }}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.background = C.cardHov)
