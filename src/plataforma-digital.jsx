@@ -1004,7 +1004,7 @@ function Dashboard({ C }) {
     if (projectsRes.error)
       console.log("Erro ao carregar projetos no dashboard:", projectsRes.error);
     if (pocsRes.error)
-      console.log("Erro ao carregar POCs no dashboard:", pocsRes.error);
+      console.log("Erro ao carregar POC no dashboard:", pocsRes.error);
     if (suppliersRes.error)
       console.log(
         "Erro ao carregar fornecedores no dashboard:",
@@ -1196,7 +1196,7 @@ function Dashboard({ C }) {
 
   const radarData = [
     { eixo: "Projetos", valor: scoreProjetos },
-    { eixo: "POCs", valor: Math.round(scorePocs) },
+    { eixo: "POC", valor: Math.round(scorePocs) },
     { eixo: "Fornecedores", valor: scoreFornecedores },
     { eixo: "Risco", valor: scoreRisco },
   ];
@@ -1236,7 +1236,7 @@ function Dashboard({ C }) {
       value:
         totalPocs > 0
           ? `${totalPocs} POC(s) cadastrada(s)`
-          : "Sem POCs cadastradas",
+          : "Sem POC cadastrada",
       color: C.violet,
     },
     {
@@ -1358,7 +1358,7 @@ function Dashboard({ C }) {
                 lineHeight: 1.7,
               }}
             >
-              A plataforma consolida projetos, POCs e fornecedores em uma visão
+              A plataforma consolida projetos, POC e fornecedores em uma visão
               única para tomada de decisão. Hoje existem{" "}
               <strong style={{ color: C.t1 }}>{totalProjetos}</strong> projetos,
               <strong style={{ color: C.t1 }}> {totalPocs}</strong> POC(s) e
@@ -1376,7 +1376,7 @@ function Dashboard({ C }) {
             >
               {[
                 ["Projetos", totalProjetos, C.blue],
-                ["POCs", totalPocs, C.violet],
+                ["POC", totalPocs, C.violet],
                 ["Fornecedores", totalFornecedores, C.emerald],
                 [
                   "Alertas",
@@ -1473,7 +1473,7 @@ function Dashboard({ C }) {
         />
         <KPICard
           icon={FlaskConical}
-          label="POCs registradas"
+          label="POC registrada"
           value={totalPocs}
           sub={`${pocsExecucao} em execução`}
           color={C.violet}
@@ -1622,7 +1622,7 @@ function Dashboard({ C }) {
           >
             <div>
               <div style={{ fontSize: 17, fontWeight: 900, color: C.t1 }}>
-                Funil Consolidado das POCs
+                Funil Consolidado das POC
               </div>
               <div style={{ fontSize: 12, color: C.t3, marginTop: 3 }}>
                 Leitura visual do desempenho das validações
@@ -6122,7 +6122,7 @@ function IndicatorsView({ C }) {
 
     if (projectsRes.error)
       console.log("Erro ao carregar projetos:", projectsRes.error);
-    if (pocsRes.error) console.log("Erro ao carregar POCs:", pocsRes.error);
+    if (pocsRes.error) console.log("Erro ao carregar POC:", pocsRes.error);
     if (suppliersRes.error)
       console.log("Erro ao carregar fornecedores:", suppliersRes.error);
 
@@ -6285,10 +6285,10 @@ function IndicatorsView({ C }) {
       desc: "Projetos com prazo vencido e ciclo não encerrado",
     },
     {
-      label: "POCs com condições",
+      label: "POC com condições",
       value: pocsCondicoes,
       color: pocsCondicoes > 0 ? C.amber : C.emerald,
-      desc: "POCs aprovadas com ressalvas",
+      desc: "POC aprovada com ressalvas",
     },
     {
       label: "Fornecedores alto risco",
@@ -6312,7 +6312,7 @@ function IndicatorsView({ C }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
       <SectionHeader
         title="Control Tower"
-        sub="Central de acompanhamento da Transformação Digital: projetos, POCs, fornecedores, riscos e performance."
+        sub="Central de acompanhamento da Transformação Digital: projetos, POC, fornecedores, riscos e performance."
         actions={[
           <Btn
             key="refresh"
@@ -6358,7 +6358,7 @@ function IndicatorsView({ C }) {
         />
         <KPICard
           icon={FlaskConical}
-          label="POCs"
+          label="POC"
           value={totalPocs}
           sub={`${pocsExecucao} em execução`}
           color={C.violet}
@@ -6607,7 +6607,7 @@ function IndicatorsView({ C }) {
               marginBottom: 4,
             }}
           >
-            Performance das POCs
+            Performance das POC
           </div>
           <div style={{ fontSize: 12, color: C.t3, marginBottom: 18 }}>
             Indicadores consolidados das validações
@@ -6963,7 +6963,7 @@ function PocView({ C }) {
     setLoading(false);
 
     if (error) {
-      console.log("Erro ao carregar POCs:", error);
+      console.log("Erro ao carregar POC:", error);
       return;
     }
 
@@ -7168,7 +7168,7 @@ function PocView({ C }) {
       )}
 
       <SectionHeader
-        title="POCs — Proof of Concept"
+        title="POC — Proof of Concept"
         sub="Gestão de validações técnicas, fornecedores, incidentes e performance analítica"
         actions={[
           <Btn
@@ -7192,9 +7192,9 @@ function PocView({ C }) {
       >
         <KPICard
           icon={FlaskConical}
-          label="POCs registradas"
+          label="POC registrada"
           value={total}
-          sub={loading ? "Carregando..." : "Portfólio de validações"}
+          sub={loading ? "Carregando..." : "Registro de validações"}
           color={C.blue}
           glow={C.blueGlow}
           C={C}
@@ -7212,7 +7212,7 @@ function PocView({ C }) {
           icon={CheckCircle2}
           label="Encerradas"
           value={encerradas}
-          sub="POCs finalizadas"
+          sub="POC finalizada"
           color={C.violet}
           glow={C.violetGlow}
           C={C}
@@ -7405,7 +7405,7 @@ const navItems = [
   { id: "indicators", label: "Control Tower", icon: BarChart3 },
   { id: "projects", label: "Projetos", icon: FolderKanban },
   { id: "scrum", label: "Scrum", icon: Layers },
-  { id: "poc", label: "POCs", icon: FlaskConical, badge: "Novo" },
+  { id: "poc", label: "POC", icon: FlaskConical, badge: "Novo" },
   { id: "suppliers", label: "Fornecedores", icon: Globe },
   { id: "portals", label: "Portais", icon: FileSearch },
 ];
@@ -8164,8 +8164,8 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
                 maxWidth: 560,
               }}
             >
-              Central de acompanhamento para projetos, Scrum, POCs,
-              fornecedores, riscos, indicadores e decisões executivas.
+              Central de acompanhamento para projetos, Scrum, POC, fornecedores,
+              riscos, indicadores e decisões executivas.
             </div>
 
             <div

@@ -950,7 +950,7 @@ export default function PocRegister({
 
       htmlBody +=
         '<div class="header">' +
-        '<div class="breadcrumb">POCs › Registro de Prova de Conceito</div>' +
+        '<div class="breadcrumb">POC › Registro de Prova de Conceito</div>' +
         "<h1>" +
         safeTitle +
         "</h1>" +
@@ -1336,7 +1336,7 @@ export default function PocRegister({
           <div>
             {" "}
             <div style={{ fontSize: 12, color: C.t3, marginBottom: 6 }}>
-              POCs › Registro de Prova de Conceito
+              POC › Registro de Prova de Conceito
             </div>{" "}
             <div style={{ fontSize: 24, fontWeight: 900, color: C.t1 }}>
               {" "}
