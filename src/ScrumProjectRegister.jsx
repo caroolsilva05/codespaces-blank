@@ -285,6 +285,7 @@ const PhaseSection = ({ phaseNum, title, expanded, onToggle, children }) => {
   const p = theme.phases[phaseNum];
   return (
     <div
+      className="pdf-phase-section"
       style={{
         marginBottom: 28,
         borderRadius: 8,
@@ -294,6 +295,7 @@ const PhaseSection = ({ phaseNum, title, expanded, onToggle, children }) => {
       }}
     >
       <div
+        className="pdf-phase-header"
         onClick={onToggle}
         style={{
           background: p.bg,
@@ -340,7 +342,10 @@ const PhaseSection = ({ phaseNum, title, expanded, onToggle, children }) => {
         </span>
       </div>
       {expanded && (
-        <div style={{ padding: "28px 28px 20px", background: "#fff" }}>
+        <div
+          className="pdf-phase-body"
+          style={{ padding: "28px 28px 20px", background: "#fff" }}
+        >
           {children}
         </div>
       )}
@@ -349,7 +354,7 @@ const PhaseSection = ({ phaseNum, title, expanded, onToggle, children }) => {
 };
 
 const SubSection = ({ title, children }) => (
-  <div style={{ marginBottom: 28 }}>
+  <div className="pdf-subsection" style={{ marginBottom: 28 }}>
     <h4
       style={{
         margin: "0 0 14px 0",
@@ -370,6 +375,7 @@ const SubSection = ({ title, children }) => (
 
 const TableWrap = ({ children }) => (
   <div
+    className="pdf-table-wrap"
     style={{
       overflowX: "auto",
       borderRadius: 6,
@@ -1123,7 +1129,97 @@ export default function ScrumProjectRegister({
       return;
     }
 
-    const janela = window.open("", "_blank", "width=1200,height=900");
+    const clone = conteudo.cloneNode(true);
+
+    // Remove botões
+    clone.querySelectorAll("button").forEach((button) => button.remove());
+
+    // Remove textos de recolher/expandir
+    clone.querySelectorAll("span").forEach((span) => {
+      const text = String(span.textContent || "").trim();
+      if (text.includes("Recolher") || text.includes("Expandir")) {
+        span.remove();
+      }
+    });
+
+    // Converte radio: mostra somente opção marcada
+    clone.querySelectorAll('input[type="radio"]').forEach((input) => {
+      const label = input.closest("label");
+
+      if (!input.checked && label) {
+        label.remove();
+        return;
+      }
+
+      const replacement = document.createElement("span");
+      replacement.textContent = "●";
+      replacement.style.display = "inline-flex";
+      replacement.style.padding = "0 3px";
+      replacement.style.fontSize = "9px";
+      replacement.style.fontWeight = "900";
+      replacement.style.color = "inherit";
+
+      input.parentNode.replaceChild(replacement, input);
+    });
+
+    // Converte checkbox
+    clone.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+      const replacement = document.createElement("span");
+      replacement.textContent = input.checked ? "☑" : "☐";
+      replacement.style.display = "inline-flex";
+      replacement.style.padding = "0 3px";
+      replacement.style.fontSize = "9px";
+      replacement.style.fontWeight = "900";
+      replacement.style.color = "inherit";
+
+      input.parentNode.replaceChild(replacement, input);
+    });
+
+    // Converte campos preenchíveis em texto
+    clone
+      .querySelectorAll(
+        "input:not([type='radio']):not([type='checkbox']), textarea, select",
+      )
+      .forEach((element) => {
+        const tag = element.tagName.toLowerCase();
+        let value = "";
+
+        if (tag === "select") {
+          value =
+            element.options && element.selectedIndex >= 0
+              ? element.options[element.selectedIndex].text
+              : element.value || "";
+        } else {
+          value = element.value || element.getAttribute("value") || "";
+        }
+
+        const replacement = document.createElement("span");
+        replacement.textContent = value || "-";
+        replacement.style.display = "block";
+        replacement.style.minHeight = "14px";
+        replacement.style.padding = "2px 4px";
+        replacement.style.borderRadius = "4px";
+        replacement.style.background = "rgba(15, 23, 42, 0.035)";
+        replacement.style.color = "inherit";
+        replacement.style.fontSize = "8.5px";
+        replacement.style.fontWeight = "700";
+        replacement.style.whiteSpace = "normal";
+        replacement.style.wordBreak = "break-word";
+
+        element.parentNode.replaceChild(replacement, element);
+      });
+
+    clone.querySelectorAll("*").forEach((el) => {
+      el.style.maxWidth = "100%";
+      el.style.overflow = "visible";
+      el.style.boxSizing = "border-box";
+    });
+
+    const safeTitle = String(data.projectInfo.nome || "Projeto")
+      .replace(/</g, "")
+      .replace(/>/g, "");
+
+    const janela = window.open("", "_blank", "width=1400,height=950");
 
     if (!janela) {
       alert(
@@ -1132,75 +1228,55 @@ export default function ScrumProjectRegister({
       return;
     }
 
-    janela.document.write(`
-      <!DOCTYPE html>
-      <html lang="pt-BR">
-        <head>
-          <meta charset="UTF-8" />
-          <title>Registro Scrum - ${data.projectInfo.nome || "Projeto"}</title>
-          <style>
-            * {
-              box-sizing: border-box;
-            }
+    const html =
+      "<!DOCTYPE html>" +
+      '<html lang="pt-BR">' +
+      "<head>" +
+      '<meta charset="UTF-8" />' +
+      "<title>Template de Projeto - " +
+      safeTitle +
+      "</title>" +
+      "<style>" +
+      "* { box-sizing: border-box !important; }" +
+      "html, body { margin: 0; padding: 0; font-family: Segoe UI, Arial, sans-serif; background: #f0f4f8; color: #1e293b; -webkit-print-color-adjust: exact; print-color-adjust: exact; }" +
+      "body { padding: 5mm; font-size: 9px; }" +
+      "button { display: none !important; }" +
+      ".pdf-phase-section { margin-bottom: 5mm !important; overflow: visible !important; break-before: page !important; page-break-before: always !important; break-inside: auto !important; page-break-inside: auto !important; }" +
+      ".pdf-phase-section:first-of-type { break-before: auto !important; page-break-before: auto !important; }" +
+      ".pdf-phase-header { padding: 8px 14px !important; break-after: avoid-page !important; page-break-after: avoid !important; page-break-inside: avoid !important; }" +
+      ".pdf-phase-body { padding: 9px 10px 7px !important; overflow: visible !important; }" +
+      ".pdf-subsection { margin-bottom: 4mm !important; break-before: auto !important; page-break-before: auto !important; break-inside: avoid-page !important; page-break-inside: avoid !important; }" +
+      ".pdf-subsection h4 { margin-bottom: 5px !important; padding-bottom: 4px !important; break-after: avoid-page !important; page-break-after: avoid !important; page-break-inside: avoid !important; }" +
+      ".pdf-subsection h4 + * { break-before: avoid-page !important; page-break-before: avoid !important; }" +
+      ".pdf-table-wrap { overflow: visible !important; break-inside: auto !important; page-break-inside: auto !important; }" +
+      "table { width: 100% !important; min-width: 0 !important; border-collapse: collapse !important; table-layout: fixed !important; font-size: 7.4px !important; break-inside: auto !important; page-break-inside: auto !important; }" +
+      "thead { display: table-header-group !important; break-after: avoid-page !important; page-break-after: avoid !important; }" +
+      "tbody tr, tr, td, th { break-inside: avoid-page !important; page-break-inside: avoid !important; }" +
+      "th, td { padding: 2.5px 3px !important; white-space: normal !important; word-break: break-word !important; vertical-align: top !important; }" +
+      "input, textarea, select { border: none !important; background: transparent !important; color: inherit !important; pointer-events: none !important; }" +
+      "textarea { resize: none !important; }" +
+      '[style*="overflow"] { overflow: visible !important; }' +
+      '[style*="min-width"] { min-width: 0 !important; }' +
+      '[style*="minHeight"], [style*="min-height"] { min-height: auto !important; }' +
+      '[style*="height: 100vh"], [style*="minHeight: 100vh"], [style*="min-height: 100vh"] { min-height: auto !important; height: auto !important; }' +
+      '[style*="padding: 32px 40px 48px"] { padding: 10px 14px 14px !important; }' +
+      "h1, h2, h3, h4 { margin-top: 0 !important; }" +
+      "@page { size: A4 landscape; margin: 7mm; }" +
+      "@media print { body { background: #ffffff; } }" +
+      "</style>" +
+      "</head>" +
+      "<body>" +
+      clone.innerHTML +
+      "</body>" +
+      "</html>";
 
-            body {
-              margin: 0;
-              font-family: Segoe UI, Arial, sans-serif;
-              background: #f0f4f8;
-              color: #1e293b;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
-
-            button {
-              display: none !important;
-            }
-
-            input,
-            textarea,
-            select {
-              border: none !important;
-              background: transparent !important;
-              color: #1e293b !important;
-              pointer-events: none;
-            }
-
-            textarea {
-              resize: none !important;
-            }
-
-            @page {
-              size: A4;
-              margin: 12mm;
-            }
-
-            @media print {
-              body {
-                background: #ffffff;
-              }
-
-              div {
-                break-inside: avoid;
-              }
-            }
-          </style>
-        </head>
-
-        <body>
-          ${conteudo.innerHTML}
-          <script>
-            window.onload = function() {
-              setTimeout(function() {
-                window.focus();
-                window.print();
-              }, 500);
-            };
-          <\/script>
-        </body>
-      </html>
-    `);
-
+    janela.document.write(html);
     janela.document.close();
+
+    setTimeout(() => {
+      janela.focus();
+      janela.print();
+    }, 700);
   };
 
   const {
