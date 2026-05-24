@@ -3334,6 +3334,8 @@ function SuppliersView({ C }) {
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState("Todos");
   const [form, setForm] = useState(emptyForm);
+  const [formRenderKey, setFormRenderKey] = useState(0);
+  const formRefFornecedor = React.useRef({ ...emptyForm });
   const [editingFornecedorId, setEditingFornecedorId] = useState(null);
 
   const optionStyleFornecedor = {
@@ -3361,15 +3363,30 @@ function SuppliersView({ C }) {
   }
 
   function updateForm(campo, valor) {
+    formRefFornecedor.current = {
+      ...formRefFornecedor.current,
+      [campo]: valor,
+    };
+
     setForm((prev) => ({
       ...prev,
       [campo]: valor,
     }));
   }
 
+  function updateFormSilent(campo, valor) {
+    formRefFornecedor.current = {
+      ...formRefFornecedor.current,
+      [campo]: valor,
+    };
+  }
+
   function abrirNovoFornecedor() {
+    const novoForm = { ...emptyForm };
+    formRefFornecedor.current = novoForm;
     setEditingFornecedorId(null);
-    setForm(emptyForm);
+    setForm(novoForm);
+    setFormRenderKey((prev) => prev + 1);
     setShowForm(true);
   }
 
@@ -3378,8 +3395,7 @@ function SuppliersView({ C }) {
       ? item.canais.join(", ")
       : item.canais || "";
 
-    setEditingFornecedorId(item.id || null);
-    setForm({
+    const formEditado = {
       ...emptyForm,
       nome: item.nome || "",
       categoria: item.categoria || "",
@@ -3409,15 +3425,22 @@ function SuppliersView({ C }) {
           : "",
       avaliacao: item.avaliacao || "",
       observacoes: item.observacoes || "",
-    });
+    };
 
+    formRefFornecedor.current = formEditado;
+    setEditingFornecedorId(item.id || null);
+    setForm(formEditado);
+    setFormRenderKey((prev) => prev + 1);
     setShowForm(true);
   }
 
   function fecharFormularioFornecedor() {
+    const novoForm = { ...emptyForm };
+    formRefFornecedor.current = novoForm;
     setShowForm(false);
     setEditingFornecedorId(null);
-    setForm(emptyForm);
+    setForm(novoForm);
+    setFormRenderKey((prev) => prev + 1);
   }
 
   function statusColor(status) {
@@ -3458,34 +3481,41 @@ function SuppliersView({ C }) {
   }, []);
 
   async function salvarFornecedor(continuarCadastro = false) {
-    if (!form.nome.trim()) {
+    const currentForm = {
+      ...formRefFornecedor.current,
+      canais: form.canais || formRefFornecedor.current.canais || "",
+      status: form.status || formRefFornecedor.current.status || "Ativo",
+      risco: form.risco || formRefFornecedor.current.risco || "Baixo",
+    };
+
+    if (!String(currentForm.nome || "").trim()) {
       alert("Informe o nome do fornecedor.");
       return;
     }
 
     setSaving(true);
 
-    const canais = form.canais
+    const canais = String(currentForm.canais || "")
       .split(",")
       .map((item) => item.trim())
       .filter(Boolean);
 
     const payload = {
-      nome: form.nome,
-      categoria: form.categoria,
+      nome: currentForm.nome,
+      categoria: currentForm.categoria,
       canais,
-      responsavel: form.responsavel,
-      contato: form.contato,
-      email: form.email,
-      telefone: form.telefone,
-      status: form.status,
-      sla_meta: toNum(form.sla_meta),
-      performance_score: toNum(form.performance_score),
-      risco: form.risco,
-      projetos_ativos: toNum(form.projetos_ativos),
-      incidentes_abertos: toNum(form.incidentes_abertos),
-      avaliacao: form.avaliacao,
-      observacoes: form.observacoes,
+      responsavel: currentForm.responsavel,
+      contato: currentForm.contato,
+      email: currentForm.email,
+      telefone: currentForm.telefone,
+      status: currentForm.status,
+      sla_meta: toNum(currentForm.sla_meta),
+      performance_score: toNum(currentForm.performance_score),
+      risco: currentForm.risco,
+      projetos_ativos: toNum(currentForm.projetos_ativos),
+      incidentes_abertos: toNum(currentForm.incidentes_abertos),
+      avaliacao: currentForm.avaliacao,
+      observacoes: currentForm.observacoes,
       updated_at: new Date().toISOString(),
     };
 
@@ -3510,14 +3540,18 @@ function SuppliersView({ C }) {
         : "Fornecedor salvo com sucesso!",
     );
 
-    setForm(emptyForm);
+    const novoForm = { ...emptyForm };
+    formRefFornecedor.current = novoForm;
+    setForm(novoForm);
     setEditingFornecedorId(null);
     setShowForm(continuarCadastro && !editingFornecedorId);
+    setFormRenderKey((prev) => prev + 1);
     carregarFornecedores();
   }
 
-  const filtrados =
-    filter === "Todos"
+  const filtrados = showForm
+    ? []
+    : filter === "Todos"
       ? fornecedores
       : fornecedores.filter(
           (item) => item.status === filter || item.risco === filter,
@@ -3636,7 +3670,7 @@ function SuppliersView({ C }) {
 
       <div
         style={{
-          display: "grid",
+          display: showForm ? "none" : "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
           gap: 14,
         }}
@@ -3681,6 +3715,7 @@ function SuppliersView({ C }) {
 
       {showForm && (
         <div
+          key={formRenderKey}
           style={{
             ...card(C),
             padding: 0,
@@ -3744,8 +3779,8 @@ function SuppliersView({ C }) {
               >
                 <input
                   placeholder="Nome do fornecedor"
-                  value={form.nome}
-                  onChange={(e) => updateForm("nome", e.target.value)}
+                  defaultValue={form.nome}
+                  onChange={(e) => updateFormSilent("nome", e.target.value)}
                   style={field}
                 />
               </FieldBlockFornecedor>
@@ -3757,8 +3792,10 @@ function SuppliersView({ C }) {
               >
                 <input
                   placeholder="Categoria: Mensageria, IA, CRM, Portal..."
-                  value={form.categoria}
-                  onChange={(e) => updateForm("categoria", e.target.value)}
+                  defaultValue={form.categoria}
+                  onChange={(e) =>
+                    updateFormSilent("categoria", e.target.value)
+                  }
                   style={field}
                 />
               </FieldBlockFornecedor>
@@ -3885,8 +3922,10 @@ function SuppliersView({ C }) {
               <FieldBlockFornecedor label="Responsável interno" required>
                 <input
                   placeholder="Responsável interno"
-                  value={form.responsavel}
-                  onChange={(e) => updateForm("responsavel", e.target.value)}
+                  defaultValue={form.responsavel}
+                  onChange={(e) =>
+                    updateFormSilent("responsavel", e.target.value)
+                  }
                   style={field}
                 />
               </FieldBlockFornecedor>
@@ -3897,8 +3936,8 @@ function SuppliersView({ C }) {
               >
                 <input
                   placeholder="Contato do fornecedor"
-                  value={form.contato}
-                  onChange={(e) => updateForm("contato", e.target.value)}
+                  defaultValue={form.contato}
+                  onChange={(e) => updateFormSilent("contato", e.target.value)}
                   style={field}
                 />
               </FieldBlockFornecedor>
@@ -3910,8 +3949,8 @@ function SuppliersView({ C }) {
               >
                 <input
                   placeholder="E-mail"
-                  value={form.email}
-                  onChange={(e) => updateForm("email", e.target.value)}
+                  defaultValue={form.email}
+                  onChange={(e) => updateFormSilent("email", e.target.value)}
                   style={field}
                 />
               </FieldBlockFornecedor>
@@ -3922,8 +3961,8 @@ function SuppliersView({ C }) {
               >
                 <input
                   placeholder="Telefone"
-                  value={form.telefone}
-                  onChange={(e) => updateForm("telefone", e.target.value)}
+                  defaultValue={form.telefone}
+                  onChange={(e) => updateFormSilent("telefone", e.target.value)}
                   style={field}
                 />
               </FieldBlockFornecedor>
@@ -3971,8 +4010,8 @@ function SuppliersView({ C }) {
                   min="0"
                   max="100"
                   placeholder="SLA contratado/meta (%)"
-                  value={form.sla_meta}
-                  onChange={(e) => updateForm("sla_meta", e.target.value)}
+                  defaultValue={form.sla_meta}
+                  onChange={(e) => updateFormSilent("sla_meta", e.target.value)}
                   style={field}
                 />
               </FieldBlockFornecedor>
@@ -3986,9 +4025,9 @@ function SuppliersView({ C }) {
                   min="0"
                   max="100"
                   placeholder="Score de performance (%)"
-                  value={form.performance_score}
+                  defaultValue={form.performance_score}
                   onChange={(e) =>
-                    updateForm("performance_score", e.target.value)
+                    updateFormSilent("performance_score", e.target.value)
                   }
                   style={field}
                 />
@@ -4001,9 +4040,9 @@ function SuppliersView({ C }) {
                 <input
                   type="number"
                   placeholder="Projetos ativos"
-                  value={form.projetos_ativos}
+                  defaultValue={form.projetos_ativos}
                   onChange={(e) =>
-                    updateForm("projetos_ativos", e.target.value)
+                    updateFormSilent("projetos_ativos", e.target.value)
                   }
                   style={field}
                 />
@@ -4016,9 +4055,9 @@ function SuppliersView({ C }) {
                 <input
                   type="number"
                   placeholder="Incidentes em aberto"
-                  value={form.incidentes_abertos}
+                  defaultValue={form.incidentes_abertos}
                   onChange={(e) =>
-                    updateForm("incidentes_abertos", e.target.value)
+                    updateFormSilent("incidentes_abertos", e.target.value)
                   }
                   style={field}
                 />
@@ -4035,8 +4074,10 @@ function SuppliersView({ C }) {
               >
                 <textarea
                   placeholder="Avaliação executiva do fornecedor"
-                  value={form.avaliacao}
-                  onChange={(e) => updateForm("avaliacao", e.target.value)}
+                  defaultValue={form.avaliacao}
+                  onChange={(e) =>
+                    updateFormSilent("avaliacao", e.target.value)
+                  }
                   style={{
                     ...field,
                     gridColumn: "1 / -1",
@@ -4053,8 +4094,10 @@ function SuppliersView({ C }) {
               >
                 <textarea
                   placeholder="Observações, pontos de atenção, histórico de relacionamento ou próximos passos"
-                  value={form.observacoes}
-                  onChange={(e) => updateForm("observacoes", e.target.value)}
+                  defaultValue={form.observacoes}
+                  onChange={(e) =>
+                    updateFormSilent("observacoes", e.target.value)
+                  }
                   style={{
                     ...field,
                     gridColumn: "1 / -1",
@@ -4133,7 +4176,13 @@ function SuppliersView({ C }) {
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div
+        style={{
+          display: showForm ? "none" : "flex",
+          gap: 8,
+          flexWrap: "wrap",
+        }}
+      >
         {filtros.map((f) => {
           const active = filter === f;
           return (
@@ -4160,6 +4209,7 @@ function SuppliersView({ C }) {
       <div
         style={{
           ...card(C),
+          display: showForm ? "none" : "block",
           padding: 0,
           overflowX: "auto",
           overflowY: "hidden",
