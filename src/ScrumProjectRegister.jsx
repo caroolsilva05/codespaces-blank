@@ -626,6 +626,225 @@ const FieldRow = ({ label, children }) => (
   </div>
 );
 
+const MonitoringConversionSection = ({ phase4, setP4Conversion }) => {
+  const conv = phase4.conversaoCustos || {};
+
+  const parseNumber = (value) => {
+    const normalizado = String(value || "")
+      .replace(/R\$/g, "")
+      .replace(/\s/g, "")
+      .replace(/\./g, "")
+      .replace(",", ".")
+      .replace(/[^0-9.-]/g, "");
+
+    const numero = Number(normalizado);
+    return Number.isFinite(numero) ? numero : 0;
+  };
+
+  const parseCurrency = (value) => {
+    const normalizado = String(value || "")
+      .replace(/R\$/g, "")
+      .replace(/\s/g, "")
+      .replace(/\./g, "")
+      .replace(",", ".");
+
+    const numero = Number(normalizado);
+    return Number.isFinite(numero) ? numero : 0;
+  };
+
+  const money = (value) =>
+    Number(value || 0).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+
+  const pct = (value) =>
+    `${Number(value || 0)
+      .toFixed(1)
+      .replace(".", ",")}%`;
+
+  const disparado = parseNumber(conv.disparado);
+  const entregue = parseNumber(conv.entregue);
+  const lido = parseNumber(conv.lido);
+  const retorno = parseNumber(conv.retorno);
+  const intencaoPagamento = parseNumber(conv.intencaoPagamento);
+  const acordoFormalizado = parseNumber(conv.acordoFormalizado);
+
+  const valorAcordo = parseCurrency(conv.valorAcordo);
+  const custoUnitario = parseCurrency(conv.custoUnitario);
+  const custoTotalDisparo = disparado * custoUnitario;
+
+  const taxaEntregue = disparado > 0 ? (entregue / disparado) * 100 : 0;
+  const taxaLido = entregue > 0 ? (lido / entregue) * 100 : 0;
+  const taxaRetorno = entregue > 0 ? (retorno / entregue) * 100 : 0;
+  const taxaIntencao = retorno > 0 ? (intencaoPagamento / retorno) * 100 : 0;
+  const taxaConversao = retorno > 0 ? (acordoFormalizado / retorno) * 100 : 0;
+
+  const roi =
+    custoTotalDisparo > 0
+      ? ((valorAcordo - custoTotalDisparo) / custoTotalDisparo) * 100
+      : 0;
+
+  const custoPorRetorno = retorno > 0 ? custoTotalDisparo / retorno : 0;
+
+  const custoPorAcordo =
+    acordoFormalizado > 0 ? custoTotalDisparo / acordoFormalizado : 0;
+
+  return (
+    <SubSection title="4.3 Monitoramento de Conversão e Custos">
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(5, 1fr)",
+          gap: 12,
+          marginBottom: 18,
+        }}
+      >
+        {[
+          ["Disparado", disparado],
+          ["Entregue", entregue + " (" + pct(taxaEntregue) + ")"],
+          ["Retorno", retorno + " (" + pct(taxaRetorno) + ")"],
+          ["Acordos", acordoFormalizado],
+          ["ROI", pct(roi)],
+        ].map(([label, value]) => (
+          <div
+            key={label}
+            style={{
+              border: "1px solid " + theme.border,
+              borderRadius: 8,
+              background: "#f8fafc",
+              padding: "13px 14px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10,
+                color: theme.textMuted,
+                textTransform: "uppercase",
+                letterSpacing: "0.8px",
+                fontWeight: 800,
+                marginBottom: 5,
+              }}
+            >
+              {label}
+            </div>
+            <div
+              style={{
+                fontSize: 18,
+                color: theme.phases[4].bg,
+                fontWeight: 900,
+              }}
+            >
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "0 48px",
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              color: theme.textSecondary,
+              textTransform: "uppercase",
+              letterSpacing: "0.8px",
+              marginBottom: 8,
+            }}
+          >
+            Dados operacionais
+          </div>
+
+          {[
+            ["Disparado", "disparado"],
+            ["Cancelado", "cancelado"],
+            ["Entregue", "entregue"],
+            ["Lido", "lido"],
+            ["Não entregue", "naoEntregue"],
+            ["Retorno", "retorno"],
+            ["Intenção de pagamento", "intencaoPagamento"],
+            ["Acordo formalizado", "acordoFormalizado"],
+          ].map(([label, key]) => (
+            <FieldRow key={key} label={label}>
+              <EditField
+                value={conv[key] || ""}
+                onChange={(v) => setP4Conversion(key, v)}
+                placeholder="0"
+              />
+            </FieldRow>
+          ))}
+        </div>
+
+        <div>
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              color: theme.textSecondary,
+              textTransform: "uppercase",
+              letterSpacing: "0.8px",
+              marginBottom: 8,
+            }}
+          >
+            Custos e cálculos automáticos
+          </div>
+
+          <FieldRow label="Valor do acordo">
+            <EditField
+              value={conv.valorAcordo || ""}
+              onChange={(v) => setP4Conversion("valorAcordo", v)}
+              placeholder="R$ 0,00"
+            />
+          </FieldRow>
+
+          <FieldRow label="Custo unitário">
+            <EditField
+              value={conv.custoUnitario || ""}
+              onChange={(v) => setP4Conversion("custoUnitario", v)}
+              placeholder="R$ 0,00"
+            />
+          </FieldRow>
+
+          {[
+            ["Custo total de disparo", money(custoTotalDisparo)],
+            ["% Entregue", pct(taxaEntregue)],
+            ["% Lido sobre entregue", pct(taxaLido)],
+            ["% Retorno sobre entregue", pct(taxaRetorno)],
+            ["% Intenção sobre retorno", pct(taxaIntencao)],
+            ["% Conversão acordo/retorno", pct(taxaConversao)],
+            ["ROI", pct(roi)],
+            ["Custo por retorno", money(custoPorRetorno)],
+            ["Custo por acordo", money(custoPorAcordo)],
+          ].map(([label, value]) => (
+            <FieldRow key={label} label={label}>
+              <div
+                style={{
+                  padding: "6px 8px",
+                  borderRadius: 4,
+                  background: "#f1f5f9",
+                  border: "1px solid " + theme.border,
+                  color: theme.phases[4].bg,
+                  fontSize: 13,
+                  fontWeight: 900,
+                }}
+              >
+                {value}
+              </div>
+            </FieldRow>
+          ))}
+        </div>
+      </div>
+    </SubSection>
+  );
+};
+
 // ============================================================
 // MAIN COMPONENT
 // ============================================================
@@ -2880,404 +3099,12 @@ export default function ScrumProjectRegister({
                 ＋ Adicionar relatório de status
               </GhostBtn>
             </div>
-            <SubSection title="4.3 Monitoramento de Disparos, Retornos e Acordos">
-              <div
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  marginBottom: 16,
-                  flexWrap: "wrap",
-                }}
-              >
-                {[
-                  { id: "disparos", label: "Disparos e Retornos" },
-                  { id: "conversao", label: "Conversão e Custos" },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setMonitorTab(tab.id)}
-                    style={{
-                      border: `1px solid ${monitorTab === tab.id ? theme.phases[4].bg : theme.border}`,
-                      background:
-                        monitorTab === tab.id ? theme.phases[4].light : "#fff",
-                      color:
-                        monitorTab === tab.id
-                          ? theme.phases[4].bg
-                          : theme.textSecondary,
-                      borderRadius: 20,
-                      padding: "8px 14px",
-                      fontSize: 12,
-                      fontWeight: 800,
-                      cursor: "pointer",
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(5, 1fr)",
-                  gap: 12,
-                  marginBottom: 16,
-                }}
-              >
-                {[
-                  { label: "Total disparos", value: monitoringTotals.disparos },
-                  { label: "Total retornos", value: monitoringTotals.retornos },
-                  {
-                    label: "% Retornos",
-                    value: formatPct(percentualRetornoGeral),
-                  },
-                  { label: "Qtd. acordos", value: monitoringTotals.qtdAcordos },
-                  {
-                    label: "Valor acordado",
-                    value: formatMoney(monitoringTotals.valorAcordo),
-                  },
-                ].map((card) => (
-                  <div
-                    key={card.label}
-                    style={{
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: 8,
-                      background: "#f8fafc",
-                      padding: "13px 14px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 10,
-                        color: theme.textMuted,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.8px",
-                        fontWeight: 800,
-                        marginBottom: 5,
-                      }}
-                    >
-                      {card.label}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 18,
-                        color: theme.phases[4].bg,
-                        fontWeight: 900,
-                      }}
-                    >
-                      {card.value}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {monitorTab === "disparos" && (
-                <>
-                  <TableWrap>
-                    <THead>
-                      <tr>
-                        <Th w="70px">D.U</Th>
-                        <Th w="130px">Data</Th>
-                        <Th w="130px">Disparos</Th>
-                        <Th w="130px">Retornos</Th>
-                        <Th w="120px">% Retornos</Th>
-                        <Th w="160px">R$ Valor da base</Th>
-                        <Th w="120px">Qtd. Acordos</Th>
-                        <Th w="170px">R$ Valor do acordo</Th>
-                        <Th w="46px"></Th>
-                      </tr>
-                    </THead>
-
-                    <tbody>
-                      {(phase4.disparosRetornos || []).map((row, i) => {
-                        const disparos = parseNumber(row.disparos);
-                        const retornos = parseNumber(row.retornos);
-                        const pctRetornos =
-                          row.percentualRetornos ||
-                          (disparos > 0
-                            ? formatPct((retornos / disparos) * 100)
-                            : "0,0%");
-
-                        return (
-                          <tr
-                            key={row.id}
-                            style={{
-                              background: i % 2 === 0 ? "#fff" : "#f9fafb",
-                            }}
-                          >
-                            <Td>
-                              <EditField
-                                value={row.du}
-                                onChange={(v) =>
-                                  updRow(
-                                    "phase4",
-                                    "disparosRetornos",
-                                    row.id,
-                                    "du",
-                                    v,
-                                  )
-                                }
-                                placeholder="D.U"
-                              />
-                            </Td>
-                            <Td>
-                              <DateInput
-                                value={row.data}
-                                onChange={(v) =>
-                                  updRow(
-                                    "phase4",
-                                    "disparosRetornos",
-                                    row.id,
-                                    "data",
-                                    v,
-                                  )
-                                }
-                              />
-                            </Td>
-                            <Td>
-                              <EditField
-                                value={row.disparos}
-                                onChange={(v) =>
-                                  updRow(
-                                    "phase4",
-                                    "disparosRetornos",
-                                    row.id,
-                                    "disparos",
-                                    v,
-                                  )
-                                }
-                                placeholder="0"
-                              />
-                            </Td>
-                            <Td>
-                              <EditField
-                                value={row.retornos}
-                                onChange={(v) =>
-                                  updRow(
-                                    "phase4",
-                                    "disparosRetornos",
-                                    row.id,
-                                    "retornos",
-                                    v,
-                                  )
-                                }
-                                placeholder="0"
-                              />
-                            </Td>
-                            <Td
-                              style={{
-                                fontWeight: 800,
-                                color: theme.phases[4].bg,
-                              }}
-                            >
-                              {pctRetornos}
-                            </Td>
-                            <Td>
-                              <EditField
-                                value={row.valorBase}
-                                onChange={(v) =>
-                                  updRow(
-                                    "phase4",
-                                    "disparosRetornos",
-                                    row.id,
-                                    "valorBase",
-                                    v,
-                                  )
-                                }
-                                placeholder="R$ 0,00"
-                              />
-                            </Td>
-                            <Td>
-                              <EditField
-                                value={row.qtdAcordos}
-                                onChange={(v) =>
-                                  updRow(
-                                    "phase4",
-                                    "disparosRetornos",
-                                    row.id,
-                                    "qtdAcordos",
-                                    v,
-                                  )
-                                }
-                                placeholder="0"
-                              />
-                            </Td>
-                            <Td>
-                              <EditField
-                                value={row.valorAcordo}
-                                onChange={(v) =>
-                                  updRow(
-                                    "phase4",
-                                    "disparosRetornos",
-                                    row.id,
-                                    "valorAcordo",
-                                    v,
-                                  )
-                                }
-                                placeholder="R$ 0,00"
-                              />
-                            </Td>
-                            <Td>
-                              <DeleteBtn
-                                onClick={() =>
-                                  delRow("phase4", "disparosRetornos", row.id)
-                                }
-                              />
-                            </Td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </TableWrap>
-
-                  <div style={{ marginTop: 10 }}>
-                    <GhostBtn
-                      onClick={() =>
-                        addRow("phase4", "disparosRetornos", {
-                          du: "",
-                          data: "",
-                          disparos: "",
-                          retornos: "",
-                          percentualRetornos: "",
-                          valorBase: "",
-                          qtdAcordos: "",
-                          valorAcordo: "",
-                        })
-                      }
-                    >
-                      ＋ Adicionar linha de disparo
-                    </GhostBtn>
-                  </div>
-                </>
-              )}
-
-              {monitorTab === "conversao" && (
-                <div>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: "0 48px",
-                    }}
-                  >
-                    <div>
-                      {[
-                        ["Disparado", "disparado"],
-                        ["Cancelado", "cancelado"],
-                        ["Entregue", "entregue"],
-                        ["Lido", "lido"],
-                        ["Não entregue", "naoEntregue"],
-                        ["Retorno", "retorno"],
-                        ["Intenção de pagamento", "intencaoPagamento"],
-                        ["Acordo formalizado", "acordoFormalizado"],
-                      ].map(([label, key]) => (
-                        <FieldRow key={key} label={label}>
-                          <EditField
-                            value={conversion[key] || ""}
-                            onChange={(v) => setP4Conversion(key, v)}
-                            placeholder="0"
-                          />
-                        </FieldRow>
-                      ))}
-                    </div>
-
-                    <div>
-                      {[
-                        ["Valor do acordo", "valorAcordo", "R$ 0,00"],
-                        ["Custo unitário", "custoUnitario", "R$ 0,00"],
-                        [
-                          "Custo total de disparo",
-                          "custoTotalDisparo",
-                          formatMoney(custoTotalDisparoCalculado),
-                        ],
-                        ["Entregue / Retorno", "entregueRetorno", "%"],
-                        ["Conversão", "conversao", "%"],
-                        ["ROI", "roi", formatPct(roiCalculado)],
-                        [
-                          "Custo por retorno",
-                          "custoPorRetorno",
-                          formatMoney(custoPorRetornoCalculado),
-                        ],
-                        [
-                          "Custo por acordo",
-                          "custoPorAcordo",
-                          formatMoney(custoPorAcordoCalculado),
-                        ],
-                      ].map(([label, key, placeholder]) => (
-                        <FieldRow key={key} label={label}>
-                          <EditField
-                            value={conversion[key] || ""}
-                            onChange={(v) => setP4Conversion(key, v)}
-                            placeholder={placeholder}
-                          />
-                        </FieldRow>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      marginTop: 16,
-                      display: "grid",
-                      gridTemplateColumns: "repeat(4, 1fr)",
-                      gap: 12,
-                    }}
-                  >
-                    {[
-                      {
-                        label: "Custo total calculado",
-                        value: formatMoney(custoTotalDisparoCalculado),
-                      },
-                      {
-                        label: "ROI calculado",
-                        value: formatPct(roiCalculado),
-                      },
-                      {
-                        label: "Custo por retorno",
-                        value: formatMoney(custoPorRetornoCalculado),
-                      },
-                      {
-                        label: "Custo por acordo",
-                        value: formatMoney(custoPorAcordoCalculado),
-                      },
-                    ].map((card) => (
-                      <div
-                        key={card.label}
-                        style={{
-                          border: `1px solid ${theme.border}`,
-                          borderRadius: 8,
-                          background: "#f8fafc",
-                          padding: "13px 14px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: 10,
-                            color: theme.textMuted,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.8px",
-                            fontWeight: 800,
-                            marginBottom: 5,
-                          }}
-                        >
-                          {card.label}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 18,
-                            color: theme.phases[4].bg,
-                            fontWeight: 900,
-                          }}
-                        >
-                          {card.value}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </SubSection>
           </SubSection>
+
+          <MonitoringConversionSection
+            phase4={phase4}
+            setP4Conversion={setP4Conversion}
+          />
         </PhaseSection>
 
         {/* ===== FASE 5 — ENCERRAMENTO ===== */}
