@@ -787,7 +787,53 @@ export default function PocRegister({
             ? "Relatório de Enriquecimento"
             : "Relatório Analítico";
 
-    const janela = window.open("", "_blank", "width=1200,height=900");
+    const clone = conteudo.cloneNode(true);
+
+    clone.querySelectorAll("button").forEach((button) => {
+      button.remove();
+    });
+
+    clone.querySelectorAll("input, textarea, select").forEach((element) => {
+      const tag = element.tagName.toLowerCase();
+      let value = "";
+
+      if (element.type === "checkbox" || element.type === "radio") {
+        value = element.checked ? "Sim" : "Não";
+      } else if (tag === "select") {
+        value =
+          element.options && element.selectedIndex >= 0
+            ? element.options[element.selectedIndex].text
+            : element.value || "";
+      } else {
+        value = element.value || element.getAttribute("value") || "";
+      }
+
+      const replacement = document.createElement("div");
+      replacement.textContent = value || "-";
+      replacement.style.minHeight = "22px";
+      replacement.style.padding = "4px 6px";
+      replacement.style.borderRadius = "6px";
+      replacement.style.background = "rgba(255,255,255,0.04)";
+      replacement.style.color = "inherit";
+      replacement.style.fontSize = "11px";
+      replacement.style.fontWeight = "700";
+      replacement.style.whiteSpace = "normal";
+      replacement.style.wordBreak = "break-word";
+
+      element.parentNode.replaceChild(replacement, element);
+    });
+
+    clone.querySelectorAll("*").forEach((el) => {
+      el.style.maxWidth = "100%";
+      el.style.overflow = "visible";
+      el.style.boxSizing = "border-box";
+    });
+
+    const safeTitle = (data.general.pocName || "POC")
+      .replace(/</g, "")
+      .replace(/>/g, "");
+
+    const janela = window.open("", "_blank", "width=1400,height=950");
 
     if (!janela) {
       alert(
@@ -796,74 +842,43 @@ export default function PocRegister({
       return;
     }
 
-    janela.document.write(`
-      <!DOCTYPE html>
-      <html lang="pt-BR">
-        <head>
-          <meta charset="UTF-8" />
-          <title>${tituloAba} - ${data.general.pocName || "POC"}</title>
-          <style>
-            * {
-              box-sizing: border-box;
-            }
+    const html =
+      "<!DOCTYPE html>" +
+      '<html lang="pt-BR">' +
+      "<head>" +
+      '<meta charset="UTF-8" />' +
+      "<title>" +
+      tituloAba +
+      " - " +
+      safeTitle +
+      "</title>" +
+      "<style>" +
+      "* { box-sizing: border-box !important; }" +
+      "html, body { margin: 0; padding: 0; font-family: Segoe UI, Arial, sans-serif; background: #070C17; color: #EFF3FC; -webkit-print-color-adjust: exact; print-color-adjust: exact; }" +
+      "body { padding: 10mm; }" +
+      "button { display: none !important; }" +
+      "table { width: 100% !important; min-width: 0 !important; border-collapse: collapse !important; font-size: 9px !important; table-layout: fixed !important; }" +
+      "th, td { padding: 5px 4px !important; white-space: normal !important; word-break: break-word !important; }" +
+      "input, textarea, select { border: none !important; background: transparent !important; color: inherit !important; pointer-events: none !important; }" +
+      "textarea { resize: none !important; }" +
+      '[style*="overflow"] { overflow: visible !important; }' +
+      '[style*="min-width"] { min-width: 0 !important; }' +
+      '[style*="height"] { height: auto !important; }' +
+      "@page { size: A4 landscape; margin: 8mm; }" +
+      "@media print { body { background: #070C17; } div, section, table, tr { break-inside: avoid; page-break-inside: avoid; } }" +
+      "</style>" +
+      "</head>" +
+      "<body>" +
+      clone.innerHTML +
+      "<script>" +
+      "window.onload = function() {" +
+      "setTimeout(function() { window.focus(); window.print(); }, 700);" +
+      "};" +
+      "<\/script>" +
+      "</body>" +
+      "</html>";
 
-            body {
-              margin: 0;
-              font-family: Segoe UI, Arial, sans-serif;
-              background: #070C17;
-              color: #EFF3FC;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
-
-            button {
-              display: none !important;
-            }
-
-            input,
-            textarea,
-            select {
-              border: none !important;
-              background: transparent !important;
-              color: inherit !important;
-              pointer-events: none;
-            }
-
-            textarea {
-              resize: none !important;
-            }
-
-            @page {
-              size: A4 landscape;
-              margin: 10mm;
-            }
-
-            @media print {
-              body {
-                background: #070C17;
-              }
-
-              div {
-                break-inside: avoid;
-              }
-            }
-          </style>
-        </head>
-
-        <body>
-          ${conteudo.innerHTML}
-          <script>
-            window.onload = function() {
-              setTimeout(function() {
-                window.focus();
-                window.print();
-              }, 500);
-            };
-          <\/script>
-        </body>
-      </html>
-    `);
-
+    janela.document.write(html);
     janela.document.close();
   }
 
