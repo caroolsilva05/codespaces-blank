@@ -891,7 +891,7 @@ export default function PocRegister({
           ? [
               [
                 "% Base",
-                fmtPct(enrichmentMetrics.taxaBase),
+                fmtPct(enrichmentMetrics.taxaProcessamento),
                 "Base processada",
                 "#8B5CF6",
               ],
@@ -928,17 +928,22 @@ export default function PocRegister({
                 fmtPct(metrics.taxaEntrega),
                 "#20C997",
               ],
-              ["Lidos", metrics.lido, fmtPct(metrics.taxaLeitura), "#60A5FA"],
+              [
+                "Lidos",
+                metrics.lido,
+                fmtPct(metrics.taxaLeituraDisparados),
+                "#60A5FA",
+              ],
               [
                 "Retorno",
                 metrics.retornoCliente,
-                fmtPct(metrics.taxaRetorno),
+                fmtPct(metrics.taxaRetornoLidos),
                 "#F59E0B",
               ],
               [
                 "Acordos",
                 metrics.acordos,
-                fmtPct(metrics.taxaAcordo),
+                fmtPct(metrics.taxaConversaoFinal),
                 "#FF4D6D",
               ],
             ];
@@ -1037,7 +1042,7 @@ export default function PocRegister({
         "<h2>Indicadores da Visão Geral</h2>" +
         '<div class="desc">Resumo consolidado dos principais números da POC</div>' +
         "<table>" +
-        "<thead><tr><th>Indicador</th><th>Valor</th><th>Observação</th></tr></thead><tbody>";
+        "<thead><tr><th>Indicador</th><th>Volume</th><th>Percentual</th></tr></thead><tbody>";
 
       overviewCards.forEach((card) => {
         htmlBody +=
