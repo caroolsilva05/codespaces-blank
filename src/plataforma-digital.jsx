@@ -3336,6 +3336,11 @@ function SuppliersView({ C }) {
   const [form, setForm] = useState(emptyForm);
   const [editingFornecedorId, setEditingFornecedorId] = useState(null);
 
+  const optionStyleFornecedor = {
+    background: C.bg1,
+    color: C.t1,
+  };
+
   const field = {
     width: "100%",
     minHeight: 44,
@@ -3711,10 +3716,10 @@ function SuppliersView({ C }) {
                 onChange={(e) => updateForm("status", e.target.value)}
                 style={field}
               >
-                <option>Ativo</option>
-                <option>Em Homologação</option>
-                <option>Em Observação</option>
-                <option>Inativo</option>
+                <option style={optionStyleFornecedor}>Ativo</option>
+                <option style={optionStyleFornecedor}>Em Homologação</option>
+                <option style={optionStyleFornecedor}>Em Observação</option>
+                <option style={optionStyleFornecedor}>Inativo</option>
               </select>
 
               <select
@@ -3722,9 +3727,9 @@ function SuppliersView({ C }) {
                 onChange={(e) => updateForm("risco", e.target.value)}
                 style={field}
               >
-                <option>Baixo</option>
-                <option>Médio</option>
-                <option>Alto</option>
+                <option style={optionStyleFornecedor}>Baixo</option>
+                <option style={optionStyleFornecedor}>Médio</option>
+                <option style={optionStyleFornecedor}>Alto</option>
               </select>
 
               <input
