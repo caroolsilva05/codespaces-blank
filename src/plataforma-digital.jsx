@@ -4422,6 +4422,725 @@ function SuppliersView({ C }) {
   );
 }
 
+function PortaisView({ C }) {
+  const [filter, setFilter] = useState("Todos");
+
+  function toNumPortal(value) {
+    const parsed = Number(String(value || "0").replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function intBR(value) {
+    return Number(value || 0).toLocaleString("pt-BR");
+  }
+
+  function moneyBR(value) {
+    return Number(value || 0).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      maximumFractionDigits: 0,
+    });
+  }
+
+  function pctPortal(value) {
+    return (
+      Number(value || 0)
+        .toFixed(1)
+        .replace(".", ",") + "%"
+    );
+  }
+
+  const dadosPortais = [
+    {
+      portal: "Portal 1",
+      total: 1905355,
+      riscoContrato: 2323222140,
+      buscaCliente: 9296,
+      enviaToken: 7089,
+      validaToken: 1750,
+      buscaCredor: 1864,
+      buscaDivida: 1720,
+      buscaAcordo: 1723,
+      buscaOpcaoPagamento: 1125,
+      formalizarAcordo: 68,
+      txEnviaTokenBuscaCliente: 0.7625860585197934,
+      txValidaTokenEnviaToken: 0.2468613344618423,
+      perdaToken: 0.7531386655381577,
+      txFormalizarOpcaoPagamento: 0.03946604759141033,
+      formalizacoesPorMil: 0.03568888737269433,
+      classificacao: "Conversão intermediária",
+      observacao: "Gargalo crítico de token",
+    },
+    {
+      portal: "Portal 2",
+      total: 28857706,
+      riscoContrato: 5481244639918,
+      buscaCliente: 150217,
+      enviaToken: 20817,
+      validaToken: 6508,
+      buscaCredor: 6699,
+      buscaDivida: 4112,
+      buscaAcordo: 4236,
+      buscaOpcaoPagamento: 3015,
+      formalizarAcordo: 71,
+      txEnviaTokenBuscaCliente: 0.13857952162538195,
+      txValidaTokenEnviaToken: 0.3126291012153528,
+      perdaToken: 0.6873708987846472,
+      txFormalizarOpcaoPagamento: 0.01676109537299339,
+      formalizacoesPorMil: 0.002460348026277626,
+      classificacao: "Conversão baixa",
+      observacao: "Oportunidade de melhoria",
+    },
+    {
+      portal: "Portal 3",
+      total: 0,
+      riscoContrato: 36503236,
+      buscaCliente: 242,
+      enviaToken: 196,
+      validaToken: 54,
+      buscaCredor: 109,
+      buscaDivida: 8,
+      buscaAcordo: 8,
+      buscaOpcaoPagamento: 8,
+      formalizarAcordo: 0,
+      txEnviaTokenBuscaCliente: 0.8099173553719008,
+      txValidaTokenEnviaToken: 0.2755102040816326,
+      perdaToken: 0.7244897959183674,
+      txFormalizarOpcaoPagamento: 0,
+      formalizacoesPorMil: 0,
+      classificacao: "Conversão baixa",
+      observacao: "Oportunidade de melhoria",
+    },
+    {
+      portal: "Portal 4",
+      total: 9956781,
+      riscoContrato: 3413055498,
+      buscaCliente: 99,
+      enviaToken: 0,
+      validaToken: 0,
+      buscaCredor: 1758,
+      buscaDivida: 1180,
+      buscaAcordo: 885,
+      buscaOpcaoPagamento: 725,
+      formalizarAcordo: 52,
+      txEnviaTokenBuscaCliente: 0,
+      txValidaTokenEnviaToken: 0,
+      perdaToken: 1,
+      txFormalizarOpcaoPagamento: 0.05875706214689266,
+      formalizacoesPorMil: 0.005222571431469669,
+      classificacao: "Conversão intermediária",
+      observacao: "Validar logs/autenticação",
+    },
+    {
+      portal: "Portal 5",
+      total: 1124633,
+      riscoContrato: 2238506516,
+      buscaCliente: 0,
+      enviaToken: 0,
+      validaToken: 0,
+      buscaCredor: 163,
+      buscaDivida: 199,
+      buscaAcordo: 146,
+      buscaOpcaoPagamento: 564,
+      formalizarAcordo: 2,
+      txEnviaTokenBuscaCliente: 0,
+      txValidaTokenEnviaToken: 0,
+      perdaToken: 1,
+      txFormalizarOpcaoPagamento: 0.0136986301369863,
+      formalizacoesPorMil: 0.00177835791764958,
+      classificacao: "Conversão baixa",
+      observacao: "Validar logs/autenticação",
+    },
+    {
+      portal: "Portal 6",
+      total: 0,
+      riscoContrato: 0,
+      buscaCliente: 33,
+      enviaToken: 49,
+      validaToken: 10,
+      buscaCredor: 0,
+      buscaDivida: 0,
+      buscaAcordo: 0,
+      buscaOpcaoPagamento: 0,
+      formalizarAcordo: 0,
+      txEnviaTokenBuscaCliente: 1.4848484848484849,
+      txValidaTokenEnviaToken: 0.20408163265306123,
+      perdaToken: 0.7959183673469388,
+      txFormalizarOpcaoPagamento: 0,
+      formalizacoesPorMil: 0,
+      classificacao: "Conversão baixa",
+      observacao: "Gargalo crítico de token",
+    },
+    {
+      portal: "Portal 7",
+      total: 41844475,
+      riscoContrato: 1349253202918,
+      buscaCliente: 159887,
+      enviaToken: 28151,
+      validaToken: 8322,
+      buscaCredor: 10593,
+      buscaDivida: 7219,
+      buscaAcordo: 6998,
+      buscaOpcaoPagamento: 5437,
+      formalizarAcordo: 193,
+      txEnviaTokenBuscaCliente: 0.1760680980942791,
+      txValidaTokenEnviaToken: 0.29562004902134914,
+      perdaToken: 0.7043799509786508,
+      txFormalizarOpcaoPagamento: 0.027579308373821092,
+      formalizacoesPorMil: 0.004612317396741147,
+      classificacao: "Consolidado",
+      observacao: "Consolidado geral da imagem",
+    },
+  ];
+
+  const consolidado =
+    dadosPortais.find((item) => item.classificacao === "Consolidado") ||
+    dadosPortais[dadosPortais.length - 1];
+
+  const portaisOperacionais = dadosPortais.filter(
+    (item) => item.classificacao !== "Consolidado",
+  );
+
+  const qtdGargaloToken = portaisOperacionais.filter(
+    (item) =>
+      item.perdaToken >= 0.7 ||
+      String(item.observacao || "").includes("Gargalo crítico"),
+  ).length;
+
+  const filtros = [
+    "Todos",
+    "Gargalo Token",
+    "Conversão Baixa",
+    "Intermediária",
+    "Consolidado",
+  ];
+
+  const filtrados = dadosPortais.filter((item) => {
+    if (filter === "Todos") return true;
+    if (filter === "Gargalo Token") {
+      return (
+        item.perdaToken >= 0.7 ||
+        String(item.observacao || "").includes("Gargalo crítico")
+      );
+    }
+    if (filter === "Conversão Baixa") {
+      return item.classificacao === "Conversão baixa";
+    }
+    if (filter === "Intermediária") {
+      return item.classificacao === "Conversão intermediária";
+    }
+    if (filter === "Consolidado") {
+      return item.classificacao === "Consolidado";
+    }
+    return true;
+  });
+
+  function classificacaoStyle(classificacao) {
+    if (classificacao === "Consolidado") {
+      return { color: C.blue, bg: C.blueGlow };
+    }
+
+    if (classificacao === "Conversão intermediária") {
+      return { color: C.amber, bg: C.amberGlow };
+    }
+
+    if (classificacao === "Conversão baixa") {
+      return { color: C.rose, bg: C.roseGlow };
+    }
+
+    return { color: C.t2, bg: C.surface };
+  }
+
+  const funil = [
+    ["BuscaCliente", consolidado.buscaCliente],
+    ["EnviaToken", consolidado.enviaToken],
+    ["ValidaToken", consolidado.validaToken],
+    ["BuscaCredor", consolidado.buscaCredor],
+    ["BuscaDivida", consolidado.buscaDivida],
+    ["BuscaAcordo", consolidado.buscaAcordo],
+    ["BuscaOpcaoPagamento", consolidado.buscaOpcaoPagamento],
+    ["FormalizarAcordo", consolidado.formalizarAcordo],
+  ];
+
+  const baseFunil = consolidado.buscaCliente || 1;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+      <SectionHeader
+        title="Gestão de Portais"
+        sub="Acompanhamento de funil, token, risco de contrato, conversão e formalização dos portais"
+        C={C}
+      />
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+          gap: 14,
+        }}
+      >
+        <KPICard
+          icon={Globe}
+          label="Portais"
+          value={portaisOperacionais.length}
+          sub="Bases operacionais"
+          color={C.blue}
+          glow={C.blueGlow}
+          C={C}
+        />
+        <KPICard
+          icon={Activity}
+          label="Interações"
+          value={intBR(consolidado.total)}
+          sub="Total consolidado"
+          color={C.violet}
+          glow={C.violetGlow}
+          C={C}
+        />
+        <KPICard
+          icon={Shield}
+          label="Risco contrato"
+          value={moneyBR(consolidado.riscoContrato)}
+          sub="Valor financeiro em trâmite"
+          color={C.amber}
+          glow={C.amberGlow}
+          C={C}
+        />
+        <KPICard
+          icon={AlertTriangle}
+          label="Gargalo token"
+          value={pctPortal(consolidado.perdaToken * 100)}
+          sub={qtdGargaloToken + " portais em atenção"}
+          color={C.rose}
+          glow={C.roseGlow}
+          C={C}
+        />
+        <KPICard
+          icon={CheckCircle2}
+          label="Formalizações"
+          value={intBR(consolidado.formalizarAcordo)}
+          sub={
+            pctPortal(consolidado.txFormalizarOpcaoPagamento * 100) +
+            " sobre opção pagto"
+          }
+          color={C.emerald}
+          glow={C.emeraldGlow}
+          C={C}
+        />
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1.05fr 0.95fr",
+          gap: 16,
+        }}
+      >
+        <div style={{ ...card(C), padding: "22px 24px" }}>
+          <div
+            style={{
+              fontSize: 16,
+              fontWeight: 900,
+              color: C.t1,
+              marginBottom: 4,
+            }}
+          >
+            Funil Consolidado dos Portais
+          </div>
+          <div style={{ fontSize: 12, color: C.t3, marginBottom: 18 }}>
+            Volume por etapa com percentual sobre BuscaCliente
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {funil.map(([label, value]) => {
+              const percentual =
+                baseFunil > 0 ? (toNumPortal(value) / baseFunil) * 100 : 0;
+              const color =
+                label === "FormalizarAcordo"
+                  ? C.emerald
+                  : label === "ValidaToken"
+                    ? C.rose
+                    : label === "EnviaToken"
+                      ? C.amber
+                      : C.blue;
+
+              return (
+                <div key={label}>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 110px 90px",
+                      gap: 12,
+                      alignItems: "center",
+                      marginBottom: 6,
+                    }}
+                  >
+                    <span
+                      style={{ fontSize: 12, color: C.t2, fontWeight: 900 }}
+                    >
+                      {label}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color: C.t1,
+                        fontWeight: 900,
+                        textAlign: "right",
+                      }}
+                    >
+                      {intBR(value)}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color,
+                        fontWeight: 900,
+                        textAlign: "right",
+                      }}
+                    >
+                      {pctPortal(percentual)}
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      height: 6,
+                      background: C.bg3,
+                      borderRadius: 999,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: Math.max(0, Math.min(100, percentual)) + "%",
+                        height: "100%",
+                        background: color,
+                        borderRadius: 999,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ ...card(C), padding: "22px 24px" }}>
+          <div
+            style={{
+              fontSize: 16,
+              fontWeight: 900,
+              color: C.t1,
+              marginBottom: 4,
+            }}
+          >
+            Leitura Executiva
+          </div>
+          <div style={{ fontSize: 12, color: C.t3, marginBottom: 16 }}>
+            Principais pontos de atenção da base enviada
+          </div>
+
+          {[
+            {
+              title: "Token é o maior gargalo",
+              desc:
+                "A perda consolidada de token está em " +
+                pctPortal(consolidado.perdaToken * 100) +
+                ". Priorizar análise entre EnviaToken e ValidaToken.",
+              color: C.rose,
+              bg: C.roseGlow,
+            },
+            {
+              title: "Conversão final baixa",
+              desc:
+                "A taxa de formalização sobre opção de pagamento está em " +
+                pctPortal(consolidado.txFormalizarOpcaoPagamento * 100) +
+                ". Acompanhar experiência no fechamento do acordo.",
+              color: C.amber,
+              bg: C.amberGlow,
+            },
+            {
+              title: "Risco financeiro relevante",
+              desc:
+                "O risco de contrato consolidado é " +
+                moneyBR(consolidado.riscoContrato) +
+                ". Portais com maior risco devem ter acompanhamento prioritário.",
+              color: C.blue,
+              bg: C.blueGlow,
+            },
+          ].map((item) => (
+            <div
+              key={item.title}
+              style={{
+                background: item.bg,
+                border: "1px solid " + item.color + "44",
+                borderRadius: 14,
+                padding: "13px 14px",
+                marginBottom: 10,
+              }}
+            >
+              <div style={{ fontSize: 13, color: item.color, fontWeight: 950 }}>
+                {item.title}
+              </div>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: C.t2,
+                  marginTop: 5,
+                  lineHeight: 1.5,
+                }}
+              >
+                {item.desc}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {filtros.map((f) => {
+          const active = filter === f;
+
+          return (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              style={{
+                padding: "7px 13px",
+                borderRadius: 10,
+                border: "1px solid " + (active ? C.blue : C.border),
+                background: active ? C.blueGlow : C.surface,
+                color: active ? C.blue : C.t2,
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: active ? 900 : 700,
+              }}
+            >
+              {f}
+            </button>
+          );
+        })}
+      </div>
+
+      <div
+        style={{
+          ...card(C),
+          padding: 0,
+          overflowX: "auto",
+          overflowY: "hidden",
+        }}
+      >
+        <table
+          style={{ width: "100%", minWidth: 1650, borderCollapse: "collapse" }}
+        >
+          <thead>
+            <tr style={{ borderBottom: "1px solid " + C.border }}>
+              {[
+                "Portal",
+                "Total",
+                "Risco Contrato",
+                "Busca Cliente",
+                "Envia Token",
+                "Valida Token",
+                "Perda Token",
+                "Opção Pagto",
+                "Formalizar",
+                "Tx Formalizar",
+                "Formaliz. / 1.000",
+                "Classificação",
+                "Observação",
+              ].map((h) => (
+                <th
+                  key={h}
+                  style={{
+                    padding: "14px 16px",
+                    fontSize: 11,
+                    fontWeight: 900,
+                    color: C.t3,
+                    textAlign: "left",
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+
+          <tbody>
+            {filtrados.map((item) => {
+              const st = classificacaoStyle(item.classificacao);
+              const obsCritica = String(item.observacao || "").includes(
+                "Gargalo crítico",
+              );
+
+              return (
+                <tr
+                  key={item.portal}
+                  style={{
+                    borderBottom: "1px solid " + C.border,
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = C.cardHov)
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
+                >
+                  <td style={{ padding: "15px 16px" }}>
+                    <div style={{ fontSize: 13, color: C.t1, fontWeight: 950 }}>
+                      {item.portal}
+                    </div>
+                    <div style={{ fontSize: 11, color: C.t3, marginTop: 3 }}>
+                      {item.classificacao === "Consolidado"
+                        ? "Consolidado geral"
+                        : "Portal operacional"}
+                    </div>
+                  </td>
+
+                  <td
+                    style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}
+                  >
+                    {intBR(item.total)}
+                  </td>
+
+                  <td
+                    style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}
+                  >
+                    <strong style={{ color: C.amber }}>
+                      {moneyBR(item.riscoContrato)}
+                    </strong>
+                  </td>
+
+                  <td
+                    style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}
+                  >
+                    {intBR(item.buscaCliente)}
+                  </td>
+
+                  <td
+                    style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}
+                  >
+                    {intBR(item.enviaToken)}
+                  </td>
+
+                  <td
+                    style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}
+                  >
+                    <strong
+                      style={{
+                        color:
+                          item.txValidaTokenEnviaToken >= 0.3
+                            ? C.emerald
+                            : item.txValidaTokenEnviaToken >= 0.2
+                              ? C.amber
+                              : C.rose,
+                      }}
+                    >
+                      {intBR(item.validaToken)}{" "}
+                      <span style={{ color: C.t3 }}>
+                        ({pctPortal(item.txValidaTokenEnviaToken * 100)})
+                      </span>
+                    </strong>
+                  </td>
+
+                  <td style={{ padding: "15px 16px", fontSize: 12 }}>
+                    <strong
+                      style={{
+                        color:
+                          item.perdaToken >= 0.7
+                            ? C.rose
+                            : item.perdaToken >= 0.5
+                              ? C.amber
+                              : C.emerald,
+                      }}
+                    >
+                      {pctPortal(item.perdaToken * 100)}
+                    </strong>
+                  </td>
+
+                  <td
+                    style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}
+                  >
+                    {intBR(item.buscaOpcaoPagamento)}
+                  </td>
+
+                  <td
+                    style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}
+                  >
+                    <strong style={{ color: C.emerald }}>
+                      {intBR(item.formalizarAcordo)}
+                    </strong>
+                  </td>
+
+                  <td
+                    style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}
+                  >
+                    {pctPortal(item.txFormalizarOpcaoPagamento * 100)}
+                  </td>
+
+                  <td
+                    style={{ padding: "15px 16px", fontSize: 12, color: C.t2 }}
+                  >
+                    {Number(item.formalizacoesPorMil || 0)
+                      .toFixed(4)
+                      .replace(".", ",")}
+                  </td>
+
+                  <td style={{ padding: "15px 16px" }}>
+                    <Chip
+                      label={item.classificacao}
+                      color={st.color}
+                      bg={st.bg}
+                    />
+                  </td>
+
+                  <td style={{ padding: "15px 16px" }}>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 900,
+                        color: obsCritica ? C.rose : C.t2,
+                        background: obsCritica ? C.roseGlow : C.surface,
+                        border:
+                          "1px solid " +
+                          (obsCritica ? C.rose + "44" : C.border),
+                        borderRadius: 999,
+                        padding: "5px 9px",
+                        display: "inline-flex",
+                      }}
+                    >
+                      {item.observacao}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+
+            {filtrados.length === 0 && (
+              <tr>
+                <td
+                  colSpan={13}
+                  style={{
+                    padding: 30,
+                    textAlign: "center",
+                    color: C.t3,
+                    fontSize: 13,
+                  }}
+                >
+                  Nenhum portal encontrado para este filtro.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function IndicatorsView({ C }) {
   const [loading, setLoading] = useState(false);
   const [projetos, setProjetos] = useState([]);
@@ -5814,6 +6533,7 @@ const navItems = [
   { id: "scrum", label: "Scrum", icon: Layers },
   { id: "poc", label: "POCs", icon: FlaskConical, badge: "Novo" },
   { id: "suppliers", label: "Fornecedores", icon: Globe },
+  { id: "portals", label: "Portais", icon: FileSearch },
 ];
 
 function Sidebar({ active, setActive, C }) {
@@ -6844,6 +7564,7 @@ export default function App() {
     scrum: ScrumView,
     poc: PocView,
     suppliers: SuppliersView,
+    portals: PortaisView,
   };
   const View = views[active] || IndicatorsView;
 
