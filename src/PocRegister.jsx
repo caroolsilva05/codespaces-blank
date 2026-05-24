@@ -771,12 +771,35 @@ export default function PocRegister({
   }
 
   function handleExportPocPdf() {
+    const janela = window.open("", "_blank", "width=1400,height=950");
+
+    if (!janela) {
+      alert(
+        "O navegador bloqueou a janela de impressão. Libere pop-ups e tente novamente.",
+      );
+      return;
+    }
+
     const conteudo = printRef.current;
 
     if (!conteudo) {
+      janela.close();
       alert("Não foi possível preparar o PDF.");
       return;
     }
+
+    const safeText = (value) =>
+      String(value || "-")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+    const fmtPct = (value) => {
+      const n = Number(value || 0);
+      return n.toFixed(1).replace(".", ",") + "%";
+    };
 
     const tituloAba =
       tab === "overview"
@@ -787,59 +810,290 @@ export default function PocRegister({
             ? "Relatório de Enriquecimento"
             : "Relatório Analítico";
 
-    const clone = conteudo.cloneNode(true);
+    const safeTitle = safeText(data.general.pocName || "POC");
+    const tipoPoc = data.general.pocType || "Canais Digitais";
 
-    clone.querySelectorAll("button").forEach((button) => {
-      button.remove();
-    });
+    const css =
+      "<style>" +
+      "* { box-sizing: border-box !important; }" +
+      "html, body { margin: 0; padding: 0; font-family: Segoe UI, Arial, sans-serif; background: #070C17; color: #EFF3FC; -webkit-print-color-adjust: exact; print-color-adjust: exact; }" +
+      "body { padding: 8mm; font-size: 11px; overflow: visible !important; }" +
+      ".print-actions { position: sticky; top: 0; z-index: 9999; display: flex; justify-content: flex-end; gap: 8px; background: #070C17; padding: 8px 0 12px; margin-bottom: 10px; border-bottom: 1px solid rgba(148,163,184,.25); }" +
+      ".print-actions button { border-radius: 10px; padding: 10px 14px; font-weight: 900; cursor: pointer; }" +
+      ".print-primary { background: #3B82F6; color: #fff; border: 0; }" +
+      ".print-secondary { background: #111827; color: #C7D7EC; border: 1px solid rgba(148,163,184,.25); }" +
+      ".header { border: 1px solid rgba(148,163,184,.20); background: #101827; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; }" +
+      ".breadcrumb { color: #5B7FA8; font-size: 10px; margin-bottom: 5px; }" +
+      "h1 { margin: 0; font-size: 22px; color: #fff; }" +
+      ".subtitle { margin-top: 5px; color: #9FB4D1; font-size: 11px; }" +
+      ".cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px; margin: 10px 0; }" +
+      ".card { border: 1px solid rgba(148,163,184,.20); background: #111827; border-radius: 12px; padding: 11px 12px; min-height: 74px; }" +
+      ".label { color: #5B7FA8; font-size: 9px; text-transform: uppercase; letter-spacing: .7px; margin-bottom: 6px; }" +
+      ".value { font-size: 24px; font-weight: 900; color: #60A5FA; }" +
+      ".sub { margin-top: 4px; color: #C7D7EC; font-size: 10px; }" +
+      ".grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }" +
+      ".section { border: 1px solid rgba(148,163,184,.20); background: #111827; border-radius: 12px; padding: 13px 14px; margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid; }" +
+      ".section h2 { margin: 0 0 4px; font-size: 14px; color: #fff; }" +
+      ".section .desc { margin: 0 0 10px; color: #6E8AAF; font-size: 10px; }" +
+      ".infoGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }" +
+      ".info { background: #18243A; border: 1px solid rgba(96,165,250,.16); border-radius: 10px; padding: 9px 10px; min-height: 55px; }" +
+      ".info strong { display: block; color: #5B7FA8; font-size: 8.5px; text-transform: uppercase; letter-spacing: .7px; margin-bottom: 5px; }" +
+      ".info span { display: block; color: #fff; font-size: 11px; font-weight: 800; word-break: break-word; }" +
+      ".decision { border: 1px solid rgba(96,165,250,.45); background: #152A4A; border-radius: 12px; padding: 13px 14px; color: #BFD7FF; line-height: 1.5; }" +
+      ".decision b { display: block; color: #60A5FA; font-size: 20px; margin: 5px 0; }" +
+      "table { width: 100% !important; border-collapse: collapse; table-layout: fixed; font-size: 9px; }" +
+      "th { background: #0F2442; color: #BFD7FF; text-align: left; padding: 6px 5px; text-transform: uppercase; font-size: 8px; }" +
+      "td { border-bottom: 1px solid rgba(148,163,184,.16); padding: 6px 5px; color: #EFF3FC; word-break: break-word; }" +
+      "[style*='overflow'] { overflow: visible !important; }" +
+      "[style*='min-height'], [style*='minHeight'] { min-height: auto !important; }" +
+      "[style*='height'] { height: auto !important; }" +
+      "@page { size: A4 landscape; margin: 7mm; }" +
+      "@media print { .print-actions { display: none !important; } body { padding: 0; background: #070C17; } .section { break-inside: avoid; page-break-inside: avoid; } }" +
+      "</style>";
 
-    clone.querySelectorAll("input, textarea, select").forEach((element) => {
-      const tag = element.tagName.toLowerCase();
-      let value = "";
+    let htmlBody = "";
 
-      if (element.type === "checkbox" || element.type === "radio") {
-        value = element.checked ? "Sim" : "Não";
-      } else if (tag === "select") {
-        value =
-          element.options && element.selectedIndex >= 0
-            ? element.options[element.selectedIndex].text
-            : element.value || "";
-      } else {
-        value = element.value || element.getAttribute("value") || "";
-      }
+    if (tab === "overview") {
+      const overviewCards = isPocOrquestracao
+        ? [
+            [
+              "Base elegível",
+              orchestrationMetrics.baseElegivel,
+              "Clientes aptos para régua",
+              "#8B5CF6",
+            ],
+            [
+              "Acionados",
+              orchestrationMetrics.acionados,
+              fmtPct(orchestrationMetrics.taxaAcionamento),
+              "#60A5FA",
+            ],
+            [
+              "Retorno positivo",
+              orchestrationMetrics.retornoPositivo,
+              fmtPct(orchestrationMetrics.taxaRetornoPositivo),
+              "#20C997",
+            ],
+            [
+              "Avançaram fase",
+              orchestrationMetrics.avancaramFase,
+              fmtPct(orchestrationMetrics.taxaAvanco),
+              "#F59E0B",
+            ],
+            [
+              "Acordos",
+              orchestrationMetrics.acordos,
+              fmtPct(orchestrationMetrics.taxaAcordo),
+              "#FF4D6D",
+            ],
+          ]
+        : data.general.pocType === "Enriquecimento de Dados"
+          ? [
+              [
+                "% Base",
+                fmtPct(enrichmentMetrics.taxaBase),
+                "Base processada",
+                "#8B5CF6",
+              ],
+              [
+                "% Retorno",
+                fmtPct(enrichmentMetrics.taxaRetorno),
+                "Retornos obtidos",
+                "#F59E0B",
+              ],
+              ["Meta 15%", "15%", "Meta mínima CPC novo", "#60A5FA"],
+              [
+                "% CPC Novo",
+                fmtPct(enrichmentMetrics.taxaCpcNovo),
+                "CPC novo identificado",
+                "#20C997",
+              ],
+              [
+                "% Meta",
+                fmtPct(enrichmentMetrics.percentualMeta),
+                "Atingimento da meta",
+                "#FF4D6D",
+              ],
+            ]
+          : [
+              [
+                "Total mensagens",
+                metrics.totalMensagens,
+                "Base consolidada",
+                "#8B5CF6",
+              ],
+              [
+                "Entregues",
+                metrics.entregue,
+                fmtPct(metrics.taxaEntrega),
+                "#20C997",
+              ],
+              ["Lidos", metrics.lido, fmtPct(metrics.taxaLeitura), "#60A5FA"],
+              [
+                "Retorno",
+                metrics.retornoCliente,
+                fmtPct(metrics.taxaRetorno),
+                "#F59E0B",
+              ],
+              [
+                "Acordos",
+                metrics.acordos,
+                fmtPct(metrics.taxaAcordo),
+                "#FF4D6D",
+              ],
+            ];
 
-      const replacement = document.createElement("div");
-      replacement.textContent = value || "-";
-      replacement.style.minHeight = "22px";
-      replacement.style.padding = "4px 6px";
-      replacement.style.borderRadius = "6px";
-      replacement.style.background = "rgba(255,255,255,0.04)";
-      replacement.style.color = "inherit";
-      replacement.style.fontSize = "11px";
-      replacement.style.fontWeight = "700";
-      replacement.style.whiteSpace = "normal";
-      replacement.style.wordBreak = "break-word";
+      htmlBody +=
+        '<div class="header">' +
+        '<div class="breadcrumb">POCs › Registro de Prova de Conceito</div>' +
+        "<h1>" +
+        safeTitle +
+        "</h1>" +
+        '<div class="subtitle">Gestão completa da POC com acompanhamento técnico, analítico e recomendação.</div>' +
+        "</div>";
 
-      element.parentNode.replaceChild(replacement, element);
-    });
+      htmlBody += '<div class="cards">';
+      overviewCards.forEach((card) => {
+        htmlBody +=
+          '<div class="card">' +
+          '<div class="label">' +
+          safeText(card[0]) +
+          "</div>" +
+          '<div class="value" style="color:' +
+          card[3] +
+          '">' +
+          safeText(card[1]) +
+          "</div>" +
+          '<div class="sub">' +
+          safeText(card[2]) +
+          "</div>" +
+          "</div>";
+      });
+      htmlBody += "</div>";
 
-    clone.querySelectorAll("*").forEach((el) => {
-      el.style.maxWidth = "100%";
-      el.style.overflow = "visible";
-      el.style.boxSizing = "border-box";
-    });
+      htmlBody += '<div class="grid2">';
 
-    const safeTitle = (data.general.pocName || "POC")
-      .replace(/</g, "")
-      .replace(/>/g, "");
+      htmlBody +=
+        '<div class="section">' +
+        "<h2>Resumo da POC</h2>" +
+        '<div class="desc">Leitura do teste com fornecedor/produto</div>' +
+        '<div class="infoGrid">' +
+        '<div class="info"><strong>Fornecedor</strong><span>' +
+        safeText(data.general.supplier) +
+        "</span></div>" +
+        '<div class="info"><strong>Carteira / Cliente</strong><span>' +
+        safeText(data.general.wallet) +
+        "</span></div>" +
+        '<div class="info"><strong>Produto testado</strong><span>' +
+        safeText(data.general.product) +
+        "</span></div>" +
+        '<div class="info"><strong>Responsável</strong><span>' +
+        safeText(data.general.responsible) +
+        "</span></div>" +
+        '<div class="info"><strong>Período</strong><span>' +
+        safeText(
+          brDate(data.general.periodStart) +
+            " a " +
+            brDate(data.general.periodEnd),
+        ) +
+        "</span></div>" +
+        '<div class="info"><strong>Qtd. disparo por dia</strong><span>' +
+        safeText(data.general.dailyGoal) +
+        "</span></div>" +
+        '<div class="info"><strong>Tipo de POC</strong><span>' +
+        safeText(tipoPoc) +
+        "</span></div>" +
+        '<div class="info"><strong>Status</strong><span>' +
+        safeText(data.general.status) +
+        "</span></div>" +
+        '<div class="info"><strong>Recomendação</strong><span>' +
+        safeText(data.evaluation.recommendation) +
+        "</span></div>" +
+        "</div>" +
+        "</div>";
 
-    const janela = window.open("", "_blank", "width=1400,height=950");
+      htmlBody +=
+        '<div class="section">' +
+        "<h2>Status</h2>" +
+        '<div class="desc">Decisão atual da POC para acompanhamento</div>' +
+        '<div class="decision">' +
+        "<span>Decisão atual</span>" +
+        "<b>" +
+        safeText(data.evaluation.recommendation) +
+        "</b>" +
+        "<p>" +
+        safeText(
+          data.evaluation.executiveSummary ||
+            "POC ainda em avaliação. Acompanhar indicadores, incidentes e critérios de sucesso.",
+        ) +
+        "</p>" +
+        "</div>" +
+        "</div>";
 
-    if (!janela) {
-      alert(
-        "O navegador bloqueou a janela de impressão. Libere pop-ups para exportar o PDF.",
-      );
-      return;
+      htmlBody += "</div>";
+
+      htmlBody +=
+        '<div class="section">' +
+        "<h2>Indicadores da Visão Geral</h2>" +
+        '<div class="desc">Resumo consolidado dos principais números da POC</div>' +
+        "<table>" +
+        "<thead><tr><th>Indicador</th><th>Valor</th><th>Observação</th></tr></thead><tbody>";
+
+      overviewCards.forEach((card) => {
+        htmlBody +=
+          "<tr><td>" +
+          safeText(card[0]) +
+          "</td><td>" +
+          safeText(card[1]) +
+          "</td><td>" +
+          safeText(card[2]) +
+          "</td></tr>";
+      });
+
+      htmlBody += "</tbody></table></div>";
+    } else {
+      const clone = conteudo.cloneNode(true);
+
+      clone.querySelectorAll("button").forEach((button) => button.remove());
+
+      clone.querySelectorAll("input, textarea, select").forEach((element) => {
+        const tag = element.tagName.toLowerCase();
+        let value = "";
+
+        if (element.type === "checkbox" || element.type === "radio") {
+          value = element.checked ? "Sim" : "Não";
+        } else if (tag === "select") {
+          value =
+            element.options && element.selectedIndex >= 0
+              ? element.options[element.selectedIndex].text
+              : element.value || "";
+        } else {
+          value = element.value || element.getAttribute("value") || "";
+        }
+
+        const replacement = document.createElement("div");
+        replacement.textContent = value || "-";
+        replacement.style.minHeight = "18px";
+        replacement.style.padding = "3px 5px";
+        replacement.style.borderRadius = "6px";
+        replacement.style.background = "rgba(255,255,255,0.04)";
+        replacement.style.color = "inherit";
+        replacement.style.fontSize = "10px";
+        replacement.style.fontWeight = "700";
+        replacement.style.whiteSpace = "normal";
+        replacement.style.wordBreak = "break-word";
+
+        element.parentNode.replaceChild(replacement, element);
+      });
+
+      clone.querySelectorAll("*").forEach((el) => {
+        el.style.maxWidth = "100%";
+        el.style.overflow = "visible";
+        el.style.boxSizing = "border-box";
+        el.style.minHeight = "auto";
+      });
+
+      htmlBody = clone.innerHTML;
     }
 
     const html =
@@ -852,32 +1106,23 @@ export default function PocRegister({
       " - " +
       safeTitle +
       "</title>" +
-      "<style>" +
-      "* { box-sizing: border-box !important; }" +
-      "html, body { margin: 0; padding: 0; font-family: Segoe UI, Arial, sans-serif; background: #070C17; color: #EFF3FC; -webkit-print-color-adjust: exact; print-color-adjust: exact; }" +
-      "body { padding: 10mm; }" +
-      "button { display: none !important; }" +
-      "table { width: 100% !important; min-width: 0 !important; border-collapse: collapse !important; font-size: 9px !important; table-layout: fixed !important; }" +
-      "th, td { padding: 5px 4px !important; white-space: normal !important; word-break: break-word !important; }" +
-      "input, textarea, select { border: none !important; background: transparent !important; color: inherit !important; pointer-events: none !important; }" +
-      "textarea { resize: none !important; }" +
-      '[style*="overflow"] { overflow: visible !important; }' +
-      '[style*="min-width"] { min-width: 0 !important; }' +
-      '[style*="height"] { height: auto !important; }' +
-      "@page { size: A4 landscape; margin: 8mm; }" +
-      "@media print { body { background: #070C17; } div, section, table, tr { break-inside: avoid; page-break-inside: avoid; } }" +
-      "</style>" +
+      css +
       "</head>" +
       "<body>" +
-      clone.innerHTML +
+      '<div class="print-actions">' +
+      '<button class="print-secondary" onclick="window.close()">Fechar</button>' +
+      '<button class="print-primary" onclick="window.print()">Imprimir / Salvar PDF</button>' +
+      "</div>" +
+      htmlBody +
       "<script>" +
-      "window.onload = function() {" +
-      "setTimeout(function() { window.focus(); window.print(); }, 700);" +
-      "};" +
-      "<\/script>" +
+      "window.addEventListener('load', function() {" +
+      "setTimeout(function() { try { window.focus(); window.print(); } catch(e) {} }, 800);" +
+      "});" +
+      "<\\/script>" +
       "</body>" +
       "</html>";
 
+    janela.document.open();
     janela.document.write(html);
     janela.document.close();
   }
