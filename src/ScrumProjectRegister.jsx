@@ -672,7 +672,7 @@ const MonitoringConversionSection = ({ phase4, setP4Conversion }) => {
 
   const valorAcordo = parseCurrency(conv.valorAcordo);
   const custoUnitario = parseCurrency(conv.custoUnitario);
-  const custoTotalDisparo = disparado * custoUnitario;
+  const custoTotalDisparo = entregue * custoUnitario;
 
   const taxaEntregue = disparado > 0 ? (entregue / disparado) * 100 : 0;
   const taxaLido = entregue > 0 ? (lido / entregue) * 100 : 0;
@@ -682,7 +682,7 @@ const MonitoringConversionSection = ({ phase4, setP4Conversion }) => {
 
   const roi =
     custoTotalDisparo > 0
-      ? ((valorAcordo - custoTotalDisparo) / custoTotalDisparo) * 100
+      ? (valorAcordo - custoTotalDisparo) / custoTotalDisparo / 100
       : 0;
 
   const custoPorRetorno = retorno > 0 ? custoTotalDisparo / retorno : 0;
@@ -705,7 +705,7 @@ const MonitoringConversionSection = ({ phase4, setP4Conversion }) => {
           ["Entregue", entregue + " (" + pct(taxaEntregue) + ")"],
           ["Retorno", retorno + " (" + pct(taxaRetorno) + ")"],
           ["Acordos", acordoFormalizado],
-          ["ROI", pct(roi)],
+          ["ROI", pct(roi * 100)],
         ].map(([label, value]) => (
           <div
             key={label}
@@ -771,12 +771,18 @@ const MonitoringConversionSection = ({ phase4, setP4Conversion }) => {
             ["Retorno", "retorno"],
             ["Intenção de pagamento", "intencaoPagamento"],
             ["Acordo formalizado", "acordoFormalizado"],
+            ["Valor do acordo", "valorAcordo"],
+            ["Custo unitário/disparo", "custoUnitario"],
           ].map(([label, key]) => (
             <FieldRow key={key} label={label}>
               <EditField
                 value={conv[key] || ""}
                 onChange={(v) => setP4Conversion(key, v)}
-                placeholder="0"
+                placeholder={
+                  key === "valorAcordo" || key === "custoUnitario"
+                    ? "R$ 0,00"
+                    : "0"
+                }
               />
             </FieldRow>
           ))}
@@ -793,24 +799,8 @@ const MonitoringConversionSection = ({ phase4, setP4Conversion }) => {
               marginBottom: 8,
             }}
           >
-            Custos e cálculos automáticos
+            CONVERSÃO
           </div>
-
-          <FieldRow label="Valor do acordo">
-            <EditField
-              value={conv.valorAcordo || ""}
-              onChange={(v) => setP4Conversion("valorAcordo", v)}
-              placeholder="R$ 0,00"
-            />
-          </FieldRow>
-
-          <FieldRow label="Custo unitário">
-            <EditField
-              value={conv.custoUnitario || ""}
-              onChange={(v) => setP4Conversion("custoUnitario", v)}
-              placeholder="R$ 0,00"
-            />
-          </FieldRow>
 
           {[
             ["Custo total de disparo", money(custoTotalDisparo)],
@@ -819,7 +809,7 @@ const MonitoringConversionSection = ({ phase4, setP4Conversion }) => {
             ["% Retorno sobre entregue", pct(taxaRetorno)],
             ["% Intenção sobre retorno", pct(taxaIntencao)],
             ["% Conversão acordo/retorno", pct(taxaConversao)],
-            ["ROI", pct(roi)],
+            ["ROI", pct(roi * 100)],
             ["Custo por retorno", money(custoPorRetorno)],
             ["Custo por acordo", money(custoPorAcordo)],
           ].map(([label, value]) => (
