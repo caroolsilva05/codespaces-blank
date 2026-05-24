@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { supabase } from "./lib/supabase";
 const emptyPoc = {
   general: {
@@ -507,6 +507,7 @@ export default function PocRegister({
   const [tab, setTab] = useState("overview");
   const [saving, setSaving] = useState(false);
   const [lastEditedAt, setLastEditedAt] = useState(null);
+  const printRef = useRef(null);
   const [data, setData] = useState(() => {
     const saved =
       registroInicial?.record_data ||
@@ -769,6 +770,103 @@ export default function PocRegister({
     });
   }
 
+  function handleExportPocPdf() {
+    const conteudo = printRef.current;
+
+    if (!conteudo) {
+      alert("Não foi possível preparar o PDF.");
+      return;
+    }
+
+    const tituloAba =
+      tab === "overview"
+        ? "Visão Geral"
+        : isPocOrquestracao
+          ? "Relatório da Régua"
+          : data.general.pocType === "Enriquecimento de Dados"
+            ? "Relatório de Enriquecimento"
+            : "Relatório Analítico";
+
+    const janela = window.open("", "_blank", "width=1200,height=900");
+
+    if (!janela) {
+      alert(
+        "O navegador bloqueou a janela de impressão. Libere pop-ups para exportar o PDF.",
+      );
+      return;
+    }
+
+    janela.document.write(`
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+        <head>
+          <meta charset="UTF-8" />
+          <title>${tituloAba} - ${data.general.pocName || "POC"}</title>
+          <style>
+            * {
+              box-sizing: border-box;
+            }
+
+            body {
+              margin: 0;
+              font-family: Segoe UI, Arial, sans-serif;
+              background: #070C17;
+              color: #EFF3FC;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+
+            button {
+              display: none !important;
+            }
+
+            input,
+            textarea,
+            select {
+              border: none !important;
+              background: transparent !important;
+              color: inherit !important;
+              pointer-events: none;
+            }
+
+            textarea {
+              resize: none !important;
+            }
+
+            @page {
+              size: A4 landscape;
+              margin: 10mm;
+            }
+
+            @media print {
+              body {
+                background: #070C17;
+              }
+
+              div {
+                break-inside: avoid;
+              }
+            }
+          </style>
+        </head>
+
+        <body>
+          ${conteudo.innerHTML}
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.focus();
+                window.print();
+              }, 500);
+            };
+          <\/script>
+        </body>
+      </html>
+    `);
+
+    janela.document.close();
+  }
+
   async function savePoc() {
     if (!data.general.pocName.trim()) {
       alert("Informe o nome da POC antes de salvar.");
@@ -917,6 +1015,7 @@ export default function PocRegister({
   };
   return (
     <div
+      ref={printRef}
       style={{
         minHeight: "100vh",
         background: C.bg0,
@@ -1003,6 +1102,22 @@ export default function PocRegister({
               {" "}
               {saving ? "Salvando..." : "Salvar POC"}{" "}
             </button>{" "}
+            {(tab === "overview" || tab === "analytics") && (
+              <button
+                onClick={handleExportPocPdf}
+                style={{
+                  background: C.violet,
+                  border: "none",
+                  color: "#fff",
+                  borderRadius: 12,
+                  padding: "11px 18px",
+                  fontWeight: 900,
+                  cursor: "pointer",
+                }}
+              >
+                Exportar PDF
+              </button>
+            )}{" "}
             {onClose && (
               <button
                 onClick={onClose}
