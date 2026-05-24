@@ -3457,7 +3457,7 @@ function SuppliersView({ C }) {
     carregarFornecedores();
   }, []);
 
-  async function salvarFornecedor() {
+  async function salvarFornecedor(continuarCadastro = false) {
     if (!form.nome.trim()) {
       alert("Informe o nome do fornecedor.");
       return;
@@ -3512,7 +3512,7 @@ function SuppliersView({ C }) {
 
     setForm(emptyForm);
     setEditingFornecedorId(null);
-    setShowForm(false);
+    setShowForm(continuarCadastro && !editingFornecedorId);
     carregarFornecedores();
   }
 
@@ -3551,6 +3551,70 @@ function SuppliersView({ C }) {
     "Inativo",
     "Alto",
   ];
+
+  const canaisFornecedorOptions = [
+    "WhatsApp",
+    "RCS",
+    "SMS",
+    "E-mail",
+    "Enriquecimento de Dados",
+    "Outros",
+  ];
+
+  const selectedCanaisFornecedor = String(form.canais || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  function toggleCanalFornecedor(canal) {
+    const exists = selectedCanaisFornecedor.includes(canal);
+    const next = exists
+      ? selectedCanaisFornecedor.filter((item) => item !== canal)
+      : [...selectedCanaisFornecedor, canal];
+
+    updateForm("canais", next.join(", "));
+  }
+
+  const SectionTitleFornecedor = ({ title, subtitle }) => (
+    <div
+      style={{
+        gridColumn: "1 / -1",
+        marginTop: 8,
+        paddingTop: 14,
+        borderTop: "1px solid " + C.border,
+      }}
+    >
+      <div style={{ fontSize: 13, fontWeight: 900, color: C.t1 }}>{title}</div>
+      {subtitle && (
+        <div style={{ fontSize: 11, color: C.t3, marginTop: 4 }}>
+          {subtitle}
+        </div>
+      )}
+    </div>
+  );
+
+  const FieldBlockFornecedor = ({ label, required, example, children }) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <label
+        style={{
+          fontSize: 11,
+          color: C.t3,
+          fontWeight: 900,
+          textTransform: "uppercase",
+          letterSpacing: "0.06em",
+        }}
+      >
+        {label}
+        {required && <span style={{ color: C.rose }}> *</span>}
+      </label>
+      {children}
+      {example && (
+        <div style={{ fontSize: 10, color: C.t3, lineHeight: 1.4 }}>
+          {example}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
@@ -3665,131 +3729,341 @@ function SuppliersView({ C }) {
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                gap: 12,
+                gap: 14,
               }}
             >
-              <input
-                placeholder="Nome do fornecedor"
-                value={form.nome}
-                onChange={(e) => updateForm("nome", e.target.value)}
-                style={field}
-              />
-              <input
-                placeholder="Categoria: Mensageria, IA, CRM, Portal..."
-                value={form.categoria}
-                onChange={(e) => updateForm("categoria", e.target.value)}
-                style={field}
-              />
-              <input
-                placeholder="Canais atendidos: WhatsApp, RCS, SMS, E-mail..."
-                value={form.canais}
-                onChange={(e) => updateForm("canais", e.target.value)}
-                style={{ ...field, gridColumn: "1 / -1" }}
-              />
-              <input
-                placeholder="Responsável interno"
-                value={form.responsavel}
-                onChange={(e) => updateForm("responsavel", e.target.value)}
-                style={field}
-              />
-              <input
-                placeholder="Contato do fornecedor"
-                value={form.contato}
-                onChange={(e) => updateForm("contato", e.target.value)}
-                style={field}
-              />
-              <input
-                placeholder="E-mail"
-                value={form.email}
-                onChange={(e) => updateForm("email", e.target.value)}
-                style={field}
-              />
-              <input
-                placeholder="Telefone"
-                value={form.telefone}
-                onChange={(e) => updateForm("telefone", e.target.value)}
-                style={field}
+              <SectionTitleFornecedor
+                title="1. Identificação do fornecedor"
+                subtitle="Dados principais para classificação e acompanhamento executivo."
               />
 
-              <select
-                value={form.status}
-                onChange={(e) => updateForm("status", e.target.value)}
-                style={field}
+              <FieldBlockFornecedor
+                label="Nome do fornecedor"
+                required
+                example="Ex.: Ótima Digital, Zap2Go, Robbu, Smart NX"
               >
-                <option style={optionStyleFornecedor}>Ativo</option>
-                <option style={optionStyleFornecedor}>Em Homologação</option>
-                <option style={optionStyleFornecedor}>Em Observação</option>
-                <option style={optionStyleFornecedor}>Inativo</option>
-              </select>
+                <input
+                  placeholder="Nome do fornecedor"
+                  value={form.nome}
+                  onChange={(e) => updateForm("nome", e.target.value)}
+                  style={field}
+                />
+              </FieldBlockFornecedor>
 
-              <select
-                value={form.risco}
-                onChange={(e) => updateForm("risco", e.target.value)}
-                style={field}
+              <FieldBlockFornecedor
+                label="Categoria"
+                required
+                example="Ex.: Mensageria, IA, CRM, Portal, Enriquecimento"
               >
-                <option style={optionStyleFornecedor}>Baixo</option>
-                <option style={optionStyleFornecedor}>Médio</option>
-                <option style={optionStyleFornecedor}>Alto</option>
-              </select>
+                <input
+                  placeholder="Categoria: Mensageria, IA, CRM, Portal..."
+                  value={form.categoria}
+                  onChange={(e) => updateForm("categoria", e.target.value)}
+                  style={field}
+                />
+              </FieldBlockFornecedor>
 
-              <input
-                type="number"
-                placeholder="SLA contratado/meta (%)"
-                value={form.sla_meta}
-                onChange={(e) => updateForm("sla_meta", e.target.value)}
-                style={field}
-              />
-              <input
-                type="number"
-                placeholder="Score de performance (%)"
-                value={form.performance_score}
-                onChange={(e) =>
-                  updateForm("performance_score", e.target.value)
-                }
-                style={field}
-              />
-              <input
-                type="number"
-                placeholder="Projetos ativos"
-                value={form.projetos_ativos}
-                onChange={(e) => updateForm("projetos_ativos", e.target.value)}
-                style={field}
-              />
-              <input
-                type="number"
-                placeholder="Incidentes em aberto"
-                value={form.incidentes_abertos}
-                onChange={(e) =>
-                  updateForm("incidentes_abertos", e.target.value)
-                }
-                style={field}
+              <SectionTitleFornecedor
+                title="2. Canais atendidos"
+                subtitle="Selecione os canais por tags. Isso evita nomes duplicados como WPP, Whats e WhatsApp."
               />
 
-              <textarea
-                placeholder="Avaliação executiva do fornecedor"
-                value={form.avaliacao}
-                onChange={(e) => updateForm("avaliacao", e.target.value)}
-                style={{
-                  ...field,
-                  gridColumn: "1 / -1",
-                  minHeight: 90,
-                  resize: "vertical",
-                  lineHeight: 1.6,
-                }}
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label
+                  style={{
+                    fontSize: 11,
+                    color: C.t3,
+                    fontWeight: 900,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    display: "block",
+                    marginBottom: 8,
+                  }}
+                >
+                  Canais atendidos <span style={{ color: C.rose }}>*</span>
+                </label>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    padding: 12,
+                    borderRadius: 14,
+                    border: "1px solid " + C.border,
+                    background: C.surface,
+                  }}
+                >
+                  {canaisFornecedorOptions.map((canal) => {
+                    const active = selectedCanaisFornecedor.includes(canal);
+
+                    return (
+                      <button
+                        type="button"
+                        key={canal}
+                        onClick={() => toggleCanalFornecedor(canal)}
+                        style={{
+                          border: "1px solid " + (active ? C.blue : C.border),
+                          background: active ? C.blueGlow : C.bg2,
+                          color: active ? C.blue : C.t2,
+                          borderRadius: 999,
+                          padding: "8px 12px",
+                          fontSize: 12,
+                          fontWeight: 900,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {active ? "✓ " : ""}
+                        {canal}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={{ fontSize: 10, color: C.t3, marginTop: 7 }}>
+                  Ex.: WhatsApp, RCS, SMS, E-mail, Enriquecimento de Dados.
+                </div>
+
+                {selectedCanaisFornecedor.length > 0 && (
+                  <div
+                    style={{
+                      marginTop: 10,
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(220px, 1fr))",
+                      gap: 8,
+                    }}
+                  >
+                    {selectedCanaisFornecedor.map((canal) => (
+                      <div
+                        key={canal}
+                        style={{
+                          border: "1px solid " + C.border,
+                          background: C.bg2,
+                          borderRadius: 12,
+                          padding: 10,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 900,
+                            color: C.t1,
+                            marginBottom: 5,
+                          }}
+                        >
+                          {canal}
+                        </div>
+
+                        <div
+                          style={{ fontSize: 10, color: C.t3, lineHeight: 1.5 }}
+                        >
+                          {canal === "WhatsApp" &&
+                            "MVP+: BSP, WABA, tipo de integração e janela de SLA."}
+                          {canal === "RCS" &&
+                            "MVP+: agregador, operadoras, cobertura e fallback."}
+                          {canal === "SMS" &&
+                            "MVP+: rotas, DLR, throughput, blacklist e opt-out."}
+                          {canal === "E-mail" &&
+                            "MVP+: SPF, DKIM, DMARC, IP dedicado/compartilhado e bounce."}
+                          {canal === "Enriquecimento de Dados" &&
+                            "MVP+: fontes, atualização, LGPD, base legal e checklist."}
+                          {canal === "Outros" &&
+                            "MVP+: descrever canal, parceiro, integração e observações técnicas."}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <SectionTitleFornecedor
+                title="3. Responsáveis e contatos"
+                subtitle="Contatos para operação, suporte, escalonamento e relacionamento com o fornecedor."
               />
 
-              <textarea
-                placeholder="Observações, pontos de atenção, histórico de relacionamento ou próximos passos"
-                value={form.observacoes}
-                onChange={(e) => updateForm("observacoes", e.target.value)}
-                style={{
-                  ...field,
-                  gridColumn: "1 / -1",
-                  minHeight: 90,
-                  resize: "vertical",
-                  lineHeight: 1.6,
-                }}
+              <FieldBlockFornecedor label="Responsável interno" required>
+                <input
+                  placeholder="Responsável interno"
+                  value={form.responsavel}
+                  onChange={(e) => updateForm("responsavel", e.target.value)}
+                  style={field}
+                />
+              </FieldBlockFornecedor>
+
+              <FieldBlockFornecedor
+                label="Contato do fornecedor"
+                example="MVP+: permitir mais de um contato por tipo: suporte, técnico, comercial."
+              >
+                <input
+                  placeholder="Contato do fornecedor"
+                  value={form.contato}
+                  onChange={(e) => updateForm("contato", e.target.value)}
+                  style={field}
+                />
+              </FieldBlockFornecedor>
+
+              <FieldBlockFornecedor
+                label="E-mail principal"
+                required
+                example="Ex.: suporte@fornecedor.com"
+              >
+                <input
+                  placeholder="E-mail"
+                  value={form.email}
+                  onChange={(e) => updateForm("email", e.target.value)}
+                  style={field}
+                />
+              </FieldBlockFornecedor>
+
+              <FieldBlockFornecedor
+                label="Telefone"
+                example="Ex.: +55 41 99999-9999"
+              >
+                <input
+                  placeholder="Telefone"
+                  value={form.telefone}
+                  onChange={(e) => updateForm("telefone", e.target.value)}
+                  style={field}
+                />
+              </FieldBlockFornecedor>
+
+              <SectionTitleFornecedor
+                title="4. SLA, performance e risco"
+                subtitle="Dados utilizados para acompanhamento operacional e visão executiva."
               />
+
+              <FieldBlockFornecedor label="Status" required>
+                <select
+                  value={form.status}
+                  onChange={(e) => updateForm("status", e.target.value)}
+                  style={field}
+                >
+                  <option style={optionStyleFornecedor}>Ativo</option>
+                  <option style={optionStyleFornecedor}>Em Homologação</option>
+                  <option style={optionStyleFornecedor}>Em Observação</option>
+                  <option style={optionStyleFornecedor}>Inativo</option>
+                </select>
+              </FieldBlockFornecedor>
+
+              <FieldBlockFornecedor
+                label="Risco"
+                required
+                example="Critérios: incidentes, SLA, compliance, dependência e volume."
+              >
+                <select
+                  value={form.risco}
+                  onChange={(e) => updateForm("risco", e.target.value)}
+                  style={field}
+                >
+                  <option style={optionStyleFornecedor}>Baixo</option>
+                  <option style={optionStyleFornecedor}>Médio</option>
+                  <option style={optionStyleFornecedor}>Alto</option>
+                </select>
+              </FieldBlockFornecedor>
+
+              <FieldBlockFornecedor
+                label="SLA contratado/meta (%)"
+                example="Valor entre 0 e 100. Ex.: 95"
+              >
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  placeholder="SLA contratado/meta (%)"
+                  value={form.sla_meta}
+                  onChange={(e) => updateForm("sla_meta", e.target.value)}
+                  style={field}
+                />
+              </FieldBlockFornecedor>
+
+              <FieldBlockFornecedor
+                label="Score de performance (%)"
+                example="MVP: manual. MVP+: calculado por entrega, falhas, SLA e incidentes."
+              >
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  placeholder="Score de performance (%)"
+                  value={form.performance_score}
+                  onChange={(e) =>
+                    updateForm("performance_score", e.target.value)
+                  }
+                  style={field}
+                />
+              </FieldBlockFornecedor>
+
+              <FieldBlockFornecedor
+                label="Projetos ativos"
+                example="Futuro: puxar automático dos projetos vinculados."
+              >
+                <input
+                  type="number"
+                  placeholder="Projetos ativos"
+                  value={form.projetos_ativos}
+                  onChange={(e) =>
+                    updateForm("projetos_ativos", e.target.value)
+                  }
+                  style={field}
+                />
+              </FieldBlockFornecedor>
+
+              <FieldBlockFornecedor
+                label="Incidentes em aberto"
+                example="Futuro: puxar automático do controle de incidentes."
+              >
+                <input
+                  type="number"
+                  placeholder="Incidentes em aberto"
+                  value={form.incidentes_abertos}
+                  onChange={(e) =>
+                    updateForm("incidentes_abertos", e.target.value)
+                  }
+                  style={field}
+                />
+              </FieldBlockFornecedor>
+
+              <SectionTitleFornecedor
+                title="5. Avaliação e observações"
+                subtitle="Resumo executivo, pontos de atenção, histórico e próximos passos."
+              />
+
+              <FieldBlockFornecedor
+                label="Avaliação executiva do fornecedor"
+                example="Ex.: fornecedor estável, bom suporte, pendências em homologação ou necessidade de plano de ação."
+              >
+                <textarea
+                  placeholder="Avaliação executiva do fornecedor"
+                  value={form.avaliacao}
+                  onChange={(e) => updateForm("avaliacao", e.target.value)}
+                  style={{
+                    ...field,
+                    gridColumn: "1 / -1",
+                    minHeight: 90,
+                    resize: "vertical",
+                    lineHeight: 1.6,
+                  }}
+                />
+              </FieldBlockFornecedor>
+
+              <FieldBlockFornecedor
+                label="Observações / plano de mitigação"
+                example="Ex.: criar fornecedor backup, revisar SLA, validar integração alternativa ou abrir plano de ação."
+              >
+                <textarea
+                  placeholder="Observações, pontos de atenção, histórico de relacionamento ou próximos passos"
+                  value={form.observacoes}
+                  onChange={(e) => updateForm("observacoes", e.target.value)}
+                  style={{
+                    ...field,
+                    gridColumn: "1 / -1",
+                    minHeight: 90,
+                    resize: "vertical",
+                    lineHeight: 1.6,
+                  }}
+                />
+              </FieldBlockFornecedor>
             </div>
 
             <div
@@ -3815,8 +4089,27 @@ function SuppliersView({ C }) {
                 Cancelar
               </button>
 
+              {!editingFornecedorId && (
+                <button
+                  onClick={() => salvarFornecedor(true)}
+                  disabled={saving}
+                  style={{
+                    background: C.surface,
+                    border: "1px solid " + C.border,
+                    color: C.blue,
+                    borderRadius: 12,
+                    padding: "11px 18px",
+                    cursor: saving ? "not-allowed" : "pointer",
+                    fontWeight: 900,
+                    opacity: saving ? 0.7 : 1,
+                  }}
+                >
+                  Salvar e adicionar outro
+                </button>
+              )}
+
               <button
-                onClick={salvarFornecedor}
+                onClick={() => salvarFornecedor(false)}
                 disabled={saving}
                 style={{
                   background: C.blue,
