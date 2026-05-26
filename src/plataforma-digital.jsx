@@ -4423,8 +4423,10 @@ function SuppliersView({ C }) {
 }
 
 function PortaisView({ C }) {
-  const [tab, setTab] = useState("dashboard");
+  const [tab, setTab] = useState("monitoria");
   const [filter, setFilter] = useState("Todos");
+  const [selectedPortalMonitoria, setSelectedPortalMonitoria] =
+    useState("Todos");
 
   function toNumPortal(value) {
     const parsed = Number(String(value || "0").replace(",", "."));
@@ -4540,7 +4542,7 @@ function PortaisView({ C }) {
 
   const dadosPortais = [
     {
-      portal: "Portal 1",
+      portal: "Portal - Bradesco",
       total: 1905355,
       riscoContrato: 2323222140,
       buscaCliente: 9296,
@@ -4551,14 +4553,11 @@ function PortaisView({ C }) {
       buscaAcordo: 1723,
       buscaOpcaoPagamento: 1125,
       formalizarAcordo: 68,
-      txValidaTokenEnviaToken: 0.2468,
-      perdaToken: 0.7531,
-      txFormalizarOpcaoPagamento: 0.0394,
       classificacao: "Conversão intermediária",
       observacao: "Gargalo crítico de token",
     },
     {
-      portal: "Portal 2",
+      portal: "Portal - Genérico",
       total: 28857706,
       riscoContrato: 5481244639918,
       buscaCliente: 150217,
@@ -4569,31 +4568,89 @@ function PortaisView({ C }) {
       buscaAcordo: 4236,
       buscaOpcaoPagamento: 3015,
       formalizarAcordo: 71,
-      txValidaTokenEnviaToken: 0.3126,
-      perdaToken: 0.6873,
-      txFormalizarOpcaoPagamento: 0.0167,
       classificacao: "Conversão baixa",
       observacao: "Oportunidade de melhoria",
     },
     {
-      portal: "Portal 7",
-      total: 41844475,
-      riscoContrato: 1349253202918,
-      buscaCliente: 159887,
-      enviaToken: 28151,
-      validaToken: 8322,
-      buscaCredor: 10593,
-      buscaDivida: 7219,
-      buscaAcordo: 6998,
-      buscaOpcaoPagamento: 5437,
-      formalizarAcordo: 193,
-      txValidaTokenEnviaToken: 0.2956,
-      perdaToken: 0.7043,
-      txFormalizarOpcaoPagamento: 0.0275,
-      classificacao: "Consolidado",
-      observacao: "Consolidado geral",
+      portal: "Portal - Itaú",
+      total: 0,
+      riscoContrato: 36503236,
+      buscaCliente: 242,
+      enviaToken: 196,
+      validaToken: 54,
+      buscaCredor: 109,
+      buscaDivida: 8,
+      buscaAcordo: 8,
+      buscaOpcaoPagamento: 8,
+      formalizarAcordo: 0,
+      classificacao: "Conversão baixa",
+      observacao: "Oportunidade de melhoria",
     },
-  ];
+    {
+      portal: "Portal - Itaú PF",
+      total: 9956781,
+      riscoContrato: 3413055498,
+      buscaCliente: 99,
+      enviaToken: 0,
+      validaToken: 0,
+      buscaCredor: 1758,
+      buscaDivida: 1180,
+      buscaAcordo: 885,
+      buscaOpcaoPagamento: 725,
+      formalizarAcordo: 52,
+      classificacao: "Conversão intermediária",
+      observacao: "Validar logs/autenticação",
+    },
+    {
+      portal: "Portal - Itaú PJ",
+      total: 1124633,
+      riscoContrato: 2238506516,
+      buscaCliente: 0,
+      enviaToken: 0,
+      validaToken: 0,
+      buscaCredor: 163,
+      buscaDivida: 199,
+      buscaAcordo: 146,
+      buscaOpcaoPagamento: 564,
+      formalizarAcordo: 2,
+      classificacao: "Conversão baixa",
+      observacao: "Validar logs/autenticação",
+    },
+    {
+      portal: "Portal - PanRefin",
+      total: 0,
+      riscoContrato: 0,
+      buscaCliente: 33,
+      enviaToken: 49,
+      validaToken: 10,
+      buscaCredor: 0,
+      buscaDivida: 0,
+      buscaAcordo: 0,
+      buscaOpcaoPagamento: 0,
+      formalizarAcordo: 0,
+      classificacao: "Conversão baixa",
+      observacao: "Gargalo crítico de token",
+    },
+  ].map((item) => {
+    const txValidaTokenEnviaToken =
+      item.enviaToken > 0 ? item.validaToken / item.enviaToken : 0;
+    const perdaToken =
+      item.enviaToken > 0 ? 1 - item.validaToken / item.enviaToken : 1;
+    const txFormalizarOpcaoPagamento =
+      item.buscaOpcaoPagamento > 0
+        ? item.formalizarAcordo / item.buscaOpcaoPagamento
+        : 0;
+    const formalizacoesPorMil =
+      item.total > 0 ? (item.formalizarAcordo / item.total) * 1000 : 0;
+
+    return {
+      ...item,
+      txValidaTokenEnviaToken,
+      perdaToken,
+      txFormalizarOpcaoPagamento,
+      formalizacoesPorMil,
+    };
+  });
 
   const testesDiarios = [
     {
@@ -4731,10 +4788,76 @@ function PortaisView({ C }) {
     },
   ];
 
-  const consolidado =
-    dadosPortais.find((item) => item.classificacao === "Consolidado") ||
-    dadosPortais[dadosPortais.length - 1];
+  const portalOperacionais = dadosPortais;
 
+  function somarPortais(rows) {
+    const totalizador = rows.reduce(
+      (acc, item) => {
+        acc.total += toNumPortal(item.total);
+        acc.riscoContrato += toNumPortal(item.riscoContrato);
+        acc.buscaCliente += toNumPortal(item.buscaCliente);
+        acc.enviaToken += toNumPortal(item.enviaToken);
+        acc.validaToken += toNumPortal(item.validaToken);
+        acc.buscaCredor += toNumPortal(item.buscaCredor);
+        acc.buscaDivida += toNumPortal(item.buscaDivida);
+        acc.buscaAcordo += toNumPortal(item.buscaAcordo);
+        acc.buscaOpcaoPagamento += toNumPortal(item.buscaOpcaoPagamento);
+        acc.formalizarAcordo += toNumPortal(item.formalizarAcordo);
+        return acc;
+      },
+      {
+        portal: "Visão Geral",
+        total: 0,
+        riscoContrato: 0,
+        buscaCliente: 0,
+        enviaToken: 0,
+        validaToken: 0,
+        buscaCredor: 0,
+        buscaDivida: 0,
+        buscaAcordo: 0,
+        buscaOpcaoPagamento: 0,
+        formalizarAcordo: 0,
+      },
+    );
+
+    const txValidaTokenEnviaToken =
+      totalizador.enviaToken > 0
+        ? totalizador.validaToken / totalizador.enviaToken
+        : 0;
+    const perdaToken =
+      totalizador.enviaToken > 0
+        ? 1 - totalizador.validaToken / totalizador.enviaToken
+        : 1;
+    const txFormalizarOpcaoPagamento =
+      totalizador.buscaOpcaoPagamento > 0
+        ? totalizador.formalizarAcordo / totalizador.buscaOpcaoPagamento
+        : 0;
+    const formalizacoesPorMil =
+      totalizador.total > 0
+        ? (totalizador.formalizarAcordo / totalizador.total) * 1000
+        : 0;
+
+    return {
+      ...totalizador,
+      txValidaTokenEnviaToken,
+      perdaToken,
+      txFormalizarOpcaoPagamento,
+      formalizacoesPorMil,
+      classificacao: "Consolidado",
+      observacao: "Soma consolidada dos portais",
+    };
+  }
+
+  const consolidadoGeral = somarPortais(portalOperacionais);
+
+  const portalSelecionado =
+    selectedPortalMonitoria === "Todos"
+      ? consolidadoGeral
+      : portalOperacionais.find(
+          (item) => item.portal === selectedPortalMonitoria,
+        ) || consolidadoGeral;
+
+  const consolidado = portalSelecionado;
   const falhasHoje = testesDiarios.filter((i) => i.status === "Falha").length;
   const criticosHoje = testesDiarios.filter(
     (i) => i.severidade === "Crítica" || i.severidade === "Alta",
@@ -4755,7 +4878,7 @@ function PortaisView({ C }) {
       : 0;
 
   const tabs = [
-    { id: "dashboard", label: "Dashboard" },
+    { id: "monitoria", label: "Monitoria" },
     { id: "testes", label: "Testes Diários" },
     { id: "usabilidade", label: "Usabilidade" },
     { id: "tickets", label: "Tickets" },
@@ -4771,7 +4894,7 @@ function PortaisView({ C }) {
   }
 
   function exportCurrentCsv() {
-    if (tab === "dashboard") {
+    if (tab === "monitoria") {
       const html = [
         '<div class="grid">',
         '<div class="kpi"><small>% bancos OK hoje</small><strong>' +
@@ -4794,7 +4917,7 @@ function PortaisView({ C }) {
       ].join("");
 
       exportPdf(
-        "Dashboard Executivo de Portais",
+        "Monitoria de Portais",
         "Resumo consolidado dos portais, testes, usabilidade e tickets.",
         html,
       );
@@ -4927,61 +5050,127 @@ function PortaisView({ C }) {
     ];
 
     const baseFunil = consolidado.buscaCliente || 1;
+    const portalCards = portalOperacionais;
 
     return (
       <>
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
             gap: 14,
           }}
         >
-          <KPICard
-            icon={CheckCircle2}
-            label="% bancos OK hoje"
-            value={pctPortal(pctOk)}
-            sub="Testes diários"
-            color={C.emerald}
-            glow={C.emeraldGlow}
-            C={C}
-          />
-          <KPICard
-            icon={AlertTriangle}
-            label="Falhas hoje"
-            value={falhasHoje}
-            sub={criticosHoje + " críticas/altas"}
-            color={falhasHoje > 0 ? C.rose : C.emerald}
-            glow={falhasHoje > 0 ? C.roseGlow : C.emeraldGlow}
-            C={C}
-          />
-          <KPICard
-            icon={Clock}
-            label="Tickets abertos"
-            value={ticketsAbertos}
-            sub={ticketsSlaAtencao + " com SLA em atenção"}
-            color={ticketsSlaAtencao > 0 ? C.amber : C.blue}
-            glow={ticketsSlaAtencao > 0 ? C.amberGlow : C.blueGlow}
-            C={C}
-          />
-          <KPICard
-            icon={Star}
-            label="Nota usabilidade"
-            value={notaUsabilidade.toFixed(1).replace(".", ",") + "/5"}
-            sub="Média dos checklists"
-            color={C.violet}
-            glow={C.violetGlow}
-            C={C}
-          />
-          <KPICard
-            icon={Shield}
-            label="Risco contrato"
-            value={moneyBR(consolidado.riscoContrato)}
-            sub="Consolidado"
-            color={C.amber}
-            glow={C.amberGlow}
-            C={C}
-          />
+          {portalCards.map((portal) => {
+            const isGeral = portal.portal === "Visão Geral";
+            const active =
+              selectedPortalMonitoria === "Todos"
+                ? isGeral
+                : selectedPortalMonitoria === portal.portal;
+
+            const color =
+              portal.perdaToken >= 0.7
+                ? C.rose
+                : portal.txFormalizarOpcaoPagamento >= 0.04
+                  ? C.emerald
+                  : portal.txFormalizarOpcaoPagamento >= 0.02
+                    ? C.amber
+                    : C.violet;
+
+            const glow =
+              portal.perdaToken >= 0.7
+                ? C.roseGlow
+                : portal.txFormalizarOpcaoPagamento >= 0.04
+                  ? C.emeraldGlow
+                  : portal.txFormalizarOpcaoPagamento >= 0.02
+                    ? C.amberGlow
+                    : C.violetGlow;
+
+            return (
+              <button
+                key={portal.portal}
+                type="button"
+                onClick={() =>
+                  setSelectedPortalMonitoria(isGeral ? "Todos" : portal.portal)
+                }
+                style={{
+                  ...card(C),
+                  textAlign: "left",
+                  padding: "22px 24px",
+                  minHeight: 170,
+                  border: "1px solid " + (active ? C.blue : C.border),
+                  background: active ? C.blueGlow : C.card,
+                  cursor: "pointer",
+                  boxShadow: active ? "0 0 0 2px " + C.blue + "22" : "none",
+                }}
+              >
+                <div
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 14,
+                    display: "grid",
+                    placeItems: "center",
+                    color,
+                    background: glow,
+                    border: "1px solid " + color + "33",
+                    marginBottom: 14,
+                  }}
+                >
+                  {isGeral ? (
+                    <Activity size={19} />
+                  ) : portal.perdaToken >= 0.7 ? (
+                    <AlertTriangle size={19} />
+                  ) : (
+                    <Globe size={19} />
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 950,
+                    color: active ? C.blue : C.t1,
+                    marginBottom: 5,
+                  }}
+                >
+                  {portal.portal}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 26,
+                    fontWeight: 950,
+                    color: C.t1,
+                    marginTop: 8,
+                  }}
+                >
+                  {intBR(portal.formalizarAcordo)}
+                </div>
+
+                <div style={{ fontSize: 12, color: C.t2, marginTop: 3 }}>
+                  Acordos formalizados
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    flexWrap: "wrap",
+                    marginTop: 10,
+                    fontSize: 11,
+                    color: C.t3,
+                  }}
+                >
+                  <span>Token: {pctPortal(portal.perdaToken * 100)}</span>
+                  <span>
+                    Tx. acordo:{" "}
+                    {pctPortal(portal.txFormalizarOpcaoPagamento * 100)}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         <div
@@ -5000,10 +5189,15 @@ function PortaisView({ C }) {
                 marginBottom: 4,
               }}
             >
-              Funil Consolidado dos Portais
+              Funil{" "}
+              {selectedPortalMonitoria === "Todos"
+                ? "Consolidado dos Portais"
+                : selectedPortalMonitoria}
             </div>
             <div style={{ fontSize: 12, color: C.t3, marginBottom: 18 }}>
-              Volume por etapa com percentual sobre BuscaCliente
+              {selectedPortalMonitoria === "Todos"
+                ? "Soma de todos os portais com percentual sobre BuscaCliente"
+                : "Resultado individual do portal selecionado"}
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -5092,28 +5286,37 @@ function PortaisView({ C }) {
               Leitura Executiva
             </div>
             <div style={{ fontSize: 12, color: C.t3, marginBottom: 16 }}>
-              Pontos para acompanhamento da gestão
+              Resultado da monitoria para{" "}
+              {selectedPortalMonitoria === "Todos"
+                ? "todos os portais"
+                : selectedPortalMonitoria}
             </div>
 
             {[
               {
                 title: "Token é o maior gargalo",
                 desc:
-                  "A perda consolidada de token está em " +
+                  "A perda de token está em " +
                   pctPortal(consolidado.perdaToken * 100) +
                   ". Priorizar análise entre EnviaToken e ValidaToken.",
                 color: C.rose,
                 bg: C.roseGlow,
               },
               {
-                title: "Tickets precisam de SLA Dev/TI",
-                desc: "Tickets P1/P2 devem ter triagem e resolução monitoradas com prazo automático por severidade.",
+                title: "Conversão final",
+                desc:
+                  "A taxa de formalização sobre opção de pagamento está em " +
+                  pctPortal(consolidado.txFormalizarOpcaoPagamento * 100) +
+                  ". Acompanhar experiência no fechamento do acordo.",
                 color: C.amber,
                 bg: C.amberGlow,
               },
               {
-                title: "Usabilidade padronizada",
-                desc: "Checklist 0–5 permite transformar Word solto em relatório comparável e auditável.",
+                title: "Risco financeiro",
+                desc:
+                  "O risco de contrato monitorado é " +
+                  moneyBR(consolidado.riscoContrato) +
+                  ". Portais com maior risco devem ter prioridade.",
                 color: C.blue,
                 bg: C.blueGlow,
               },
@@ -5831,7 +6034,7 @@ function PortaisView({ C }) {
   }
 
   function getDadosExportPortais() {
-    const currentTab = typeof tab !== "undefined" ? tab : "dashboard";
+    const currentTab = typeof tab !== "undefined" ? tab : "monitoria";
 
     if (currentTab === "testes") {
       return {
@@ -5858,8 +6061,8 @@ function PortaisView({ C }) {
     }
 
     return {
-      title: "Dashboard Executivo de Portais",
-      filename: "portais_dashboard.csv",
+      title: "Monitoria de Portais",
+      filename: "portais_monitoria.csv",
       rows: typeof dadosPortais !== "undefined" ? dadosPortais : [],
     };
   }
@@ -6007,7 +6210,7 @@ function PortaisView({ C }) {
         })}
       </div>
 
-      {tab === "dashboard" && renderDashboard()}
+      {tab === "monitoria" && renderDashboard()}
       {tab === "testes" && renderTestes()}
       {tab === "usabilidade" && renderUsabilidade()}
       {tab === "tickets" && renderTickets()}
