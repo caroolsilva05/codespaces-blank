@@ -4542,7 +4542,7 @@ function PortaisView({ C }) {
 
   const dadosPortais = [
     {
-      portal: "Portal - Bradesco",
+      portal: "Bellinati - Portal - Bradesco",
       total: 1905355,
       riscoContrato: 2323222140,
       buscaCliente: 9296,
@@ -4553,11 +4553,16 @@ function PortaisView({ C }) {
       buscaAcordo: 1723,
       buscaOpcaoPagamento: 1125,
       formalizarAcordo: 68,
+      txEnviaTokenBuscaCliente: 0.7625860585197934,
+      txValidaTokenEnviaToken: 0.2468613344618423,
+      perdaToken: 0.7531386655381577,
+      txFormalizarOpcaoPagamento: 0.03946604759141033,
+      formalizacoesPorMil: 0.03568888737269433,
       classificacao: "Conversão intermediária",
       observacao: "Gargalo crítico de token",
     },
     {
-      portal: "Portal - Genérico",
+      portal: "Bellinati - Portal - Generico",
       total: 28857706,
       riscoContrato: 5481244639918,
       buscaCliente: 150217,
@@ -4568,11 +4573,16 @@ function PortaisView({ C }) {
       buscaAcordo: 4236,
       buscaOpcaoPagamento: 3015,
       formalizarAcordo: 71,
+      txEnviaTokenBuscaCliente: 0.13857952162538195,
+      txValidaTokenEnviaToken: 0.3126291012153528,
+      perdaToken: 0.6873708987846472,
+      txFormalizarOpcaoPagamento: 0.01676109537299339,
+      formalizacoesPorMil: 0.002460348026277626,
       classificacao: "Conversão baixa",
       observacao: "Oportunidade de melhoria",
     },
     {
-      portal: "Portal - Itaú",
+      portal: "Bellinati - Portal - Itau",
       total: 0,
       riscoContrato: 36503236,
       buscaCliente: 242,
@@ -4583,11 +4593,16 @@ function PortaisView({ C }) {
       buscaAcordo: 8,
       buscaOpcaoPagamento: 8,
       formalizarAcordo: 0,
+      txEnviaTokenBuscaCliente: 0.8099173553719008,
+      txValidaTokenEnviaToken: 0.2755102040816326,
+      perdaToken: 0.7244897959183674,
+      txFormalizarOpcaoPagamento: 0,
+      formalizacoesPorMil: 0,
       classificacao: "Conversão baixa",
       observacao: "Oportunidade de melhoria",
     },
     {
-      portal: "Portal - Itaú PF",
+      portal: "Bellinati - Portal - Itau PF",
       total: 9956781,
       riscoContrato: 3413055498,
       buscaCliente: 99,
@@ -4598,11 +4613,16 @@ function PortaisView({ C }) {
       buscaAcordo: 885,
       buscaOpcaoPagamento: 725,
       formalizarAcordo: 52,
+      txEnviaTokenBuscaCliente: 0,
+      txValidaTokenEnviaToken: 0,
+      perdaToken: 1,
+      txFormalizarOpcaoPagamento: 0.05875706214689266,
+      formalizacoesPorMil: 0.005222571431469669,
       classificacao: "Conversão intermediária",
       observacao: "Validar logs/autenticação",
     },
     {
-      portal: "Portal - Itaú PJ",
+      portal: "Bellinati - Portal - Itau PJ",
       total: 1124633,
       riscoContrato: 2238506516,
       buscaCliente: 0,
@@ -4613,11 +4633,16 @@ function PortaisView({ C }) {
       buscaAcordo: 146,
       buscaOpcaoPagamento: 564,
       formalizarAcordo: 2,
+      txEnviaTokenBuscaCliente: 0,
+      txValidaTokenEnviaToken: 0,
+      perdaToken: 1,
+      txFormalizarOpcaoPagamento: 0.0136986301369863,
+      formalizacoesPorMil: 0.00177835791764958,
       classificacao: "Conversão baixa",
       observacao: "Validar logs/autenticação",
     },
     {
-      portal: "Portal - PanRefin",
+      portal: "Bellinati - Portal - PanRefin",
       total: 0,
       riscoContrato: 0,
       buscaCliente: 33,
@@ -4628,29 +4653,15 @@ function PortaisView({ C }) {
       buscaAcordo: 0,
       buscaOpcaoPagamento: 0,
       formalizarAcordo: 0,
+      txEnviaTokenBuscaCliente: 1.4848484848484849,
+      txValidaTokenEnviaToken: 0.20408163265306123,
+      perdaToken: 0.7959183673469388,
+      txFormalizarOpcaoPagamento: 0,
+      formalizacoesPorMil: 0,
       classificacao: "Conversão baixa",
       observacao: "Gargalo crítico de token",
     },
-  ].map((item) => {
-    const txValidaTokenEnviaToken =
-      item.enviaToken > 0 ? item.validaToken / item.enviaToken : 0;
-    const perdaToken =
-      item.enviaToken > 0 ? 1 - item.validaToken / item.enviaToken : 1;
-    const txFormalizarOpcaoPagamento =
-      item.buscaOpcaoPagamento > 0
-        ? item.formalizarAcordo / item.buscaOpcaoPagamento
-        : 0;
-    const formalizacoesPorMil =
-      item.total > 0 ? (item.formalizarAcordo / item.total) * 1000 : 0;
-
-    return {
-      ...item,
-      txValidaTokenEnviaToken,
-      perdaToken,
-      txFormalizarOpcaoPagamento,
-      formalizacoesPorMil,
-    };
-  });
+  ];
 
   const testesDiarios = [
     {
@@ -5052,52 +5063,62 @@ function PortaisView({ C }) {
     const baseFunil = consolidado.buscaCliente || 1;
     const portalCards = portalOperacionais;
 
+    const metricLine = (label, value, color = C.t1) => (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          fontSize: 11,
+          color: C.t2,
+          padding: "5px 0",
+          borderBottom: "1px solid " + C.border,
+        }}
+      >
+        <span>{label}</span>
+        <strong style={{ color, fontSize: 11 }}>{value}</strong>
+      </div>
+    );
+
     return (
       <>
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
             gap: 14,
           }}
         >
           {portalCards.map((portal) => {
-            const isGeral = portal.portal === "Visão Geral";
-            const active =
-              selectedPortalMonitoria === "Todos"
-                ? isGeral
-                : selectedPortalMonitoria === portal.portal;
+            const active = selectedPortalMonitoria === portal.portal;
 
-            const color =
-              portal.perdaToken >= 0.7
-                ? C.rose
-                : portal.txFormalizarOpcaoPagamento >= 0.04
-                  ? C.emerald
-                  : portal.txFormalizarOpcaoPagamento >= 0.02
-                    ? C.amber
-                    : C.violet;
+            const displayName = portal.portal.replace("Bellinati - ", "");
 
-            const glow =
-              portal.perdaToken >= 0.7
-                ? C.roseGlow
-                : portal.txFormalizarOpcaoPagamento >= 0.04
-                  ? C.emeraldGlow
-                  : portal.txFormalizarOpcaoPagamento >= 0.02
-                    ? C.amberGlow
-                    : C.violetGlow;
+            const statusColor =
+              portal.classificacao === "Conversão intermediária"
+                ? C.amber
+                : portal.classificacao === "Consolidado"
+                  ? C.blue
+                  : C.rose;
+
+            const statusBg =
+              portal.classificacao === "Conversão intermediária"
+                ? C.amberGlow
+                : portal.classificacao === "Consolidado"
+                  ? C.blueGlow
+                  : C.roseGlow;
 
             return (
               <button
                 key={portal.portal}
                 type="button"
-                onClick={() =>
-                  setSelectedPortalMonitoria(isGeral ? "Todos" : portal.portal)
-                }
+                onClick={() => setSelectedPortalMonitoria(portal.portal)}
                 style={{
                   ...card(C),
                   textAlign: "left",
-                  padding: "22px 24px",
-                  minHeight: 170,
+                  padding: "20px 22px",
+                  minHeight: 390,
                   border: "1px solid " + (active ? C.blue : C.border),
                   background: active ? C.blueGlow : C.card,
                   cursor: "pointer",
@@ -5106,72 +5127,253 @@ function PortaisView({ C }) {
               >
                 <div
                   style={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: 14,
-                    display: "grid",
-                    placeItems: "center",
-                    color,
-                    background: glow,
-                    border: "1px solid " + color + "33",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    alignItems: "flex-start",
                     marginBottom: 14,
                   }}
                 >
-                  {isGeral ? (
-                    <Activity size={19} />
-                  ) : portal.perdaToken >= 0.7 ? (
-                    <AlertTriangle size={19} />
-                  ) : (
-                    <Globe size={19} />
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 950,
+                        color: active ? C.blue : C.t1,
+                        marginBottom: 5,
+                      }}
+                    >
+                      {displayName}
+                    </div>
+
+                    <Chip
+                      label={portal.classificacao}
+                      color={statusColor}
+                      bg={statusBg}
+                    />
+                  </div>
+
+                  <div
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 14,
+                      display: "grid",
+                      placeItems: "center",
+                      color: statusColor,
+                      background: statusBg,
+                      border: "1px solid " + statusColor + "33",
+                      flex: "0 0 auto",
+                    }}
+                  >
+                    {portal.perdaToken >= 0.7 ? (
+                      <AlertTriangle size={19} />
+                    ) : (
+                      <Globe size={19} />
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                    gap: 8,
+                    marginBottom: 12,
+                  }}
+                >
+                  <div
+                    style={{
+                      background: C.surface,
+                      border: "1px solid " + C.border,
+                      borderRadius: 12,
+                      padding: 10,
+                    }}
+                  >
+                    <div style={{ fontSize: 10, color: C.t3, fontWeight: 900 }}>
+                      TOTAL
+                    </div>
+                    <div style={{ fontSize: 17, color: C.t1, fontWeight: 950 }}>
+                      {intBR(portal.total)}
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      background: C.surface,
+                      border: "1px solid " + C.border,
+                      borderRadius: 12,
+                      padding: 10,
+                    }}
+                  >
+                    <div style={{ fontSize: 10, color: C.t3, fontWeight: 900 }}>
+                      RISCO CONTRATO
+                    </div>
+                    <div
+                      style={{ fontSize: 14, color: C.amber, fontWeight: 950 }}
+                    >
+                      {moneyBR(portal.riscoContrato)}
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: C.t3,
+                    fontWeight: 950,
+                    marginBottom: 6,
+                  }}
+                >
+                  FUNIL OPERACIONAL
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                    gap: "0 14px",
+                    marginBottom: 12,
+                  }}
+                >
+                  {metricLine("BuscaCliente", intBR(portal.buscaCliente))}
+                  {metricLine("EnviaToken", intBR(portal.enviaToken))}
+                  {metricLine("ValidaToken", intBR(portal.validaToken), C.rose)}
+                  {metricLine("BuscaCredor", intBR(portal.buscaCredor))}
+                  {metricLine("BuscaDivida", intBR(portal.buscaDivida))}
+                  {metricLine("BuscaAcordo", intBR(portal.buscaAcordo))}
+                  {metricLine("Opção Pagto", intBR(portal.buscaOpcaoPagamento))}
+                  {metricLine(
+                    "Formalizar",
+                    intBR(portal.formalizarAcordo),
+                    C.emerald,
                   )}
                 </div>
 
                 <div
                   style={{
-                    fontSize: 13,
-                    fontWeight: 950,
-                    color: active ? C.blue : C.t1,
-                    marginBottom: 5,
-                  }}
-                >
-                  {portal.portal}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 26,
-                    fontWeight: 950,
-                    color: C.t1,
-                    marginTop: 8,
-                  }}
-                >
-                  {intBR(portal.formalizarAcordo)}
-                </div>
-
-                <div style={{ fontSize: 12, color: C.t2, marginTop: 3 }}>
-                  Acordos formalizados
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 10,
-                    flexWrap: "wrap",
-                    marginTop: 10,
                     fontSize: 11,
                     color: C.t3,
+                    fontWeight: 950,
+                    marginBottom: 6,
                   }}
                 >
-                  <span>Token: {pctPortal(portal.perdaToken * 100)}</span>
-                  <span>
-                    Tx. acordo:{" "}
-                    {pctPortal(portal.txFormalizarOpcaoPagamento * 100)}
-                  </span>
+                  PERCENTUAIS
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                    gap: 8,
+                    marginBottom: 12,
+                  }}
+                >
+                  <div
+                    style={{ background: C.bg2, borderRadius: 10, padding: 9 }}
+                  >
+                    <div style={{ fontSize: 10, color: C.t3 }}>
+                      Envio / Busca
+                    </div>
+                    <strong style={{ color: C.blue, fontSize: 13 }}>
+                      {pctPortal(portal.txEnviaTokenBuscaCliente * 100)}
+                    </strong>
+                  </div>
+
+                  <div
+                    style={{ background: C.bg2, borderRadius: 10, padding: 9 }}
+                  >
+                    <div style={{ fontSize: 10, color: C.t3 }}>
+                      Validação / Envio
+                    </div>
+                    <strong style={{ color: C.blue, fontSize: 13 }}>
+                      {pctPortal(portal.txValidaTokenEnviaToken * 100)}
+                    </strong>
+                  </div>
+
+                  <div
+                    style={{ background: C.bg2, borderRadius: 10, padding: 9 }}
+                  >
+                    <div style={{ fontSize: 10, color: C.t3 }}>Perda Token</div>
+                    <strong
+                      style={{
+                        color: portal.perdaToken >= 0.7 ? C.rose : C.amber,
+                        fontSize: 13,
+                      }}
+                    >
+                      {pctPortal(portal.perdaToken * 100)}
+                    </strong>
+                  </div>
+
+                  <div
+                    style={{ background: C.bg2, borderRadius: 10, padding: 9 }}
+                  >
+                    <div style={{ fontSize: 10, color: C.t3 }}>
+                      Formalizar / Opção
+                    </div>
+                    <strong style={{ color: C.emerald, fontSize: 13 }}>
+                      {pctPortal(portal.txFormalizarOpcaoPagamento * 100)}
+                    </strong>
+                  </div>
+
+                  <div
+                    style={{
+                      gridColumn: "1 / -1",
+                      background: C.bg2,
+                      borderRadius: 10,
+                      padding: 9,
+                    }}
+                  >
+                    <div style={{ fontSize: 10, color: C.t3 }}>
+                      Formalizações por 1.000 interações
+                    </div>
+                    <strong style={{ color: C.violet, fontSize: 13 }}>
+                      {Number(portal.formalizacoesPorMil || 0)
+                        .toFixed(4)
+                        .replace(".", ",")}
+                    </strong>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    background: statusBg,
+                    border: "1px solid " + statusColor + "33",
+                    borderRadius: 12,
+                    padding: 10,
+                    color: C.t2,
+                    fontSize: 11,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  <strong style={{ color: statusColor }}>Observação: </strong>
+                  {portal.observacao}
                 </div>
               </button>
             );
           })}
         </div>
+
+        {selectedPortalMonitoria !== "Todos" && (
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button
+              type="button"
+              onClick={() => setSelectedPortalMonitoria("Todos")}
+              style={{
+                border: "1px solid " + C.border,
+                background: C.surface,
+                color: C.blue,
+                borderRadius: 12,
+                padding: "9px 14px",
+                fontSize: 12,
+                fontWeight: 900,
+                cursor: "pointer",
+              }}
+            >
+              Ver funil consolidado geral
+            </button>
+          </div>
+        )}
 
         <div
           style={{
@@ -5192,7 +5394,7 @@ function PortaisView({ C }) {
               Funil{" "}
               {selectedPortalMonitoria === "Todos"
                 ? "Consolidado dos Portais"
-                : selectedPortalMonitoria}
+                : selectedPortalMonitoria.replace("Bellinati - ", "")}
             </div>
             <div style={{ fontSize: 12, color: C.t3, marginBottom: 18 }}>
               {selectedPortalMonitoria === "Todos"
@@ -5289,7 +5491,7 @@ function PortaisView({ C }) {
               Resultado da monitoria para{" "}
               {selectedPortalMonitoria === "Todos"
                 ? "todos os portais"
-                : selectedPortalMonitoria}
+                : selectedPortalMonitoria.replace("Bellinati - ", "")}
             </div>
 
             {[
