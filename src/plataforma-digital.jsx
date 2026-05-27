@@ -5049,18 +5049,6 @@ function PortaisView({ C }) {
   }
 
   function renderDashboard() {
-    const funil = [
-      ["BuscaCliente", consolidado.buscaCliente],
-      ["EnviaToken", consolidado.enviaToken],
-      ["ValidaToken", consolidado.validaToken],
-      ["BuscaCredor", consolidado.buscaCredor],
-      ["BuscaDivida", consolidado.buscaDivida],
-      ["BuscaAcordo", consolidado.buscaAcordo],
-      ["BuscaOpcaoPagamento", consolidado.buscaOpcaoPagamento],
-      ["FormalizarAcordo", consolidado.formalizarAcordo],
-    ];
-
-    const baseFunil = consolidado.buscaCliente || 1;
     const portalCards = portalOperacionais;
 
     const metricLine = (label, value, color = C.t1) => (
@@ -5092,18 +5080,17 @@ function PortaisView({ C }) {
         >
           {portalCards.map((portal) => {
             const active = selectedPortalMonitoria === portal.portal;
-
             const displayName = portal.portal.replace("Bellinati - ", "");
 
             const statusColor =
-              portal.classificacao === "Conversão intermediária"
+              portal.classificacao === "Convers?o intermedi?ria"
                 ? C.amber
                 : portal.classificacao === "Consolidado"
                   ? C.blue
                   : C.rose;
 
             const statusBg =
-              portal.classificacao === "Conversão intermediária"
+              portal.classificacao === "Convers?o intermedi?ria"
                 ? C.amberGlow
                 : portal.classificacao === "Consolidado"
                   ? C.blueGlow
@@ -5242,7 +5229,7 @@ function PortaisView({ C }) {
                   {metricLine("BuscaCredor", intBR(portal.buscaCredor))}
                   {metricLine("BuscaDivida", intBR(portal.buscaDivida))}
                   {metricLine("BuscaAcordo", intBR(portal.buscaAcordo))}
-                  {metricLine("Opção Pagto", intBR(portal.buscaOpcaoPagamento))}
+                  {metricLine("Op??o Pagto", intBR(portal.buscaOpcaoPagamento))}
                   {metricLine(
                     "Formalizar",
                     intBR(portal.formalizarAcordo),
@@ -5284,7 +5271,7 @@ function PortaisView({ C }) {
                     style={{ background: C.bg2, borderRadius: 10, padding: 9 }}
                   >
                     <div style={{ fontSize: 10, color: C.t3 }}>
-                      Validação / Envio
+                      Valida??o / Envio
                     </div>
                     <strong style={{ color: C.blue, fontSize: 13 }}>
                       {pctPortal(portal.txValidaTokenEnviaToken * 100)}
@@ -5309,7 +5296,7 @@ function PortaisView({ C }) {
                     style={{ background: C.bg2, borderRadius: 10, padding: 9 }}
                   >
                     <div style={{ fontSize: 10, color: C.t3 }}>
-                      Formalizar / Opção
+                      Formalizar / Op??o
                     </div>
                     <strong style={{ color: C.emerald, fontSize: 13 }}>
                       {pctPortal(portal.txFormalizarOpcaoPagamento * 100)}
@@ -5325,7 +5312,7 @@ function PortaisView({ C }) {
                     }}
                   >
                     <div style={{ fontSize: 10, color: C.t3 }}>
-                      Formalizações por 1.000 interações
+                      Formaliza??es por 1.000 intera??es
                     </div>
                     <strong style={{ color: C.violet, fontSize: 13 }}>
                       {Number(portal.formalizacoesPorMil || 0)
@@ -5346,211 +5333,12 @@ function PortaisView({ C }) {
                     lineHeight: 1.45,
                   }}
                 >
-                  <strong style={{ color: statusColor }}>Observação: </strong>
+                  <strong style={{ color: statusColor }}>Observa??o: </strong>
                   {portal.observacao}
                 </div>
               </button>
             );
           })}
-        </div>
-
-        {selectedPortalMonitoria !== "Todos" && (
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button
-              type="button"
-              onClick={() => setSelectedPortalMonitoria("Todos")}
-              style={{
-                border: "1px solid " + C.border,
-                background: C.surface,
-                color: C.blue,
-                borderRadius: 12,
-                padding: "9px 14px",
-                fontSize: 12,
-                fontWeight: 900,
-                cursor: "pointer",
-              }}
-            >
-              Ver funil consolidado geral
-            </button>
-          </div>
-        )}
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1.05fr 0.95fr",
-            gap: 16,
-          }}
-        >
-          <div style={{ ...card(C), padding: "22px 24px" }}>
-            <div
-              style={{
-                fontSize: 16,
-                fontWeight: 900,
-                color: C.t1,
-                marginBottom: 4,
-              }}
-            >
-              Funil{" "}
-              {selectedPortalMonitoria === "Todos"
-                ? "Consolidado dos Portais"
-                : selectedPortalMonitoria.replace("Bellinati - ", "")}
-            </div>
-            <div style={{ fontSize: 12, color: C.t3, marginBottom: 18 }}>
-              {selectedPortalMonitoria === "Todos"
-                ? "Soma de todos os portais com percentual sobre BuscaCliente"
-                : "Resultado individual do portal selecionado"}
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {funil.map(([label, value]) => {
-                const percentual =
-                  baseFunil > 0 ? (toNumPortal(value) / baseFunil) * 100 : 0;
-                const color =
-                  label === "FormalizarAcordo"
-                    ? C.emerald
-                    : label === "ValidaToken"
-                      ? C.rose
-                      : label === "EnviaToken"
-                        ? C.amber
-                        : C.blue;
-
-                return (
-                  <div key={label}>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 110px 90px",
-                        gap: 12,
-                        alignItems: "center",
-                        marginBottom: 6,
-                      }}
-                    >
-                      <span
-                        style={{ fontSize: 12, color: C.t2, fontWeight: 900 }}
-                      >
-                        {label}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: C.t1,
-                          fontWeight: 900,
-                          textAlign: "right",
-                        }}
-                      >
-                        {intBR(value)}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color,
-                          fontWeight: 900,
-                          textAlign: "right",
-                        }}
-                      >
-                        {pctPortal(percentual)}
-                      </span>
-                    </div>
-
-                    <div
-                      style={{
-                        height: 6,
-                        background: C.bg3,
-                        borderRadius: 999,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: Math.max(0, Math.min(100, percentual)) + "%",
-                          height: "100%",
-                          background: color,
-                          borderRadius: 999,
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div style={{ ...card(C), padding: "22px 24px" }}>
-            <div
-              style={{
-                fontSize: 16,
-                fontWeight: 900,
-                color: C.t1,
-                marginBottom: 4,
-              }}
-            >
-              Leitura Executiva
-            </div>
-            <div style={{ fontSize: 12, color: C.t3, marginBottom: 16 }}>
-              Resultado da monitoria para{" "}
-              {selectedPortalMonitoria === "Todos"
-                ? "todos os portais"
-                : selectedPortalMonitoria.replace("Bellinati - ", "")}
-            </div>
-
-            {[
-              {
-                title: "Token é o maior gargalo",
-                desc:
-                  "A perda de token está em " +
-                  pctPortal(consolidado.perdaToken * 100) +
-                  ". Priorizar análise entre EnviaToken e ValidaToken.",
-                color: C.rose,
-                bg: C.roseGlow,
-              },
-              {
-                title: "Conversão final",
-                desc:
-                  "A taxa de formalização sobre opção de pagamento está em " +
-                  pctPortal(consolidado.txFormalizarOpcaoPagamento * 100) +
-                  ". Acompanhar experiência no fechamento do acordo.",
-                color: C.amber,
-                bg: C.amberGlow,
-              },
-              {
-                title: "Risco financeiro",
-                desc:
-                  "O risco de contrato monitorado é " +
-                  moneyBR(consolidado.riscoContrato) +
-                  ". Portais com maior risco devem ter prioridade.",
-                color: C.blue,
-                bg: C.blueGlow,
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                style={{
-                  background: item.bg,
-                  border: "1px solid " + item.color + "44",
-                  borderRadius: 14,
-                  padding: "13px 14px",
-                  marginBottom: 10,
-                }}
-              >
-                <div
-                  style={{ fontSize: 13, color: item.color, fontWeight: 950 }}
-                >
-                  {item.title}
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: C.t2,
-                    marginTop: 5,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {item.desc}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </>
     );
