@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   useState,
   useEffect,
   useContext,
@@ -28,6 +28,7 @@ import {
 import { supabase } from "./lib/supabase";
 import ScrumProjectRegister from "./ScrumProjectRegister";
 import PocRegister from "./PocRegister";
+import PortalDashboard from "./components/PortalDashboard";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -69,7 +70,7 @@ import {
   Eye,
 } from "lucide-react";
 
-// ─── THEME CONTEXT ────────────────────────────────────────────────────────────
+// ---
 const ThemeCtx = createContext({ dark: true, toggle: () => {} });
 const useTheme = () => useContext(ThemeCtx);
 
@@ -142,7 +143,7 @@ const getC = (dark) =>
         scrollbar: "#E8EDF8",
       };
 
-// ─── DATA ──────────────────────────────────────────────────────────────────────
+// ---
 const roiData = [
   { m: "Jan", roi: 12, meta: 10 },
   { m: "Fev", roi: 19, meta: 12 },
@@ -412,7 +413,7 @@ const activities = [
   },
 ];
 
-// ─── POC DATA ─────────────────────────────────────────────────────────────────
+// ---
 const pocs = [
   {
     id: "POC-001",
@@ -556,13 +557,13 @@ const pocRoiData = pocs
   }));
 const pocPerfData = pocs.map((p) => ({
   name: p.supplier.split(" ")[0],
-  Técnico: p.tecnico,
+  Tecnico: p.tecnico,
   Funcional: p.funcional,
   Financeiro: p.financeiro,
-  Estratégico: p.estrategico,
+  Estrategico: p.estrategico,
 }));
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
+// ---
 const scoreColor = (s, C) => (s >= 90 ? C.emerald : s >= 70 ? C.amber : C.rose);
 const pocStatusConf = (C) => ({
   Aprovado: { color: C.emerald, bg: C.emeraldGlow },
@@ -572,19 +573,19 @@ const pocStatusConf = (C) => ({
 });
 const projStatusConf = (C) => ({
   "Em Andamento": { color: C.blue, bg: C.blueGlow },
-  Concluído: { color: C.emerald, bg: C.emeraldGlow },
+  "Concluído": { color: C.emerald, bg: C.emeraldGlow },
   Planejamento: { color: C.violet, bg: C.violetGlow },
   Ativo: { color: C.emerald, bg: C.emeraldGlow },
   Pausado: { color: C.amber, bg: C.amberGlow },
 });
 const priConf = (C) => ({
-  Crítica: { c: C.rose, b: C.roseGlow },
+  "Crítica": { c: C.rose, b: C.roseGlow },
   Alta: { c: C.amber, b: C.amberGlow },
-  Média: { c: C.blue, b: C.blueGlow },
+  "Média": { c: C.blue, b: C.blueGlow },
   Baixa: { c: C.t3, b: C.card },
 });
 
-// ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
+// ---
 const Chip = ({ label, color, bg, border }) => (
   <span
     style={{
@@ -896,7 +897,7 @@ const inputStyle = (C) => ({
   fontSize: 13,
   outline: "none",
 });
-// ─── VIEWS ────────────────────────────────────────────────────────────────────
+// ---
 function Dashboard({ C }) {
   const [loading, setLoading] = useState(false);
   const [projetos, setProjetos] = useState([]);
@@ -1951,9 +1952,9 @@ function ProjectsView({ C }) {
   function calcularProgressoPorEtapa(etapa) {
     const etapas = {
       Backlog: 10,
-      Início: 10,
+      "Inicio": 10,
       Planejamento: 30,
-      Execução: 60,
+      "Execucao": 60,
       Monitoramento: 85,
       Encerramento: 100,
     };
@@ -2505,7 +2506,7 @@ function ProjectsView({ C }) {
                             gap: 5,
                           }}
                         >
-                          <span>{subtarefaAberta ? "⌃" : "⌄"}</span>
+                          <span>{subtarefaAberta ? "-" : "+"}</span>
                           {subtarefaAberta
                             ? "Ocultar subtarefa"
                             : "Ver subtarefa"}
@@ -2599,7 +2600,7 @@ function ProjectsView({ C }) {
                               gap: 7,
                             }}
                           >
-                            <span style={{ fontSize: 14 }}>↳</span>
+                            <span style={{ fontSize: 14 }}>{">"}</span>
                             Última tarefa atualizada no Scrum
                           </div>
 
@@ -3850,7 +3851,7 @@ function SuppliersView({ C }) {
                           cursor: "pointer",
                         }}
                       >
-                        {active ? "✓ " : ""}
+                        {active ? "* " : ""}
                         {canal}
                       </button>
                     );
@@ -5049,299 +5050,7 @@ function PortaisView({ C }) {
   }
 
   function renderDashboard() {
-    const portalCards = portalOperacionais;
-
-    const metricLine = (label, value, color = C.t1) => (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
-          fontSize: 11,
-          color: C.t2,
-          padding: "5px 0",
-          borderBottom: "1px solid " + C.border,
-        }}
-      >
-        <span>{label}</span>
-        <strong style={{ color, fontSize: 11 }}>{value}</strong>
-      </div>
-    );
-
-    return (
-      <>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
-            gap: 14,
-          }}
-        >
-          {portalCards.map((portal) => {
-            const active = selectedPortalMonitoria === portal.portal;
-            const displayName = portal.portal.replace("Bellinati - ", "");
-
-            const statusColor =
-              portal.classificacao === "Convers?o intermedi?ria"
-                ? C.amber
-                : portal.classificacao === "Consolidado"
-                  ? C.blue
-                  : C.rose;
-
-            const statusBg =
-              portal.classificacao === "Convers?o intermedi?ria"
-                ? C.amberGlow
-                : portal.classificacao === "Consolidado"
-                  ? C.blueGlow
-                  : C.roseGlow;
-
-            return (
-              <button
-                key={portal.portal}
-                type="button"
-                onClick={() => setSelectedPortalMonitoria(portal.portal)}
-                style={{
-                  ...card(C),
-                  textAlign: "left",
-                  padding: "20px 22px",
-                  minHeight: 390,
-                  border: "1px solid " + (active ? C.blue : C.border),
-                  background: active ? C.blueGlow : C.card,
-                  cursor: "pointer",
-                  boxShadow: active ? "0 0 0 2px " + C.blue + "22" : "none",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 12,
-                    alignItems: "flex-start",
-                    marginBottom: 14,
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 15,
-                        fontWeight: 950,
-                        color: active ? C.blue : C.t1,
-                        marginBottom: 5,
-                      }}
-                    >
-                      {displayName}
-                    </div>
-
-                    <Chip
-                      label={portal.classificacao}
-                      color={statusColor}
-                      bg={statusBg}
-                    />
-                  </div>
-
-                  <div
-                    style={{
-                      width: 42,
-                      height: 42,
-                      borderRadius: 14,
-                      display: "grid",
-                      placeItems: "center",
-                      color: statusColor,
-                      background: statusBg,
-                      border: "1px solid " + statusColor + "33",
-                      flex: "0 0 auto",
-                    }}
-                  >
-                    {portal.perdaToken >= 0.7 ? (
-                      <AlertTriangle size={19} />
-                    ) : (
-                      <Globe size={19} />
-                    )}
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                    gap: 8,
-                    marginBottom: 12,
-                  }}
-                >
-                  <div
-                    style={{
-                      background: C.surface,
-                      border: "1px solid " + C.border,
-                      borderRadius: 12,
-                      padding: 10,
-                    }}
-                  >
-                    <div style={{ fontSize: 10, color: C.t3, fontWeight: 900 }}>
-                      TOTAL
-                    </div>
-                    <div style={{ fontSize: 17, color: C.t1, fontWeight: 950 }}>
-                      {intBR(portal.total)}
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      background: C.surface,
-                      border: "1px solid " + C.border,
-                      borderRadius: 12,
-                      padding: 10,
-                    }}
-                  >
-                    <div style={{ fontSize: 10, color: C.t3, fontWeight: 900 }}>
-                      RISCO CONTRATO
-                    </div>
-                    <div
-                      style={{ fontSize: 14, color: C.amber, fontWeight: 950 }}
-                    >
-                      {moneyBR(portal.riscoContrato)}
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: C.t3,
-                    fontWeight: 950,
-                    marginBottom: 6,
-                  }}
-                >
-                  FUNIL OPERACIONAL
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                    gap: "0 14px",
-                    marginBottom: 12,
-                  }}
-                >
-                  {metricLine("BuscaCliente", intBR(portal.buscaCliente))}
-                  {metricLine("EnviaToken", intBR(portal.enviaToken))}
-                  {metricLine("ValidaToken", intBR(portal.validaToken), C.rose)}
-                  {metricLine("BuscaCredor", intBR(portal.buscaCredor))}
-                  {metricLine("BuscaDivida", intBR(portal.buscaDivida))}
-                  {metricLine("BuscaAcordo", intBR(portal.buscaAcordo))}
-                  {metricLine("Op??o Pagto", intBR(portal.buscaOpcaoPagamento))}
-                  {metricLine(
-                    "Formalizar",
-                    intBR(portal.formalizarAcordo),
-                    C.emerald,
-                  )}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: C.t3,
-                    fontWeight: 950,
-                    marginBottom: 6,
-                  }}
-                >
-                  PERCENTUAIS
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                    gap: 8,
-                    marginBottom: 12,
-                  }}
-                >
-                  <div
-                    style={{ background: C.bg2, borderRadius: 10, padding: 9 }}
-                  >
-                    <div style={{ fontSize: 10, color: C.t3 }}>
-                      Envio / Busca
-                    </div>
-                    <strong style={{ color: C.blue, fontSize: 13 }}>
-                      {pctPortal(portal.txEnviaTokenBuscaCliente * 100)}
-                    </strong>
-                  </div>
-
-                  <div
-                    style={{ background: C.bg2, borderRadius: 10, padding: 9 }}
-                  >
-                    <div style={{ fontSize: 10, color: C.t3 }}>
-                      Valida??o / Envio
-                    </div>
-                    <strong style={{ color: C.blue, fontSize: 13 }}>
-                      {pctPortal(portal.txValidaTokenEnviaToken * 100)}
-                    </strong>
-                  </div>
-
-                  <div
-                    style={{ background: C.bg2, borderRadius: 10, padding: 9 }}
-                  >
-                    <div style={{ fontSize: 10, color: C.t3 }}>Perda Token</div>
-                    <strong
-                      style={{
-                        color: portal.perdaToken >= 0.7 ? C.rose : C.amber,
-                        fontSize: 13,
-                      }}
-                    >
-                      {pctPortal(portal.perdaToken * 100)}
-                    </strong>
-                  </div>
-
-                  <div
-                    style={{ background: C.bg2, borderRadius: 10, padding: 9 }}
-                  >
-                    <div style={{ fontSize: 10, color: C.t3 }}>
-                      Formalizar / Op??o
-                    </div>
-                    <strong style={{ color: C.emerald, fontSize: 13 }}>
-                      {pctPortal(portal.txFormalizarOpcaoPagamento * 100)}
-                    </strong>
-                  </div>
-
-                  <div
-                    style={{
-                      gridColumn: "1 / -1",
-                      background: C.bg2,
-                      borderRadius: 10,
-                      padding: 9,
-                    }}
-                  >
-                    <div style={{ fontSize: 10, color: C.t3 }}>
-                      Formaliza??es por 1.000 intera??es
-                    </div>
-                    <strong style={{ color: C.violet, fontSize: 13 }}>
-                      {Number(portal.formalizacoesPorMil || 0)
-                        .toFixed(4)
-                        .replace(".", ",")}
-                    </strong>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    background: statusBg,
-                    border: "1px solid " + statusColor + "33",
-                    borderRadius: 12,
-                    padding: 10,
-                    color: C.t2,
-                    fontSize: 11,
-                    lineHeight: 1.45,
-                  }}
-                >
-                  <strong style={{ color: statusColor }}>Observa??o: </strong>
-                  {portal.observacao}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </>
-    );
+    return <PortalDashboard />;
   }
 
   function renderTestes() {
@@ -7092,7 +6801,7 @@ function IndicatorsView({ C }) {
   );
 }
 
-// ─── POC VIEW ─────────────────────────────────────────────────────────────────
+// ---
 function PocView({ C }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -7331,7 +7040,7 @@ function PocView({ C }) {
                       color: item.color,
                     }}
                   >
-                    Iniciar POC →
+                    Iniciar POC
                   </div>
                 </button>
               ))}
@@ -7593,7 +7302,7 @@ function PocView({ C }) {
   );
 }
 
-// ─── SIDEBAR ──────────────────────────────────────────────────────────────────
+// ---
 const navItems = [
   { id: "indicators", label: "Control Tower", icon: BarChart3 },
   { id: "projects", label: "Projetos", icon: FolderKanban },
@@ -7791,7 +7500,7 @@ function Sidebar({ active, setActive, C }) {
   );
 }
 
-// ─── TOPBAR ───────────────────────────────────────────────────────────────────
+// ---
 function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
   const now = new Date().toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -8207,7 +7916,7 @@ function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
   );
 }
 
-// ─── LOGIN DEMO ───────────────────────────────────────────────────────────────
+// ---
 function LoginScreen({ C, dark, toggleTheme, onLogin }) {
   const [email, setEmail] = useState("teste@digital.com.br");
   const [password, setPassword] = useState("");
@@ -8554,7 +8263,7 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
   );
 }
 
-// ─── APP ─────────────────────────────────────────────────────────────────────
+// ---
 export default function App() {
   useEffect(() => {
     async function testarConexao() {
@@ -8670,3 +8379,13 @@ export default function App() {
     </ThemeCtx.Provider>
   );
 }
+
+
+
+
+
+
+
+
+
+
