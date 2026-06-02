@@ -25,10 +25,10 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { supabase } from "./lib/supabase";
-import ScrumProjectRegister from "./ScrumProjectRegister";
-import PocRegister from "./PocRegister";
-import PortalDashboard from "./components/PortalDashboard";
+import { supabase } from "./settings";
+import ScrumProjectRegister from "../features/scrum";
+import PocRegister from "../features/pocs";
+import PortalDashboard from "../features/portals";
 import {
   LayoutDashboard,
   FolderKanban,

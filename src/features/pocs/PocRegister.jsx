@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
-import { supabase } from "./lib/supabase";
+import { supabase } from "../../app/settings";
 const emptyPoc = {
   general: {
     pocName: "",

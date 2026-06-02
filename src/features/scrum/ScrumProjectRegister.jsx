@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { supabase } from "./lib/supabase";
+import { supabase } from "../../app/settings";
 
 // ============================================================
 // THEME & CONSTANTS
