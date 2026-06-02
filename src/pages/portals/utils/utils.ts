@@ -1,4 +1,4 @@
-﻿import type { AlertLevel, ConversionStatus, FunnelStep } from './types';
+﻿import type { AlertLevel, ConversionStatus, FunnelStep } from '../types/types';
 
 export const STEPS = ['BuscaCliente', 'EnviaToken', 'ValidaToken', 'BuscaDivida', 'BuscaAcordo', 'Formalizar'] as const;
 
@@ -57,4 +57,5 @@ export function scoreColor(score: number): string {
   if (score < 70) return '#EF9F27';
   return '#639922';
 }
+
 

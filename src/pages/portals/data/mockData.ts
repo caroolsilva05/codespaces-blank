@@ -1,4 +1,4 @@
-﻿import type { Portal } from './types';
+﻿import type { Portal } from '../types/types';
 
 export const portais: Portal[] = [
   {
@@ -9,7 +9,7 @@ export const portais: Portal[] = [
     totalInteracoes: 28857706,
     riscoContrato: 5481244639918,
     alertLevel: 'critico',
-    observacao: 'Gargalo crítico em ValidaToken (+18% vs ontem)',
+    observacao: 'Gargalo crítico em Valida Token (+18% vs ontem)',
     funil: [
       { nome: 'BuscaCliente', volume: 150217, percentual: 100 },
       { nome: 'EnviaToken', volume: 20817, percentual: 13.9 },
@@ -47,7 +47,7 @@ export const portais: Portal[] = [
     totalInteracoes: 9956781,
     riscoContrato: 3413055498,
     alertLevel: 'critico',
-    observacao: 'ValidaToken com 100% de falha - checar logs',
+    observacao: 'Valida Token com 100% de falha - checar logs',
     funil: [
       { nome: 'BuscaCliente', volume: 99, percentual: 100 },
       { nome: 'EnviaToken', volume: 0, percentual: 0 },
@@ -78,4 +78,5 @@ export const portais: Portal[] = [
     percentuais: { envioBusca: 81, validacaoEnvio: 27.6, perdaToken: 72.4, formalizarOpcao: 0, formalizacoesPorMil: 0 },
   },
 ];
+
 

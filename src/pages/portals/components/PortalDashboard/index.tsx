@@ -1,8 +1,7 @@
-﻿import React, { useMemo, useState } from 'react';
-import { ShieldX } from 'lucide-react';
-import styles from './PortalDashboard.module.css';
-import { portais as initialPortais } from './mockData';
-import type { FunnelStep, Portal } from './types';
+import React, { useMemo, useState } from 'react';
+import styles from '../../styles/PortalDashboard.module.css';
+import { portais as initialPortais } from '../../data/mockData';
+import type { FunnelStep, Portal } from '../../types/types';
 import {
   actionLabel,
   formatCompactNumber,
@@ -13,7 +12,7 @@ import {
   riskBadge,
   scoreColor,
   statusLabel,
-} from './utils';
+} from '../../utils/utils';
 
 type SortKey =
   | 'nome'
@@ -52,7 +51,6 @@ function stepCell(step: FunnelStep | undefined, labelPrefix: string, isValida = 
       >
         <span className={styles.heatMain}>{formatCompactNumber(step.volume)}</span>
         <span className={styles.heatSub}>{isValida ? `Perda ${formatPercent(perda ?? 0)}` : formatPercent(step.percentual)}</span>
-        {isValida && step.perdaToken ? <ShieldX size={13} aria-hidden="true" /> : null}
         {isValida && deltaText ? <span className={styles.delta}>Delta {deltaText}</span> : null}
       </div>
     ),
@@ -148,7 +146,7 @@ export default function PortalDashboard() {
 
       <div className={styles.kpis}>
         <div className={styles.kpi}><div className={styles.kpiLabel}>Total de interações</div><div className={styles.kpiValue}>{formatCompactNumber(totalInteracoes)}</div></div>
-        <div className={styles.kpi}><div className={styles.kpiLabel}>Erros ValidaToken</div><div className={styles.kpiValue}>{errosValidaToken}</div></div>
+        <div className={styles.kpi}><div className={styles.kpiLabel}>Erros Valida Token</div><div className={styles.kpiValue}>{errosValidaToken}</div></div>
         <div className={styles.kpi}><div className={styles.kpiLabel}>Formalizações</div><div className={styles.kpiValue}>{formatCompactNumber(formalizacoes)}</div></div>
         <div className={styles.kpi}><div className={styles.kpiLabel}>Risco total</div><div className={styles.kpiValue}>{formatRisk(riscoTotal)}</div></div>
       </div>
@@ -166,11 +164,11 @@ export default function PortalDashboard() {
           <thead>
             <tr>
               <th className={styles.thSortable} onClick={() => onSort('nome')}>Portal</th>
-              <th>BuscaCliente</th>
-              <th className={styles.thSortable} onClick={() => onSort('enviaToken')}>EnviaToken</th>
-              <th className={`${styles.thValida} ${styles.thSortable}`} onClick={() => onSort('validaToken')}>ValidaToken</th>
-              <th>BuscaDívida</th>
-              <th>BuscaAcordo</th>
+              <th>Busca Cliente</th>
+              <th className={styles.thSortable} onClick={() => onSort('enviaToken')}>Envia Token</th>
+              <th className={`${styles.thValida} ${styles.thSortable}`} onClick={() => onSort('validaToken')}>Valida Token</th>
+              <th>Busca Dívida</th>
+              <th>Busca Acordo</th>
               <th className={styles.thSortable} onClick={() => onSort('formalizar')}>Formalizar</th>
               <th className={styles.thSortable} onClick={() => onSort('healthScore')}>Score</th>
               <th className={styles.thSortable} onClick={() => onSort('riscoContrato')}>Risco contrato</th>
@@ -189,10 +187,10 @@ export default function PortalDashboard() {
               const scoreStroke = scoreColor(portal.healthScore);
               const dashOffset = CIRC * (1 - portal.healthScore / 100);
 
-              const enviaCell = stepCell(envia, 'EnviaToken');
-              const validaCell = stepCell(valida, 'ValidaToken', true);
-              const dividaCell = stepCell(divida, 'BuscaDívida');
-              const acordoCell = stepCell(acordo, 'BuscaAcordo');
+              const enviaCell = stepCell(envia, 'Envia Token');
+              const validaCell = stepCell(valida, 'Valida Token', true);
+              const dividaCell = stepCell(divida, 'Busca Dívida');
+              const acordoCell = stepCell(acordo, 'Busca Acordo');
               const formalizarCell = stepCell(formalizar, 'Formalizar');
 
               return (
