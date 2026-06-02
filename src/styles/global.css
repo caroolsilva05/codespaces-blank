@@ -9,6 +9,7 @@ html {
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: hidden;
 }
 
 button,
@@ -16,4 +17,201 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+table {
+  max-width: 100%;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.login-page {
+  width: 100%;
+}
+
+.app-main {
+  min-width: 0;
+}
+
+.app-main table {
+  min-width: max-content;
+}
+
+.app-main > * {
+  min-width: 0;
+}
+
+@media (max-width: 1280px) {
+  .app-main {
+    padding: 20px !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .login-panel {
+    max-width: 720px !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .login-panel > div:first-child,
+  .login-panel > form {
+    min-height: auto !important;
+  }
+
+  .app-shell {
+    flex-direction: column !important;
+  }
+
+  .app-sidebar {
+    width: 100% !important;
+    height: auto !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 30 !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18) !important;
+  }
+
+  .app-sidebar nav {
+    display: flex !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    padding: 10px !important;
+    scrollbar-width: thin;
+  }
+
+  .app-sidebar nav > div {
+    display: none !important;
+  }
+
+  .app-sidebar nav button {
+    width: auto !important;
+    min-width: max-content !important;
+    margin-bottom: 0 !important;
+    border-left: none !important;
+    border-bottom: 2px solid transparent !important;
+  }
+
+  .app-sidebar > div:first-child,
+  .app-sidebar > div:last-child {
+    display: none !important;
+  }
+
+  .app-content {
+    width: 100% !important;
+  }
+
+  .app-topbar {
+    top: 48px !important;
+    height: auto !important;
+    min-height: 58px !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    padding: 12px 18px !important;
+  }
+
+  .app-main {
+    padding: 18px !important;
+  }
+
+  .app-main [style*="grid-template-columns"] {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .login-page {
+    place-items: start center !important;
+    padding: 16px !important;
+  }
+
+  .login-panel {
+    gap: 14px !important;
+  }
+
+  .login-panel > div:first-child,
+  .login-panel > form {
+    padding: 22px !important;
+    border-radius: 18px !important;
+  }
+
+  .login-panel [style*="font-size: 34"] {
+    font-size: 26px !important;
+    letter-spacing: 0 !important;
+  }
+
+  .app-topbar {
+    top: 47px !important;
+    align-items: flex-start !important;
+  }
+
+  .app-topbar > div {
+    flex-wrap: wrap !important;
+  }
+
+  .app-main {
+    padding: 14px !important;
+  }
+
+  .app-main [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .app-main [style*="display: grid"] {
+    max-width: 100% !important;
+  }
+
+  .app-main [style*="overflowX"],
+  .app-main [style*="overflow-x"] {
+    max-width: 100% !important;
+  }
+
+  .app-main table {
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .login-panel > div:first-child {
+    display: none !important;
+  }
+
+  .login-panel > form {
+    width: 100% !important;
+  }
+
+  .app-sidebar nav {
+    padding: 8px !important;
+  }
+
+  .app-sidebar nav button {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .app-topbar {
+    position: relative !important;
+    top: auto !important;
+  }
+
+  .app-topbar [style*="border-radius: 999"] {
+    max-width: 100% !important;
+  }
+
+  .app-main {
+    padding: 10px !important;
+  }
+
+  button {
+    min-height: 36px;
+  }
 }

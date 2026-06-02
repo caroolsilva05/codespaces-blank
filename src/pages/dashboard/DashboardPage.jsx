@@ -7315,6 +7315,7 @@ const navItems = [
 function Sidebar({ active, setActive, C }) {
   return (
     <div
+      className="app-sidebar"
       style={{
         width: C.sidebarW,
         flexShrink: 0,
@@ -7542,6 +7543,7 @@ function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
 
   return (
     <div
+      className="app-topbar"
       style={{
         height: 54,
         display: "flex",
@@ -7961,6 +7963,7 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
 
   return (
     <div
+      className="login-page"
       style={{
         minHeight: "100vh",
         background: `radial-gradient(circle at top left, ${C.blueGlow}, transparent 34%), radial-gradient(circle at bottom right, ${C.violetGlow}, transparent 34%), ${C.bg0}`,
@@ -7972,6 +7975,7 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
       }}
     >
       <div
+        className="login-panel"
         style={{
           width: "100%",
           maxWidth: 980,
@@ -8345,6 +8349,7 @@ export default function DashboardPage() {
   return (
     <ThemeCtx.Provider value={{ dark, toggle: toggleTheme }}>
       <div
+        className="app-shell"
         style={{
           display: "flex",
           background: C.bg0,
@@ -8356,6 +8361,7 @@ export default function DashboardPage() {
       >
         <Sidebar active={active} setActive={setActive} C={C} />
         <div
+          className="app-content"
           style={{
             flex: 1,
             display: "flex",
@@ -8371,7 +8377,7 @@ export default function DashboardPage() {
             userEmail={authEmail}
             onLogout={handleLogout}
           />
-          <main style={{ flex: 1, padding: 26, overflowY: "auto" }}>
+          <main className="app-main" style={{ flex: 1, padding: 26, overflowY: "auto" }}>
             <View C={C} />
           </main>
         </div>
