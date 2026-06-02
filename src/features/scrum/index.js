@@ -1,1 +1,1 @@
-export { default } from "./ScrumProjectRegister";
+export { default } from "./pages/ScrumProjectRegisterPage";
