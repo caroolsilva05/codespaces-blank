@@ -1,1 +1,1 @@
-export { default } from "./PocRegister";
+export { default } from "./pages/PocRegisterPage";
