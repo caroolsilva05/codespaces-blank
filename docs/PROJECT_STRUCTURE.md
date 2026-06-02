@@ -1,147 +1,168 @@
 # Estrutura do Projeto
 
-Este projeto esta organizado por responsabilidade. A ideia e facilitar onde mexer sem misturar configuracao, entrada da aplicacao e telas de negocio.
+Este projeto segue uma estrutura por responsabilidade, inspirada em projetos React profissionais. A regra geral e: pagina monta fluxo, componente renderiza UI, service fala com APIs/banco, utils calculam/formatam, styles guardam CSS.
 
-## Raiz
-
-```txt
-.
-  index.html
-  package.json
-  package-lock.json
-  vercel.json
-  .env.example
-  .gitignore
-  README.md
-  docs/
-  src/
-```
-
-- `index.html`: HTML base usado pelo Vite.
-- `package.json`: scripts e dependencias do projeto.
-- `vercel.json`: configuracao de deploy na Vercel.
-- `.env.example`: modelo das variaveis de ambiente. Nao colocar dados reais aqui.
-- `.gitignore`: lista arquivos e pastas que nao devem subir para o GitHub.
-- `docs/`: documentacao tecnica do projeto.
-- `src/`: codigo da aplicacao.
-
-## src/main.jsx
-
-Ponto de entrada do React. Normalmente quase nunca precisa mexer aqui.
-
-Use este arquivo apenas quando precisar alterar como a aplicacao e inicializada no navegador.
-
-## src/app
-
-Camada principal da aplicacao.
+## Arvore Principal
 
 ```txt
-src/app/
-  App.jsx
-  settings/
+src/
+  main.jsx
+  app/
+    App.jsx
+  assets/
+  components/
+  config/
+    env.js
+  database/
+    README.md
+  features/
+    pocs/
+    scrum/
+    portals/
+  layouts/
+  pages/
+    dashboard/
+    portals/
+  services/
+    supabase/
+  styles/
+    global.css
 ```
 
-- `App.jsx`: componente raiz. Controla tema, login demonstrativo, menu lateral, topbar e escolha da tela ativa.
-- `settings/`: configuracoes compartilhadas da aplicacao.
+## Camadas
 
-Quando alterar navegacao, tela inicial, login, tema global ou layout principal, comece por `src/app/App.jsx`.
+- `app/`: inicializacao da aplicacao React. O `App.jsx` deve ficar pequeno e delegar telas para `pages/`.
+- `pages/`: telas completas e fluxos de tela.
+- `layouts/`: estruturas reutilizaveis de pagina, como sidebar/topbar/shell, quando forem extraidas.
+- `components/`: componentes compartilhados entre varias areas.
+- `features/`: modulos de negocio com seus proprios `pages`, `components`, `services`, `utils`, `data` e `styles`.
+- `services/`: clientes e integracoes externas compartilhadas.
+- `config/`: leitura e normalizacao de configuracoes de ambiente.
+- `styles/`: CSS global. CSS especifico de tela/modulo deve ficar perto do modulo.
+- `assets/`: imagens, icones, fontes e arquivos estaticos.
+- `database/`: scripts SQL, migrations, seeds ou documentacao de banco.
 
-## src/app/settings
-
-```txt
-src/app/settings/
-  index.js
-  supabase.js
-```
-
-- `supabase.js`: cria o client do Supabase usando `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
-- `index.js`: arquivo de exportacao para imports mais limpos.
-
-Quando alterar configuracao de banco, autenticação externa ou variaveis de ambiente, comece por esta pasta.
-
-## src/features
-
-Cada funcionalidade grande fica isolada em sua propria pasta.
-
-```txt
-src/features/
-  pocs/
-  scrum/
-  portals/
-```
-
-### POCs
+## POCs
 
 ```txt
 src/features/pocs/
+  data/
+    emptyPoc.js
+  pages/
+    PocRegisterPage.jsx
+  services/
+    pocRecordService.js
+  utils/
+    pocUtils.js
+  components/
+  styles/
   index.js
-  PocRegister.jsx
 ```
 
-Use esta pasta para alterar formulario, regras, calculos e salvamento de POCs.
+- `PocRegisterPage.jsx`: tela principal da POC.
+- `emptyPoc.js`: estrutura inicial de uma POC.
+- `pocRecordService.js`: persistencia da POC no Supabase.
+- `pocUtils.js`: calculos, formatadores e helpers.
 
-### Scrum
+## Scrum
 
 ```txt
 src/features/scrum/
+  components/
+    ScrumFormComponents.jsx
+  data/
+    initialScrumProject.js
+  pages/
+    ScrumProjectRegisterPage.jsx
+  services/
+    scrumProjectService.js
+  styles/
+    scrumTheme.js
+  utils/
   index.js
-  ScrumProjectRegister.jsx
 ```
 
-Use esta pasta para alterar cadastro de projetos Scrum, fases, indicadores, custos, encerramento e fluxo de acompanhamento.
+- `ScrumProjectRegisterPage.jsx`: tela principal do registro Scrum.
+- `ScrumFormComponents.jsx`: componentes menores do formulario.
+- `initialScrumProject.js`: dados iniciais.
+- `scrumProjectService.js`: persistencia no Supabase.
+- `scrumTheme.js`: tokens visuais usados pela tela.
 
-### Portais
+## Portais
 
 ```txt
-src/features/portals/
-  index.ts
-  PortalDashboard/
-    index.tsx
+src/pages/portals/
+  components/
+    PortalDashboard/
+      index.tsx
+  data/
     mockData.ts
-    types.ts
-    utils.ts
+  styles/
     PortalDashboard.module.css
+  types/
+    types.ts
+  utils/
+    utils.ts
+  index.ts
 ```
 
-- `index.tsx`: tela principal do dashboard de portais.
-- `mockData.ts`: dados simulados.
-- `types.ts`: tipos usados pelo dashboard.
-- `utils.ts`: funcoes auxiliares de formatacao, score, risco e funil.
-- `PortalDashboard.module.css`: estilos da tela de portais.
+Este modulo ja separa CSS, dados, tipos e helpers da tela.
 
-Use esta pasta para alterar monitoria, cards, tabela, funil e visual dos portais.
-
-## Onde mexer por tipo de alteracao
+## Supabase
 
 ```txt
-Alterar menu, login, tema ou layout geral:
+src/config/env.js
+src/services/supabase/client.js
+src/services/supabase/index.js
+```
+
+Use `.env` ou `.env.local` para dados reais:
+
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-publica
+```
+
+O `.env.example` deve continuar apenas como modelo.
+
+## Onde Alterar
+
+```txt
+Inicializacao do app:
   src/app/App.jsx
 
-Alterar URL/chave do Supabase:
-  .env
-  src/app/settings/supabase.js
+Variaveis de ambiente:
+  src/config/env.js
 
-Alterar tela de POC:
-  src/features/pocs/PocRegister.jsx
+Cliente Supabase:
+  src/services/supabase/client.js
 
-Alterar tela Scrum:
-  src/features/scrum/ScrumProjectRegister.jsx
+Dashboard principal, login, menu e layout atual:
+  src/pages/dashboard/DashboardPage.jsx
 
-Alterar dashboard de portais:
-  src/features/portals/PortalDashboard/
+POCs:
+  src/features/pocs/
 
-Alterar dependencias ou scripts:
-  package.json
+Scrum:
+  src/features/scrum/
 
-Alterar deploy:
-  vercel.json
+Portais:
+  src/pages/portals/
+
+CSS global:
+  src/styles/global.css
+
+Scripts de banco:
+  src/database/
 ```
 
-## Regras de organizacao
+## Padrao de Manutencao
 
-- Nao versionar `.env`, `.env.local`, `node_modules/` ou `dist/`.
-- Nao criar copias do repositorio dentro do proprio repositorio.
-- Novas telas grandes devem entrar em `src/features/nome-da-feature/`.
-- Configuracoes globais devem entrar em `src/app/settings/`.
-- Codigo compartilhado entre varias features pode ganhar uma pasta `src/shared/` quando houver necessidade real.
+- Evite estilos inline em codigo novo.
+- Prefira CSS module ou arquivo em `styles/` para estilos especificos.
+- Mantenha services fora das paginas.
+- Mantenha calculos e formatadores em `utils/`.
+- Mantenha dados iniciais e mocks em `data/`.
+- Quebre paginas grandes em componentes menores dentro de `components/`.
+- Rode `npm run check` antes de commitar.
 

@@ -9,10 +9,22 @@ npm install
 npm run dev
 ```
 
+Opcionalmente, use o inicializador local:
+
+```bash
+npm run start
+```
+
 Para gerar build de producao:
 
 ```bash
 npm run build
+```
+
+Antes de commitar:
+
+```bash
+npm run check
 ```
 
 ## Variaveis de ambiente
@@ -33,14 +45,22 @@ src/
   main.jsx
   app/
     App.jsx
-    settings/
-      index.js
-      supabase.js
+  assets/
+  components/
+  config/
+    env.js
+  database/
   features/
     pocs/
     scrum/
+  layouts/
+  pages/
+    dashboard/
     portals/
+  services/
+    supabase/
+  styles/
+    global.css
 ```
 
 Guia detalhado: [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md)
-
