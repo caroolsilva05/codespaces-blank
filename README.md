@@ -1,6 +1,6 @@
 # Plataforma Bellinati
 
-Aplicacao React/Vite para acompanhamento de projetos, Scrum, POCs, fornecedores, portais e indicadores da area de Transformacao Digital.
+Aplicacao React/Vite para acompanhamento de projetos, Scrum, POCs, fornecedores, marketing, portais e indicadores da area de Transformacao Digital.
 
 ## Como rodar
 
@@ -51,12 +51,13 @@ src/
     env.js
   database/
   features/
+    marketing/
     pocs/
+    portals/
     scrum/
   layouts/
   pages/
     dashboard/
-    portals/
   services/
     supabase/
   styles/

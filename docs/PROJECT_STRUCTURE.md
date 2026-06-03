@@ -16,13 +16,13 @@ src/
   database/
     README.md
   features/
+    marketing/
     pocs/
-    scrum/
     portals/
+    scrum/
   layouts/
   pages/
     dashboard/
-    portals/
   services/
     supabase/
   styles/
@@ -88,10 +88,25 @@ src/features/scrum/
 - `scrumProjectService.js`: persistencia no Supabase.
 - `scrumTheme.js`: tokens visuais usados pela tela.
 
+## Marketing
+
+```txt
+src/features/marketing/
+  data/
+    marketingData.js
+  styles/
+    MarketingPage.module.css
+  index.jsx
+```
+
+- `index.jsx`: tela da aba Marketing, com filtros, indicadores, fases e tabela de carteiras.
+- `marketingData.js`: base inicial de carteiras, canais, plataformas e fases. Troque este arquivo quando chegarem as carteiras oficiais.
+- `MarketingPage.module.css`: estilos especificos da tela.
+
 ## Portais
 
 ```txt
-src/pages/portals/
+src/features/portals/
   components/
     PortalDashboard/
       index.tsx
@@ -106,7 +121,7 @@ src/pages/portals/
   index.ts
 ```
 
-Este modulo ja separa CSS, dados, tipos e helpers da tela.
+Este modulo separa CSS, dados, tipos e helpers da tela.
 
 ## Supabase
 
@@ -138,7 +153,7 @@ Cliente Supabase:
   src/services/supabase/client.js
 
 Dashboard principal, login, menu e layout atual:
-  src/pages/dashboard/DashboardPage.jsx
+  src/pages/dashboard/
 
 POCs:
   src/features/pocs/
@@ -147,7 +162,10 @@ Scrum:
   src/features/scrum/
 
 Portais:
-  src/pages/portals/
+  src/features/portals/
+
+Marketing:
+  src/features/marketing/
 
 CSS global:
   src/styles/global.css
@@ -165,4 +183,3 @@ Scripts de banco:
 - Mantenha dados iniciais e mocks em `data/`.
 - Quebre paginas grandes em componentes menores dentro de `components/`.
 - Rode `npm run check` antes de commitar.
-
