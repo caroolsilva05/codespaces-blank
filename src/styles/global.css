@@ -4,12 +4,37 @@
 
 html {
   font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   overflow-x: hidden;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.18);
+  color: inherit;
+}
+
+body::-webkit-scrollbar,
+.app-main::-webkit-scrollbar {
+  width: 10px;
+}
+
+body::-webkit-scrollbar-thumb,
+.app-main::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.32);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
 }
 
 button,
@@ -17,6 +42,20 @@ input,
 select,
 textarea {
   font: inherit;
+  letter-spacing: 0;
+}
+
+button {
+  font-weight: 650;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.42);
+  outline-offset: 2px;
 }
 
 img,
@@ -40,6 +79,7 @@ table {
 
 .app-main {
   min-width: 0;
+  line-height: 1.45;
 }
 
 .app-main table {
@@ -48,6 +88,44 @@ table {
 
 .app-main > * {
   min-width: 0;
+}
+
+.app-main h1,
+.app-main h2,
+.app-main h3 {
+  letter-spacing: 0 !important;
+}
+
+.app-main [style*="font-weight: 950"] {
+  font-weight: 800 !important;
+}
+
+.app-main [style*="font-weight: 900"] {
+  font-weight: 760 !important;
+}
+
+.app-main [style*="font-weight: 800"] {
+  font-weight: 700 !important;
+}
+
+.app-main [style*="font-size: 34"] {
+  font-size: 30px !important;
+}
+
+.app-main [style*="font-size: 26"] {
+  font-size: 24px !important;
+}
+
+.app-main [style*="font-size: 24"] {
+  font-size: 22px !important;
+}
+
+.app-main [style*="font-size: 11"] {
+  line-height: 1.35 !important;
+}
+
+.app-main button {
+  letter-spacing: 0 !important;
 }
 
 @media (max-width: 1280px) {

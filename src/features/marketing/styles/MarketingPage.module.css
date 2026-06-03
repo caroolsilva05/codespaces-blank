@@ -13,39 +13,44 @@
 
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
   color: var(--marketing-text);
 }
 
 .header {
+  background: var(--marketing-card);
+  border: 1px solid var(--marketing-border);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
   display: flex;
   justify-content: space-between;
   gap: 18px;
   align-items: flex-start;
+  padding: 18px;
 }
 
 .eyebrow {
   color: var(--marketing-blue);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   margin: 0 0 8px;
   text-transform: uppercase;
 }
 
 .title {
   color: var(--marketing-text);
-  font-size: 26px;
-  font-weight: 950;
+  font-size: 25px;
+  font-weight: 760;
   letter-spacing: 0;
-  line-height: 1.15;
+  line-height: 1.2;
   margin: 0;
 }
 
 .subtitle {
   color: var(--marketing-muted);
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.6;
   margin: 8px 0 0;
   max-width: 720px;
 }
@@ -64,16 +69,17 @@
   cursor: pointer;
   display: inline-flex;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 650;
   gap: 8px;
   min-height: 36px;
-  padding: 8px 12px;
+  padding: 8px 13px;
   transition: border-color 0.2s, background 0.2s, transform 0.2s;
 }
 
 .button {
   background: var(--marketing-blue);
   border: 1px solid var(--marketing-blue);
+  box-shadow: 0 10px 18px rgba(37, 99, 235, 0.16);
   color: #ffffff;
 }
 
@@ -85,6 +91,7 @@
 
 .button:hover,
 .ghostButton:hover {
+  border-color: #9db7e8;
   transform: translateY(-1px);
 }
 
@@ -97,21 +104,30 @@
 .summaryCard {
   background: var(--marketing-card);
   border: 1px solid var(--marketing-border);
+  border-top: 3px solid rgba(37, 99, 235, 0.42);
   border-radius: 8px;
-  padding: 15px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
+  padding: 16px;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.summaryCard:hover {
+  border-color: rgba(37, 99, 235, 0.32);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.07);
+  transform: translateY(-1px);
 }
 
 .summaryLabel {
   color: var(--marketing-muted);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   margin-bottom: 7px;
 }
 
 .summaryValue {
   color: var(--marketing-text);
-  font-size: 25px;
-  font-weight: 950;
+  font-size: 24px;
+  font-weight: 760;
   line-height: 1;
 }
 
@@ -136,6 +152,7 @@
   background: var(--marketing-card);
   border: 1px solid var(--marketing-border);
   border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.045);
 }
 
 .filterPanel {
@@ -147,7 +164,7 @@
 .panelTitle {
   color: var(--marketing-text);
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 760;
   margin: 0 0 10px;
 }
 
@@ -161,8 +178,8 @@
 .filterLabel {
   color: var(--marketing-muted);
   font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -192,12 +209,18 @@
   cursor: pointer;
   display: flex;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 650;
   justify-content: space-between;
   min-height: 36px;
   padding: 8px 10px;
   text-align: left;
   width: 100%;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.choiceButton:hover {
+  border-color: #a9bddf;
+  background: #f0f5ff;
 }
 
 .choiceButtonActive {
@@ -209,7 +232,7 @@
 .choiceCount {
   color: var(--marketing-muted);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 650;
 }
 
 .contentStack {
@@ -235,6 +258,13 @@
   border-radius: 8px;
   min-height: 88px;
   padding: 12px;
+  transition: border-color 0.2s, transform 0.2s, background 0.2s;
+}
+
+.phaseCard:hover {
+  background: var(--marketing-card);
+  border-color: #a9bddf;
+  transform: translateY(-1px);
 }
 
 .phaseTop {
@@ -253,15 +283,15 @@
 .phaseLabel {
   color: var(--marketing-muted);
   font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.05em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .phaseCount {
   color: var(--marketing-text);
-  font-size: 25px;
-  font-weight: 950;
+  font-size: 23px;
+  font-weight: 760;
   margin-top: 12px;
 }
 
@@ -287,6 +317,10 @@
 
 .tablePanel {
   overflow: hidden;
+}
+
+.tableToolbar {
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.86), rgba(255, 255, 255, 0));
 }
 
 .tableToolbar {
@@ -320,11 +354,11 @@
 }
 
 .table th {
-  background: var(--marketing-blue);
-  color: #ffffff;
+  background: #eef4ff;
+  color: #21406f;
   font-size: 11px;
-  font-weight: 900;
-  padding: 10px 9px;
+  font-weight: 700;
+  padding: 11px 10px;
   text-align: left;
   text-transform: uppercase;
   white-space: nowrap;
@@ -334,7 +368,8 @@
   border-bottom: 1px solid var(--marketing-border);
   color: var(--marketing-text);
   font-size: 12px;
-  padding: 10px 9px;
+  font-weight: 450;
+  padding: 11px 10px;
   vertical-align: middle;
 }
 
@@ -342,19 +377,32 @@
   border-bottom: none;
 }
 
+.table tbody tr {
+  transition: background 0.18s;
+}
+
+.table tbody tr:hover {
+  background: rgba(37, 99, 235, 0.035);
+}
+
 .templateLink {
   color: #0ea5e9;
   font-size: 12px;
   font-style: italic;
-  font-weight: 900;
+  font-weight: 650;
   text-decoration: none;
+}
+
+.templateLink:hover {
+  color: #0369a1;
+  text-decoration: underline;
 }
 
 .statusBadge {
   border-radius: 999px;
   display: inline-flex;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 700;
   justify-content: center;
   min-width: 78px;
   padding: 5px 8px;
@@ -398,7 +446,7 @@
   border-radius: 8px;
   color: #831843;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.45;
   padding: 13px;
 }

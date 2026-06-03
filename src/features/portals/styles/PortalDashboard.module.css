@@ -15,9 +15,10 @@
 
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
   width: 100%;
   min-width: 0;
+  color: #111827;
 }
 
 .topbar,
@@ -33,7 +34,12 @@
 }
 
 .topbar {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.045);
   justify-content: space-between;
+  padding: 16px;
 }
 
 .topbar > div:last-child {
@@ -44,11 +50,14 @@
 
 .titleWrap h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 23px;
+  font-weight: 760;
+  line-height: 1.2;
 }
 
 .live {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 650;
   color: #0c8b4e;
   background: #e7f8ee;
   border: 1px solid #b9eacb;
@@ -56,14 +65,45 @@
   padding: 2px 8px;
 }
 
+.mockSource {
+  font-size: 11px;
+  font-weight: 650;
+  color: #633806;
+  background: #FAEEDA;
+  border: 1px solid #f4d49b;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.notice {
+  border: 1px solid #f4d49b;
+  border-radius: 10px;
+  background: #fff7e8;
+  color: #633806;
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 10px 12px;
+}
+
 .btn, .pill, .tab {
   border: 1px solid #d6d6d6;
-  border-radius: 10px;
-  padding: 8px 12px;
+  border-radius: 8px;
+  padding: 8px 13px;
   background: white;
   font-size: 12px;
+  font-weight: 650;
   cursor: pointer;
   min-height: 36px;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+}
+
+.btn:hover,
+.pill:hover,
+.tab:hover,
+.actionBtn:hover {
+  border-color: #a9bddf;
+  background: #f6f9ff;
+  transform: translateY(-1px);
 }
 
 .tabActive, .pillActive {
@@ -89,13 +129,32 @@
 
 .kpi {
   border: 1px solid #e5e5e5;
-  border-radius: 12px;
-  padding: 12px;
+  border-top: 3px solid #b8cef9;
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
+  padding: 14px;
   background: white;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
-.kpiLabel { font-size: 12px; color: #666; }
-.kpiValue { font-size: 20px; font-weight: 700; }
+.kpi:hover {
+  border-color: #b8cef9;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.07);
+  transform: translateY(-1px);
+}
+
+.kpiLabel {
+  font-size: 12px;
+  color: #667085;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.kpiValue {
+  font-size: 21px;
+  font-weight: 760;
+  line-height: 1.1;
+}
 
 .legend {
   font-size: 12px;
@@ -119,6 +178,8 @@
   width: 100%;
   max-width: 100%;
   border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
   -webkit-overflow-scrolling: touch;
 }
 
@@ -131,28 +192,49 @@
 
 .table th, .table td {
   border-bottom: 1px solid #efefef;
-  padding: 10px 8px;
+  padding: 11px 9px;
   text-align: left;
   vertical-align: middle;
   font-size: 12px;
+}
+
+.table th {
+  color: #344054;
+  font-weight: 700;
+  background: #f8fafc;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.table td {
+  font-weight: 450;
 }
 
 .thSortable { cursor: pointer; user-select: none; }
 .thValida { background: #fff1f1; color: #8a1111; }
 
 .rowHover:hover {
-  background: #f8fafc;
+  background: rgba(37, 99, 235, 0.035);
 }
 
-.portalName { font-weight: 700; margin-bottom: 4px; }
-.subText { color: #666; font-size: 11px; }
+.portalName {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.subText {
+  color: #667085;
+  font-size: 11px;
+  line-height: 1.35;
+}
 
 .badge {
   display: inline-flex;
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .badgeBaixa { background: #fee2e2; color: #991b1b; }
@@ -161,6 +243,7 @@
 
 .heatCell {
   border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.04);
   padding: 8px;
   display: inline-flex;
   flex-direction: column;
@@ -168,8 +251,14 @@
   min-width: 88px;
 }
 
-.heatMain { font-weight: 700; }
-.heatSub { font-size: 11px; }
+.heatMain {
+  font-weight: 700;
+}
+
+.heatSub {
+  font-size: 11px;
+  font-weight: 450;
+}
 
 .validaCell {
   outline: 1px solid #e1a1a1;
@@ -177,7 +266,7 @@
 
 .delta {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 650;
 }
 
 .scoreRing {
@@ -198,12 +287,15 @@
   background: white;
   cursor: pointer;
   font-size: 12px;
+  font-weight: 650;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
 }
 
 .footer {
+  color: #667085;
   justify-content: space-between;
   border-top: 1px solid #eee;
-  padding-top: 8px;
+  padding-top: 12px;
 }
 
 @media (max-width: 767px) {
