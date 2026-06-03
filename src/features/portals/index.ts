@@ -1,1 +1,1 @@
-export { default } from "../../pages/portals";
+export { default } from "./components/PortalDashboard";

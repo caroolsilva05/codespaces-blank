@@ -28,7 +28,7 @@ import {
 import { supabase } from "../../services/supabase";
 import ScrumProjectRegister from "../../features/scrum";
 import PocRegister from "../../features/pocs";
-import PortalDashboard from "../portals";
+import PortalDashboard from "../../features/portals";
 import MarketingPage from "../../features/marketing";
 import {
   LayoutDashboard,
