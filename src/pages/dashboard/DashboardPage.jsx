@@ -29,6 +29,7 @@ import { supabase } from "../../services/supabase";
 import ScrumProjectRegister from "../../features/scrum";
 import PocRegister from "../../features/pocs";
 import PortalDashboard from "../portals";
+import MarketingPage from "../../features/marketing";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -62,6 +63,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   FileSearch,
+  Megaphone,
   Microscope,
   CircleDot,
   ChevronDown,
@@ -7309,6 +7311,7 @@ const navItems = [
   { id: "scrum", label: "Scrum", icon: Layers },
   { id: "poc", label: "POC", icon: FlaskConical, badge: "Novo" },
   { id: "suppliers", label: "Fornecedores", icon: Globe },
+  { id: "marketing", label: "Marketing", icon: Megaphone },
   { id: "portals", label: "Portais", icon: FileSearch },
 ];
 
@@ -8329,6 +8332,7 @@ export default function DashboardPage() {
     scrum: ScrumView,
     poc: PocView,
     suppliers: SuppliersView,
+    marketing: MarketingPage,
     portals: PortaisView,
   };
   const View = views[active] || IndicatorsView;
