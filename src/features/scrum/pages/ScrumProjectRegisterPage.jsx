@@ -508,7 +508,9 @@ export default function ScrumProjectRegisterPage({
       {/* ── HEADER ── */}
       <div
         style={{
-          background: `linear-gradient(135deg, ${theme.navyDark} 0%, ${theme.navy} 55%, ${theme.navyLight} 100%)`,
+          background: theme.white,
+          borderBottom: `1px solid ${theme.border}`,
+          boxShadow: "0 8px 20px rgba(15,23,42,0.045)",
           padding: "0 40px",
           position: "relative",
           overflow: "hidden",
@@ -522,7 +524,7 @@ export default function ScrumProjectRegisterPage({
             left: 0,
             right: 0,
             height: 4,
-            background: `linear-gradient(90deg, ${theme.gold}, #f0d98c, ${theme.gold})`,
+            background: theme.gold,
           }}
         />
         {/* subtle bg pattern */}
@@ -531,7 +533,7 @@ export default function ScrumProjectRegisterPage({
             position: "absolute",
             inset: 0,
             backgroundImage:
-              "radial-gradient(circle at 80% 50%, rgba(201,168,76,0.07) 0%, transparent 60%)",
+              "linear-gradient(180deg, rgba(254,242,245,0.68), rgba(255,255,255,0))",
             pointerEvents: "none",
           }}
         />
@@ -557,7 +559,7 @@ export default function ScrumProjectRegisterPage({
               <span
                 style={{
                   background: theme.gold,
-                  color: theme.navyDark,
+                  color: theme.white,
                   fontSize: 10,
                   fontWeight: 800,
                   padding: "3px 11px",
@@ -568,17 +570,17 @@ export default function ScrumProjectRegisterPage({
               >
                 Transformação Digital
               </span>
-              <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 14 }}>
+              <span style={{ color: theme.border, fontSize: 14 }}>
                 |
               </span>
-              <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 12 }}>
+              <span style={{ color: theme.textSecondary, fontSize: 12 }}>
                 Ciclo de Vida do Projeto
               </span>
             </div>
             <h1
               style={{
                 margin: "0 0 5px",
-                color: "#fff",
+                color: theme.text,
                 fontSize: 24,
                 fontWeight: 700,
                 letterSpacing: "-0.3px",
@@ -589,7 +591,7 @@ export default function ScrumProjectRegisterPage({
             <p
               style={{
                 margin: 0,
-                color: "rgba(255,255,255,0.5)",
+                color: theme.textSecondary,
                 fontSize: 13,
               }}
             >
@@ -614,9 +616,9 @@ export default function ScrumProjectRegisterPage({
                 fn: handleSave,
                 style: {
                   background:
-                    flash === "saved" ? "#047857" : "rgba(255,255,255,0.1)",
+                    flash === "saved" ? "#16a34a" : theme.gold,
                   color: "#fff",
-                  border: "1px solid rgba(255,255,255,0.2)",
+                  border: `1px solid ${flash === "saved" ? "#16a34a" : theme.gold}`,
                 },
               },
               {
@@ -624,8 +626,8 @@ export default function ScrumProjectRegisterPage({
                 fn: handleExportPdf,
                 style: {
                   background: theme.gold,
-                  color: theme.navyDark,
-                  border: "1px solid rgba(255,255,255,0.2)",
+                  color: theme.white,
+                  border: `1px solid ${theme.gold}`,
                 },
               },
             ].map((btn) => (
@@ -655,12 +657,12 @@ export default function ScrumProjectRegisterPage({
       {/* ── SUMMARY CARDS ── */}
       <div
         style={{
-          background: theme.navyDark,
+          background: theme.bg,
           padding: "16px 40px",
           display: "grid",
           gridTemplateColumns: "repeat(6,1fr)",
           gap: 12,
-          borderBottom: "3px solid rgba(201,168,76,0.4)",
+          borderBottom: `1px solid ${theme.border}`,
         }}
       >
         {[
@@ -691,11 +693,11 @@ export default function ScrumProjectRegisterPage({
             label: "Impedimentos ativos",
             val:
               blockers > 0 ? (
-                <span style={{ color: "#f87171", fontWeight: 700 }}>
+                <span style={{ color: "#dc2626", fontWeight: 700 }}>
                   {blockers} ativo{blockers > 1 ? "s" : ""}
                 </span>
               ) : (
-                <span style={{ color: "#4ade80", fontWeight: 700 }}>
+                <span style={{ color: "#16a34a", fontWeight: 700 }}>
                   Nenhum
                 </span>
               ),
@@ -705,8 +707,8 @@ export default function ScrumProjectRegisterPage({
           <div
             key={i}
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: theme.white,
+              border: `1px solid ${theme.border}`,
               borderRadius: 8,
               padding: "12px 16px",
             }}
@@ -714,7 +716,7 @@ export default function ScrumProjectRegisterPage({
             <div
               style={{
                 fontSize: 10,
-                color: "rgba(255,255,255,0.45)",
+                color: theme.textSecondary,
                 marginBottom: 5,
                 textTransform: "uppercase",
                 letterSpacing: "0.8px",
@@ -722,7 +724,7 @@ export default function ScrumProjectRegisterPage({
             >
               {c.icon} {c.label}
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: theme.text }}>
               {c.val}
             </div>
           </div>
