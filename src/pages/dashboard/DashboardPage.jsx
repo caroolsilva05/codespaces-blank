@@ -79,70 +79,70 @@ const useTheme = () => useContext(ThemeCtx);
 const getC = (dark) =>
   dark
     ? {
-        // Dark: Grafite + Azul Petróleo + Roxo Suave
-        bg0: "#070C17",
-        bg1: "#0B1120",
-        bg2: "#0F1729",
-        bg3: "#162035",
-        bg4: "#1C2940",
-        card: "rgba(255,255,255,0.030)",
-        cardHov: "rgba(255,255,255,0.055)",
-        surface: "rgba(255,255,255,0.045)",
-        border: "rgba(255,255,255,0.07)",
-        borderHov: "rgba(255,255,255,0.14)",
-        borderStrong: "rgba(255,255,255,0.18)",
-        blue: "#4F8EF7",
-        blueD: "#2563EB",
-        blueGlow: "rgba(79,142,247,0.14)",
-        emerald: "#10B981",
-        emeraldGlow: "rgba(16,185,129,0.13)",
-        amber: "#F59E0B",
-        amberGlow: "rgba(245,158,11,0.13)",
-        rose: "#F43F5E",
-        roseGlow: "rgba(244,63,94,0.12)",
-        violet: "#9B7FFF",
-        violetGlow: "rgba(155,127,255,0.13)",
-        cyan: "#22D3EE",
-        cyanGlow: "rgba(34,211,238,0.12)",
-        t1: "#EFF3FC",
-        t2: "#8DA3C0",
-        t3: "#4A637F",
-        t4: "#1D2E42",
+        // Identidade clara corporativa: cinzas azulados + destaque rosa
+        bg0: "#f2f4f8",
+        bg1: "#ffffff",
+        bg2: "#f8fafc",
+        bg3: "#fef2f5",
+        bg4: "#ffe7ef",
+        card: "#ffffff",
+        cardHov: "#ffffff",
+        surface: "#f8fafc",
+        border: "#e2e8f0",
+        borderHov: "#f8a0b5",
+        borderStrong: "#cbd5e1",
+        blue: "#e11d48",
+        blueD: "#be123c",
+        blueGlow: "rgba(225,29,72,0.10)",
+        emerald: "#16a34a",
+        emeraldGlow: "rgba(22,163,74,0.10)",
+        amber: "#d97706",
+        amberGlow: "rgba(217,119,6,0.10)",
+        rose: "#e11d48",
+        roseGlow: "#ffe7ef",
+        violet: "#334155",
+        violetGlow: "rgba(51,65,85,0.10)",
+        cyan: "#64748b",
+        cyanGlow: "rgba(100,116,139,0.10)",
+        t1: "#0f172a",
+        t2: "#64748b",
+        t3: "#94a3b8",
+        t4: "#cbd5e1",
         sidebarW: 248,
-        scrollbar: "#1C2940",
+        scrollbar: "#cbd5e1",
       }
     : {
-        // Light: Branco Gelo + Cinza Premium + Azul Discreto
-        bg0: "#F0F3FA",
-        bg1: "#FFFFFF",
-        bg2: "#F5F7FD",
-        bg3: "#E8EDF8",
-        bg4: "#DDE4F0",
-        card: "rgba(255,255,255,0.92)",
-        cardHov: "rgba(255,255,255,1)",
-        surface: "rgba(240,243,250,0.8)",
-        border: "rgba(0,0,0,0.075)",
-        borderHov: "rgba(0,0,0,0.15)",
-        borderStrong: "rgba(0,0,0,0.20)",
-        blue: "#2563EB",
-        blueD: "#1D4ED8",
-        blueGlow: "rgba(37,99,235,0.10)",
+        // Identidade clara corporativa: cinzas azulados + destaque rosa
+        bg0: "#f2f4f8",
+        bg1: "#ffffff",
+        bg2: "#f8fafc",
+        bg3: "#fef2f5",
+        bg4: "#ffe7ef",
+        card: "#ffffff",
+        cardHov: "#ffffff",
+        surface: "#f8fafc",
+        border: "#e2e8f0",
+        borderHov: "#f8a0b5",
+        borderStrong: "#cbd5e1",
+        blue: "#e11d48",
+        blueD: "#be123c",
+        blueGlow: "rgba(225,29,72,0.10)",
         emerald: "#059669",
         emeraldGlow: "rgba(5,150,105,0.10)",
         amber: "#D97706",
         amberGlow: "rgba(217,119,6,0.10)",
-        rose: "#E11D48",
-        roseGlow: "rgba(225,29,72,0.09)",
-        violet: "#7C3AED",
-        violetGlow: "rgba(124,58,237,0.09)",
-        cyan: "#0891B2",
-        cyanGlow: "rgba(8,145,178,0.09)",
-        t1: "#0E1726",
-        t2: "#3D556F",
-        t3: "#7A93AD",
-        t4: "#B8CBDF",
+        rose: "#e11d48",
+        roseGlow: "#ffe7ef",
+        violet: "#334155",
+        violetGlow: "rgba(51,65,85,0.10)",
+        cyan: "#64748b",
+        cyanGlow: "rgba(100,116,139,0.10)",
+        t1: "#0f172a",
+        t2: "#64748b",
+        t3: "#94a3b8",
+        t4: "#cbd5e1",
         sidebarW: 248,
-        scrollbar: "#E8EDF8",
+        scrollbar: "#cbd5e1",
       };
 
 // ---
@@ -189,8 +189,8 @@ const deliveryData = [
   { m: "Dez", ok: 40, atr: 1 },
 ];
 const slaData = [
-  { name: "Conformidade", value: 94, fill: "#10B981" },
-  { name: "Violações", value: 6, fill: "#F43F5E" },
+  { name: "Conformidade", value: 94, fill: "#16a34a" },
+  { name: "Violações", value: 6, fill: "#e11d48" },
 ];
 const projects = [
   {
@@ -264,7 +264,7 @@ const kanbanCols = [
   {
     id: "backlog",
     label: "Backlog",
-    color: "#4A637F",
+    color: "#64748b",
     items: [
       { id: "k1", title: "Integração API Legado", tag: "Backend", p: "Média" },
       { id: "k2", title: "Plano DR & BCP", tag: "Infra", p: "Alta" },
@@ -273,7 +273,7 @@ const kanbanCols = [
   {
     id: "progress",
     label: "Em Progresso",
-    color: "#4F8EF7",
+    color: "#e11d48",
     items: [
       {
         id: "k3",
@@ -293,7 +293,7 @@ const kanbanCols = [
   {
     id: "review",
     label: "Em Revisão",
-    color: "#F59E0B",
+    color: "#d97706",
     items: [
       { id: "k6", title: "Documentação Técnica SAP", tag: "ERP", p: "Alta" },
       { id: "k7", title: "UAT Módulo Financeiro", tag: "QA", p: "Crítica" },
@@ -302,7 +302,7 @@ const kanbanCols = [
   {
     id: "done",
     label: "Concluído",
-    color: "#10B981",
+    color: "#16a34a",
     items: [
       {
         id: "k8",
@@ -374,43 +374,43 @@ const activities = [
   {
     time: "Agora",
     icon: CheckCircle2,
-    color: "#10B981",
+    color: "#16a34a",
     text: "Entrega concluída: Módulo BI Analytics v2.3",
   },
   {
     time: "2h",
     icon: AlertTriangle,
-    color: "#F59E0B",
+    color: "#d97706",
     text: "Alerta: SLA SAP abaixo de 98% no período",
   },
   {
     time: "4h",
     icon: Zap,
-    color: "#4F8EF7",
+    color: "#e11d48",
     text: "Deploy realizado: Portal Colaborador — Homologação",
   },
   {
     time: "6h",
     icon: Shield,
-    color: "#9B7FFF",
+    color: "#334155",
     text: "Relatório de segurança ZeroTrust gerado",
   },
   {
     time: "8h",
     icon: Target,
-    color: "#22D3EE",
+    color: "#64748b",
     text: "OKR Q1/2025 atualizado — 87% de aderência",
   },
   {
     time: "1d",
     icon: Users,
-    color: "#F43F5E",
+    color: "#dc2626",
     text: "Reunião Steering Committee agendada",
   },
   {
     time: "2d",
     icon: Package,
-    color: "#10B981",
+    color: "#16a34a",
     text: "Contrato Deloitte renovado com novos SLA",
   },
 ];
@@ -2955,7 +2955,7 @@ function ScrumView({ C }) {
             position: "fixed",
             inset: 0,
             zIndex: 9999,
-            background: "#f0f4f8",
+            background: C.bg0,
             overflow: "auto",
           }}
         >
@@ -2966,7 +2966,7 @@ function ScrumView({ C }) {
               top: 18,
               right: 22,
               zIndex: 10000,
-              background: "#0d1f3c",
+              background: "linear-gradient(135deg, #334155, #1f2937)",
               color: "#ffffff",
               border: "none",
               borderRadius: 8,
@@ -2974,7 +2974,7 @@ function ScrumView({ C }) {
               fontSize: 13,
               fontWeight: 700,
               cursor: "pointer",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
+              boxShadow: "0 8px 20px rgba(15, 23, 42, 0.14)",
             }}
           >
             Fechar Registro
@@ -4505,26 +4505,26 @@ function PortaisView({ C }) {
       "</title>" +
       "<style>" +
       "*{box-sizing:border-box}" +
-      "body{margin:0;padding:24px;font-family:Segoe UI,Arial,sans-serif;background:#070C17;color:#EFF3FC;-webkit-print-color-adjust:exact;print-color-adjust:exact}" +
-      ".cover{background:linear-gradient(135deg,#101827,#152A4A);border:1px solid rgba(148,163,184,.25);border-radius:18px;padding:24px;margin-bottom:18px}" +
-      ".tag{display:inline-flex;background:#2563EB22;color:#60A5FA;border:1px solid #2563EB44;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}" +
-      "h1{font-size:28px;margin:0 0 6px;color:#fff}" +
-      "p{color:#9FB4D1;margin:0;line-height:1.5}" +
+      "body{margin:0;padding:24px;font-family:Segoe UI,Arial,sans-serif;background:#f2f4f8;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}" +
+      ".cover{background:#ffffff;border:1px solid #e2e8f0;border-top:4px solid #e11d48;border-radius:14px;padding:24px;margin-bottom:18px}" +
+      ".tag{display:inline-flex;background:#ffe7ef;color:#e11d48;border:1px solid #f8a0b5;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}" +
+      "h1{font-size:28px;margin:0 0 6px;color:#0f172a}" +
+      "p{color:#64748b;margin:0;line-height:1.5}" +
       ".grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}" +
-      ".kpi{background:#111827;border:1px solid rgba(148,163,184,.22);border-radius:14px;padding:13px}" +
-      ".kpi small{display:block;color:#6E8AAF;text-transform:uppercase;letter-spacing:.07em;font-size:9px;margin-bottom:5px}" +
-      ".kpi strong{display:block;font-size:22px;color:#fff}" +
-      ".section{background:#111827;border:1px solid rgba(148,163,184,.22);border-radius:14px;padding:16px;margin-bottom:14px;break-inside:avoid}" +
-      ".section h2{font-size:16px;margin:0 0 10px;color:#fff}" +
+      ".kpi{background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;padding:13px}" +
+      ".kpi small{display:block;color:#64748b;text-transform:uppercase;letter-spacing:.07em;font-size:9px;margin-bottom:5px}" +
+      ".kpi strong{display:block;font-size:22px;color:#0f172a}" +
+      ".section{background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;padding:16px;margin-bottom:14px;break-inside:avoid}" +
+      ".section h2{font-size:16px;margin:0 0 10px;color:#1e293b}" +
       "table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}" +
-      "th{background:#0F2442;color:#BFD7FF;text-align:left;padding:8px 6px;text-transform:uppercase;font-size:8px}" +
-      "td{border-bottom:1px solid rgba(148,163,184,.16);padding:7px 6px;color:#EFF3FC;word-break:break-word}" +
+      "th{background:#fef2f5;color:#1e293b;text-align:left;padding:8px 6px;text-transform:uppercase;font-size:8px}" +
+      "td{border-bottom:1px solid #e2e8f0;padding:7px 6px;color:#0f172a;word-break:break-word}" +
       ".print-actions{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px}" +
       ".print-actions button{border:0;border-radius:10px;padding:10px 14px;font-weight:900;cursor:pointer}" +
-      ".primary{background:#3B82F6;color:white}" +
-      ".secondary{background:#111827;color:#C7D7EC;border:1px solid rgba(148,163,184,.25)!important}" +
+      ".primary{background:#e11d48;color:white}" +
+      ".secondary{background:linear-gradient(135deg,#334155,#1f2937);color:#ffffff;border:1px solid #334155!important}" +
       "@page{size:A4 landscape;margin:8mm}" +
-      "@media print{.print-actions{display:none!important}body{padding:0;background:#070C17}.section{break-inside:avoid}}" +
+      "@media print{.print-actions{display:none!important}body{padding:0;background:#f2f4f8}.section{break-inside:avoid}}" +
       "</style>" +
       "</head>" +
       "<body>" +
@@ -5814,26 +5814,26 @@ function PortaisView({ C }) {
       "</title>" +
       "<style>" +
       "*{box-sizing:border-box}" +
-      "body{margin:0;padding:24px;font-family:Segoe UI,Arial,sans-serif;background:#070C17;color:#EFF3FC;-webkit-print-color-adjust:exact;print-color-adjust:exact}" +
+      "body{margin:0;padding:24px;font-family:Segoe UI,Arial,sans-serif;background:#f2f4f8;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}" +
       ".actions{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px}" +
       ".actions button{border:0;border-radius:10px;padding:10px 14px;font-weight:900;cursor:pointer}" +
-      ".primary{background:#3B82F6;color:#fff}" +
-      ".secondary{background:#111827;color:#C7D7EC;border:1px solid rgba(148,163,184,.25)!important}" +
-      ".cover{background:linear-gradient(135deg,#101827,#152A4A);border:1px solid rgba(148,163,184,.25);border-radius:18px;padding:24px;margin-bottom:18px}" +
-      ".tag{display:inline-flex;background:#2563EB22;color:#60A5FA;border:1px solid #2563EB44;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}" +
-      "h1{font-size:28px;margin:0 0 6px;color:#fff}" +
-      "p{color:#9FB4D1;margin:0;line-height:1.5}" +
+      ".primary{background:#e11d48;color:#fff}" +
+      ".secondary{background:linear-gradient(135deg,#334155,#1f2937);color:#ffffff;border:1px solid #334155!important}" +
+      ".cover{background:#ffffff;border:1px solid #e2e8f0;border-top:4px solid #e11d48;border-radius:14px;padding:24px;margin-bottom:18px}" +
+      ".tag{display:inline-flex;background:#ffe7ef;color:#e11d48;border:1px solid #f8a0b5;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}" +
+      "h1{font-size:28px;margin:0 0 6px;color:#0f172a}" +
+      "p{color:#64748b;margin:0;line-height:1.5}" +
       ".grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}" +
-      ".kpi{background:#111827;border:1px solid rgba(148,163,184,.22);border-radius:14px;padding:13px}" +
-      ".kpi small{display:block;color:#6E8AAF;text-transform:uppercase;letter-spacing:.07em;font-size:9px;margin-bottom:5px}" +
-      ".kpi strong{display:block;font-size:22px;color:#fff}" +
-      ".section{background:#111827;border:1px solid rgba(148,163,184,.22);border-radius:14px;padding:16px;margin-bottom:14px;break-inside:avoid}" +
-      ".section h2{font-size:16px;margin:0 0 10px;color:#fff}" +
+      ".kpi{background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;padding:13px}" +
+      ".kpi small{display:block;color:#64748b;text-transform:uppercase;letter-spacing:.07em;font-size:9px;margin-bottom:5px}" +
+      ".kpi strong{display:block;font-size:22px;color:#0f172a}" +
+      ".section{background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;padding:16px;margin-bottom:14px;break-inside:avoid}" +
+      ".section h2{font-size:16px;margin:0 0 10px;color:#1e293b}" +
       "table{width:100%;border-collapse:collapse;font-size:8.5px;table-layout:fixed}" +
-      "th{background:#0F2442;color:#BFD7FF;text-align:left;padding:7px 5px;text-transform:uppercase;font-size:7.5px;word-break:break-word}" +
-      "td{border-bottom:1px solid rgba(148,163,184,.16);padding:6px 5px;color:#EFF3FC;word-break:break-word}" +
+      "th{background:#fef2f5;color:#1e293b;text-align:left;padding:7px 5px;text-transform:uppercase;font-size:7.5px;word-break:break-word}" +
+      "td{border-bottom:1px solid #e2e8f0;padding:6px 5px;color:#0f172a;word-break:break-word}" +
       "@page{size:A4 landscape;margin:8mm}" +
-      "@media print{.actions{display:none!important}body{padding:0;background:#070C17}.section{break-inside:avoid}}" +
+      "@media print{.actions{display:none!important}body{padding:0;background:#f2f4f8}.section{break-inside:avoid}}" +
       "</style>" +
       "</head>" +
       "<body>" +
@@ -8229,7 +8229,7 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
                 fontWeight: 950,
                 cursor: loading ? "not-allowed" : "pointer",
                 opacity: loading ? 0.75 : 1,
-                boxShadow: "0 14px 28px rgba(37,99,235,0.22)",
+                boxShadow: "0 14px 28px rgba(225,29,72,0.18)",
               }}
             >
               {loading ? "Validando acesso..." : "Entrar"}
@@ -8285,7 +8285,7 @@ export default function DashboardPage() {
 
     testarConexao();
   }, []);
-  const [dark, setDark] = useState(true);
+  const [dark, setDark] = useState(false);
   const [active, setActive] = useState("indicators");
   const [auth, setAuth] = useState(false);
   const [authEmail, setAuthEmail] = useState("");
