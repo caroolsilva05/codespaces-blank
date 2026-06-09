@@ -1,15 +1,18 @@
 .page {
-  --marketing-bg: #f6f8fc;
-  --marketing-card: #ffffff;
-  --marketing-card-soft: #f8fafc;
-  --marketing-text: #0f172a;
-  --marketing-muted: #64748b;
-  --marketing-border: #dbe3ef;
-  --marketing-blue: #2563eb;
-  --marketing-green: #22c55e;
-  --marketing-amber: #f59e0b;
-  --marketing-red: #ef4444;
-  --marketing-purple: #8b5cf6;
+  --marketing-bg: var(--app-bg, #f2f4f8);
+  --marketing-card: var(--app-surface, #ffffff);
+  --marketing-card-soft: var(--app-surface-soft, #f8fafc);
+  --marketing-text: var(--app-text, #0f172a);
+  --marketing-strong: var(--app-text-strong, #1e293b);
+  --marketing-muted: var(--app-text-muted, #64748b);
+  --marketing-border: var(--app-border, #e2e8f0);
+  --marketing-blue: var(--app-primary, #e11d48);
+  --marketing-green: #16a34a;
+  --marketing-amber: #d97706;
+  --marketing-red: var(--app-danger-bright, #ef4444);
+  --marketing-purple: #334155;
+  --marketing-primary-soft: var(--app-primary-soft, #ffe7ef);
+  --marketing-primary-bg: var(--app-primary-bg, #fef2f5);
 
   display: flex;
   flex-direction: column;
@@ -79,7 +82,7 @@
 .button {
   background: var(--marketing-blue);
   border: 1px solid var(--marketing-blue);
-  box-shadow: 0 10px 18px rgba(37, 99, 235, 0.16);
+  box-shadow: 0 10px 18px rgba(225, 29, 72, 0.16);
   color: #ffffff;
 }
 
@@ -91,7 +94,8 @@
 
 .button:hover,
 .ghostButton:hover {
-  border-color: #9db7e8;
+  border-color: var(--app-focus-border, #f8a0b5);
+  background: var(--marketing-primary-bg);
   transform: translateY(-1px);
 }
 
@@ -104,7 +108,7 @@
 .summaryCard {
   background: var(--marketing-card);
   border: 1px solid var(--marketing-border);
-  border-top: 3px solid rgba(37, 99, 235, 0.42);
+  border-top: 3px solid rgba(225, 29, 72, 0.42);
   border-radius: 8px;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
   padding: 16px;
@@ -112,7 +116,7 @@
 }
 
 .summaryCard:hover {
-  border-color: rgba(37, 99, 235, 0.32);
+  border-color: var(--app-focus-border, #f8a0b5);
   box-shadow: 0 14px 30px rgba(15, 23, 42, 0.07);
   transform: translateY(-1px);
 }
@@ -219,13 +223,13 @@
 }
 
 .choiceButton:hover {
-  border-color: #a9bddf;
-  background: #f0f5ff;
+  border-color: var(--app-focus-border, #f8a0b5);
+  background: var(--marketing-primary-bg);
 }
 
 .choiceButtonActive {
-  background: #eaf1ff;
-  border-color: #8bb2ff;
+  background: var(--marketing-primary-soft);
+  border-color: var(--app-focus-border, #f8a0b5);
   color: var(--marketing-blue);
 }
 
@@ -263,7 +267,7 @@
 
 .phaseCard:hover {
   background: var(--marketing-card);
-  border-color: #a9bddf;
+  border-color: var(--app-focus-border, #f8a0b5);
   transform: translateY(-1px);
 }
 
@@ -354,8 +358,8 @@
 }
 
 .table th {
-  background: #eef4ff;
-  color: #21406f;
+  background: var(--marketing-primary-bg);
+  color: var(--marketing-strong);
   font-size: 11px;
   font-weight: 700;
   padding: 11px 10px;
@@ -382,11 +386,11 @@
 }
 
 .table tbody tr:hover {
-  background: rgba(37, 99, 235, 0.035);
+  background: rgba(225, 29, 72, 0.035);
 }
 
 .templateLink {
-  color: #0ea5e9;
+  color: var(--marketing-blue);
   font-size: 12px;
   font-style: italic;
   font-weight: 650;
@@ -394,7 +398,7 @@
 }
 
 .templateLink:hover {
-  color: #0369a1;
+  color: #be123c;
   text-decoration: underline;
 }
 
@@ -414,8 +418,8 @@
 }
 
 .statusAtencao {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--marketing-primary-soft);
+  color: #9f1239;
 }
 
 .statusPendente {
@@ -441,10 +445,10 @@
 }
 
 .figmaBox {
-  background: #f9a8d4;
-  border: 1px solid #f472b6;
+  background: var(--marketing-primary-bg);
+  border: 1px solid var(--app-focus-border, #f8a0b5);
   border-radius: 8px;
-  color: #831843;
+  color: #9f1239;
   font-size: 11px;
   font-weight: 600;
   line-height: 1.45;
