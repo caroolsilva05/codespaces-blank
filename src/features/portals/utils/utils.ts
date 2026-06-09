@@ -1,4 +1,4 @@
-import type { AlertLevel, ConversionStatus, FunnelStep } from '../types/types';
+﻿import type { AlertLevel, ConversionStatus, FunnelStep } from '../types/types';
 
 export const STEPS = ['BuscaCliente', 'EnviaToken', 'ValidaToken', 'BuscaDivida', 'BuscaAcordo', 'Formalizar'] as const;
 
@@ -19,9 +19,9 @@ export function formatRisk(value: number): string {
 }
 
 export function statusLabel(status: ConversionStatus): string {
-  if (status === 'alta') return 'Convers?o alta';
-  if (status === 'intermediaria') return 'Convers?o intermedi?ria';
-  return 'Convers?o baixa';
+  if (status === 'alta') return 'Conversão alta';
+  if (status === 'intermediaria') return 'Conversão intermediária';
+  return 'Conversão baixa';
 }
 
 export function actionLabel(alertLevel: AlertLevel): string {
@@ -31,8 +31,8 @@ export function actionLabel(alertLevel: AlertLevel): string {
 }
 
 export function riskBadge(alertLevel: AlertLevel): string {
-  if (alertLevel === 'critico') return 'CR?TICO';
-  if (alertLevel === 'atencao') return 'ATEN??O';
+  if (alertLevel === 'critico') return 'CRÍTICO';
+  if (alertLevel === 'atencao') return 'ATENÇÃO';
   return 'OPORTUNIDADE';
 }
 
@@ -42,20 +42,21 @@ export function getStep(portalSteps: FunnelStep[], stepName: string): FunnelStep
 
 export function heatmapByConversion(percentual?: number): { bg: string; text: string; perda: number | null; tone: string } {
   if (percentual === undefined || percentual === null || Number.isNaN(percentual)) {
-    return { bg: '#F1EFE8', text: '#888780', perda: null, tone: 'neutral' };
+    return { bg: '#f8fafc', text: '#64748b', perda: null, tone: 'neutral' };
   }
 
   const perda = 100 - percentual;
-  if (perda < 30) return { bg: '#EAF3DE', text: '#27500A', perda, tone: 'healthy' };
-  if (perda <= 60) return { bg: '#FAEEDA', text: '#633806', perda, tone: 'warning' };
-  if (perda <= 90) return { bg: '#FCEBEB', text: '#791F1F', perda, tone: 'critical' };
-  return { bg: '#F09595', text: '#501313', perda, tone: 'collapse' };
+  if (perda < 30) return { bg: '#f0fdf4', text: '#166534', perda, tone: 'healthy' };
+  if (perda <= 60) return { bg: '#fff7ed', text: '#9a3412', perda, tone: 'warning' };
+  if (perda <= 90) return { bg: '#fef2f5', text: '#9f1239', perda, tone: 'critical' };
+  return { bg: '#ffe7ef', text: '#9f1239', perda, tone: 'collapse' };
 }
 
 export function scoreColor(score: number): string {
-  if (score < 40) return '#E24B4A';
-  if (score < 70) return '#EF9F27';
-  return '#639922';
+  if (score < 40) return '#e11d48';
+  if (score < 70) return '#d97706';
+  return '#16a34a';
 }
+
 
 

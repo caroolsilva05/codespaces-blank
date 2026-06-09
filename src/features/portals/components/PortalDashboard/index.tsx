@@ -152,11 +152,11 @@ export default function PortalDashboard() {
       </div>
 
       <div className={styles.legend}>
-        <span className={styles.legendItem}><span className={styles.swatch} style={{ background: '#EAF3DE' }} /> perda &lt; 30%</span>
-        <span className={styles.legendItem}><span className={styles.swatch} style={{ background: '#FAEEDA' }} /> perda 30-60%</span>
-        <span className={styles.legendItem}><span className={styles.swatch} style={{ background: '#FCEBEB' }} /> perda 60-90%</span>
-        <span className={styles.legendItem}><span className={styles.swatch} style={{ background: '#F09595' }} /> perda &gt; 90%</span>
-        <span className={styles.legendItem}><span className={styles.swatch} style={{ background: '#F1EFE8' }} /> sem dado</span>
+        <span className={styles.legendItem}><span className={styles.swatch} style={{ background: '#f0fdf4' }} /> perda &lt; 30%</span>
+        <span className={styles.legendItem}><span className={styles.swatch} style={{ background: '#fff7ed' }} /> perda 30-60%</span>
+        <span className={styles.legendItem}><span className={styles.swatch} style={{ background: '#fef2f5' }} /> perda 60-90%</span>
+        <span className={styles.legendItem}><span className={styles.swatch} style={{ background: '#ffe7ef' }} /> perda &gt; 90%</span>
+        <span className={styles.legendItem}><span className={styles.swatch} style={{ background: '#f8fafc' }} /> sem dado</span>
       </div>
 
       <div className={styles.tableWrap}>
@@ -208,7 +208,7 @@ export default function PortalDashboard() {
                     </span>
                   </td>
                   <td>
-                    <div className={styles.heatCell} style={{ background: '#F5F5F5', color: '#333' }}>
+                    <div className={styles.heatCell} style={{ background: '#f8fafc', color: '#64748b' }}>
                       <span className={styles.heatMain}>{formatCompactNumber(busca?.volume ?? 0)}</span>
                       <span className={styles.heatSub}>base</span>
                     </div>
@@ -220,7 +220,7 @@ export default function PortalDashboard() {
                   <td>{formalizarCell.element}</td>
                   <td>
                     <svg className={styles.scoreRing} viewBox="0 0 40 40" role="img" aria-label={`Health score: ${portal.healthScore} de 100`}>
-                      <circle cx="20" cy="20" r="15" stroke="#ECECEC" strokeWidth="4" fill="none" />
+                      <circle cx="20" cy="20" r="15" stroke="#e2e8f0" strokeWidth="4" fill="none" />
                       <circle
                         cx="20"
                         cy="20"
@@ -233,7 +233,7 @@ export default function PortalDashboard() {
                         strokeLinecap="round"
                         transform="rotate(-90 20 20)"
                       />
-                      <text x="20" y="24" textAnchor="middle" fontSize="10" fill="#222">{portal.healthScore}</text>
+                      <text x="20" y="24" textAnchor="middle" fontSize="10" fill="#0f172a">{portal.healthScore}</text>
                     </svg>
                   </td>
                   <td>
@@ -266,3 +266,4 @@ export default function PortalDashboard() {
     </section>
   );
 }
+
