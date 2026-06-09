@@ -321,39 +321,39 @@ export default function PocRegisterPage({
     const css =
       "<style>" +
       "* { box-sizing: border-box !important; }" +
-      "html, body { margin: 0; padding: 0; font-family: Segoe UI, Arial, sans-serif; background: #070C17; color: #EFF3FC; -webkit-print-color-adjust: exact; print-color-adjust: exact; }" +
+      "html, body { margin: 0; padding: 0; font-family: Segoe UI, Arial, sans-serif; background: #f2f4f8; color: #0f172a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }" +
       "body { padding: 8mm; font-size: 11px; overflow: visible !important; }" +
-      ".print-actions { position: sticky; top: 0; z-index: 9999; display: flex; justify-content: flex-end; gap: 8px; background: #070C17; padding: 8px 0 12px; margin-bottom: 10px; border-bottom: 1px solid rgba(148,163,184,.25); }" +
+      ".print-actions { position: sticky; top: 0; z-index: 9999; display: flex; justify-content: flex-end; gap: 8px; background: #f2f4f8; padding: 8px 0 12px; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; }" +
       ".print-actions button { border-radius: 10px; padding: 10px 14px; font-weight: 900; cursor: pointer; }" +
-      ".print-primary { background: #3B82F6; color: #fff; border: 0; }" +
-      ".print-secondary { background: #111827; color: #C7D7EC; border: 1px solid rgba(148,163,184,.25); }" +
-      ".header { border: 1px solid rgba(148,163,184,.20); background: #101827; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; }" +
-      ".breadcrumb { color: #5B7FA8; font-size: 10px; margin-bottom: 5px; }" +
-      "h1 { margin: 0; font-size: 22px; color: #fff; }" +
-      ".subtitle { margin-top: 5px; color: #9FB4D1; font-size: 11px; }" +
+      ".print-primary { background: #e11d48; color: #fff; border: 0; }" +
+      ".print-secondary { background: linear-gradient(135deg,#334155,#1f2937); color: #ffffff; border: 1px solid #334155; }" +
+      ".header { border: 1px solid #e2e8f0; border-top: 4px solid #e11d48; background: #ffffff; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; }" +
+      ".breadcrumb { color: #e11d48; font-size: 10px; margin-bottom: 5px; }" +
+      "h1 { margin: 0; font-size: 22px; color: #0f172a; }" +
+      ".subtitle { margin-top: 5px; color: #64748b; font-size: 11px; }" +
       ".cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px; margin: 10px 0; }" +
-      ".card { border: 1px solid rgba(148,163,184,.20); background: #111827; border-radius: 12px; padding: 11px 12px; min-height: 74px; }" +
-      ".label { color: #5B7FA8; font-size: 9px; text-transform: uppercase; letter-spacing: .7px; margin-bottom: 6px; }" +
-      ".value { font-size: 24px; font-weight: 900; color: #60A5FA; }" +
-      ".sub { margin-top: 4px; color: #C7D7EC; font-size: 10px; }" +
+      ".card { border: 1px solid #e2e8f0; background: #ffffff; border-radius: 12px; padding: 11px 12px; min-height: 74px; }" +
+      ".label { color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: .7px; margin-bottom: 6px; }" +
+      ".value { font-size: 24px; font-weight: 900; color: #e11d48; }" +
+      ".sub { margin-top: 4px; color: #64748b; font-size: 10px; }" +
       ".grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }" +
-      ".section { border: 1px solid rgba(148,163,184,.20); background: #111827; border-radius: 12px; padding: 13px 14px; margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid; }" +
-      ".section h2 { margin: 0 0 4px; font-size: 14px; color: #fff; }" +
-      ".section .desc { margin: 0 0 10px; color: #6E8AAF; font-size: 10px; }" +
+      ".section { border: 1px solid #e2e8f0; background: #ffffff; border-radius: 12px; padding: 13px 14px; margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid; }" +
+      ".section h2 { margin: 0 0 4px; font-size: 14px; color: #1e293b; }" +
+      ".section .desc { margin: 0 0 10px; color: #64748b; font-size: 10px; }" +
       ".infoGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }" +
-      ".info { background: #18243A; border: 1px solid rgba(96,165,250,.16); border-radius: 10px; padding: 9px 10px; min-height: 55px; }" +
-      ".info strong { display: block; color: #5B7FA8; font-size: 8.5px; text-transform: uppercase; letter-spacing: .7px; margin-bottom: 5px; }" +
-      ".info span { display: block; color: #fff; font-size: 11px; font-weight: 800; word-break: break-word; }" +
-      ".decision { border: 1px solid rgba(96,165,250,.45); background: #152A4A; border-radius: 12px; padding: 13px 14px; color: #BFD7FF; line-height: 1.5; }" +
-      ".decision b { display: block; color: #60A5FA; font-size: 20px; margin: 5px 0; }" +
+      ".info { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 9px 10px; min-height: 55px; }" +
+      ".info strong { display: block; color: #64748b; font-size: 8.5px; text-transform: uppercase; letter-spacing: .7px; margin-bottom: 5px; }" +
+      ".info span { display: block; color: #0f172a; font-size: 11px; font-weight: 800; word-break: break-word; }" +
+      ".decision { border: 1px solid #f8a0b5; background: #fef2f5; border-radius: 12px; padding: 13px 14px; color: #9f1239; line-height: 1.5; }" +
+      ".decision b { display: block; color: #e11d48; font-size: 20px; margin: 5px 0; }" +
       "table { width: 100% !important; border-collapse: collapse; table-layout: fixed; font-size: 9px; }" +
-      "th { background: #0F2442; color: #BFD7FF; text-align: left; padding: 6px 5px; text-transform: uppercase; font-size: 8px; }" +
-      "td { border-bottom: 1px solid rgba(148,163,184,.16); padding: 6px 5px; color: #EFF3FC; word-break: break-word; }" +
+      "th { background: #fef2f5; color: #1e293b; text-align: left; padding: 6px 5px; text-transform: uppercase; font-size: 8px; }" +
+      "td { border-bottom: 1px solid #e2e8f0; padding: 6px 5px; color: #0f172a; word-break: break-word; }" +
       "[style*='overflow'] { overflow: visible !important; }" +
       "[style*='min-height'], [style*='minHeight'] { min-height: auto !important; }" +
       "[style*='height'] { height: auto !important; }" +
       "@page { size: A4 landscape; margin: 7mm; }" +
-      "@media print { .print-actions { display: none !important; } body { padding: 0; background: #070C17; } .section { break-inside: avoid; page-break-inside: avoid; } }" +
+      "@media print { .print-actions { display: none !important; } body { padding: 0; background: #f2f4f8; } .section { break-inside: avoid; page-break-inside: avoid; } }" +
       "</style>";
 
     let htmlBody = "";
@@ -365,31 +365,31 @@ export default function PocRegisterPage({
               "Base elegível",
               orchestrationMetrics.baseElegivel,
               "Clientes aptos para régua",
-              "#8B5CF6",
+              "#334155",
             ],
             [
               "Acionados",
               orchestrationMetrics.acionados,
               fmtPct(orchestrationMetrics.taxaAcionamento),
-              "#60A5FA",
+              "#e11d48",
             ],
             [
               "Retorno positivo",
               orchestrationMetrics.retornoPositivo,
               fmtPct(orchestrationMetrics.taxaRetornoPositivo),
-              "#20C997",
+              "#16a34a",
             ],
             [
               "Avançaram fase",
               orchestrationMetrics.avancaramFase,
               fmtPct(orchestrationMetrics.taxaAvanco),
-              "#F59E0B",
+              "#d97706",
             ],
             [
               "Acordos",
               orchestrationMetrics.acordos,
               fmtPct(orchestrationMetrics.taxaAcordo),
-              "#FF4D6D",
+              "#dc2626",
             ],
           ]
         : data.general.pocType === "Enriquecimento de Dados"
@@ -398,26 +398,26 @@ export default function PocRegisterPage({
                 "% Base",
                 fmtPct(enrichmentMetrics.taxaProcessamento),
                 "Base processada",
-                "#8B5CF6",
+                "#334155",
               ],
               [
                 "% Retorno",
                 fmtPct(enrichmentMetrics.taxaRetorno),
                 "Retornos obtidos",
-                "#F59E0B",
+                "#d97706",
               ],
-              ["Meta 15%", "15%", "Meta mínima CPC novo", "#60A5FA"],
+              ["Meta 15%", "15%", "Meta mínima CPC novo", "#e11d48"],
               [
                 "% CPC Novo",
                 fmtPct(enrichmentMetrics.taxaCpcNovo),
                 "CPC novo identificado",
-                "#20C997",
+                "#16a34a",
               ],
               [
                 "% Meta",
                 fmtPct(enrichmentMetrics.percentualMeta),
                 "Atingimento da meta",
-                "#FF4D6D",
+                "#dc2626",
               ],
             ]
           : [
@@ -425,31 +425,31 @@ export default function PocRegisterPage({
                 "Total mensagens",
                 metrics.totalMensagens,
                 "Base consolidada",
-                "#8B5CF6",
+                "#334155",
               ],
               [
                 "Entregues",
                 metrics.entregue,
                 fmtPct(metrics.taxaEntrega),
-                "#20C997",
+                "#16a34a",
               ],
               [
                 "Lidos",
                 metrics.lido,
                 fmtPct(metrics.taxaLeituraDisparados),
-                "#60A5FA",
+                "#e11d48",
               ],
               [
                 "Retorno",
                 metrics.retornoCliente,
                 fmtPct(metrics.taxaRetornoLidos),
-                "#F59E0B",
+                "#d97706",
               ],
               [
                 "Acordos",
                 metrics.acordos,
                 fmtPct(metrics.taxaConversaoFinal),
-                "#FF4D6D",
+                "#dc2626",
               ],
             ];
 
@@ -794,27 +794,27 @@ export default function PocRegisterPage({
       <style>{`
         .poc-select-fix,
         select {
-          color: #e5edf8 !important;
-          background-color: #111827 !important;
-          border-color: rgba(148, 163, 184, 0.22) !important;
+          color: #0f172a !important;
+          background-color: #ffffff !important;
+          border-color: #e2e8f0 !important;
         }
 
         .poc-select-fix option,
         select option {
-          color: #e5edf8 !important;
-          background-color: #111827 !important;
+          color: #0f172a !important;
+          background-color: #ffffff !important;
         }
 
         .poc-select-fix option:checked,
         select option:checked {
           color: #ffffff !important;
-          background-color: #2563eb !important;
+          background-color: #e11d48 !important;
         }
 
         .poc-select-fix option:hover,
         select option:hover {
           color: #ffffff !important;
-          background-color: #1d4ed8 !important;
+          background-color: #be123c !important;
         }
       `}</style>{" "}
       <div
