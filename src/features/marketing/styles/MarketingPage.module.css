@@ -16,20 +16,21 @@
 
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
   color: var(--marketing-text);
 }
 
 .header {
   background: var(--marketing-card);
   border: 1px solid var(--marketing-border);
-  border-radius: 8px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(15,23,42,0.06), 0 8px 24px rgba(15,23,42,0.05));
   display: flex;
   justify-content: space-between;
-  gap: 18px;
+  gap: 24px;
   align-items: flex-start;
-  padding: 18px;
+  padding: 24px;
+  transition: var(--transition-base, box-shadow 0.18s);
 }
 
 .eyebrow {
@@ -43,18 +44,18 @@
 
 .title {
   color: var(--marketing-text);
-  font-size: 25px;
-  font-weight: 760;
+  font-size: 32px;
+  font-weight: 700;
   letter-spacing: 0;
-  line-height: 1.2;
+  line-height: 1.16;
   margin: 0;
 }
 
 .subtitle {
   color: var(--marketing-muted);
-  font-size: 13px;
-  line-height: 1.6;
-  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.65;
+  margin: 10px 0 0;
   max-width: 720px;
 }
 
@@ -68,22 +69,24 @@
 .button,
 .ghostButton {
   align-items: center;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   display: inline-flex;
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 700;
   gap: 8px;
-  min-height: 36px;
-  padding: 8px 13px;
-  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+  min-height: 40px;
+  padding: 9px 16px;
+  transition: var(--transition-base, border-color 0.2s, background 0.2s, transform 0.2s);
 }
 
 .button {
   background: var(--marketing-blue);
   border: 1px solid var(--marketing-blue);
-  box-shadow: 0 10px 18px rgba(225, 29, 72, 0.16);
+  box-shadow: 0 4px 12px rgba(225,29,72,0.22);
   color: #ffffff;
+  letter-spacing: -0.01em;
+  transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
 }
 
 .ghostButton {
@@ -101,18 +104,18 @@
 
 .summaryGrid {
   display: grid;
-  gap: 12px;
+  gap: 16px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .summaryCard {
   background: var(--marketing-card);
   border: 1px solid var(--marketing-border);
-  border-top: 3px solid rgba(225, 29, 72, 0.42);
-  border-radius: 8px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
-  padding: 16px;
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  border-top: 3px solid rgba(225, 29, 72, 0.55);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(15,23,42,0.05), 0 6px 20px rgba(15,23,42,0.04));
+  padding: 20px;
+  transition: var(--transition-base, border-color 0.2s, box-shadow 0.2s, transform 0.2s);
 }
 
 .summaryCard:hover {
@@ -124,15 +127,18 @@
 .summaryLabel {
   color: var(--marketing-muted);
   font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 7px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
 }
 
 .summaryValue {
   color: var(--marketing-text);
-  font-size: 24px;
-  font-weight: 760;
+  font-size: 32px;
+  font-weight: 700;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .summaryHint {
@@ -144,8 +150,8 @@
 
 .workspace {
   display: grid;
-  gap: 14px;
-  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 24px;
+  grid-template-columns: 280px minmax(0, 1fr);
   align-items: start;
 }
 
@@ -155,21 +161,22 @@
 .notePanel {
   background: var(--marketing-card);
   border: 1px solid var(--marketing-border);
-  border-radius: 8px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.045);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card, 0 10px 28px rgba(15, 23, 42, 0.045));
 }
 
 .filterPanel {
-  padding: 14px;
+  padding: 16px;
   position: sticky;
-  top: 84px;
+  top: 88px;
 }
 
 .panelTitle {
   color: var(--marketing-text);
-  font-size: 13px;
-  font-weight: 760;
-  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0 0 12px;
 }
 
 .filterGroup {
@@ -190,10 +197,10 @@
 .select {
   background: var(--marketing-card-soft);
   border: 1px solid var(--marketing-border);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--marketing-text);
-  min-height: 38px;
-  padding: 8px 10px;
+  min-height: 42px;
+  padding: 9px 12px;
   width: 100%;
 }
 
@@ -208,18 +215,18 @@
   align-items: center;
   background: var(--marketing-card-soft);
   border: 1px solid var(--marketing-border);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--marketing-text);
   cursor: pointer;
   display: flex;
   font-size: 12px;
   font-weight: 650;
   justify-content: space-between;
-  min-height: 36px;
-  padding: 8px 10px;
+  min-height: 40px;
+  padding: 9px 12px;
   text-align: left;
   width: 100%;
-  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  transition: var(--transition-base, background 0.2s, border-color 0.2s, color 0.2s);
 }
 
 .choiceButton:hover {
@@ -231,6 +238,35 @@
   background: var(--marketing-primary-soft);
   border-color: var(--app-focus-border, #f8a0b5);
   color: var(--marketing-blue);
+  box-shadow: inset 0 0 0 1px var(--app-focus-border);
+}
+
+.choiceMain {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.checkboxMark {
+  align-items: center;
+  background: var(--marketing-card);
+  border: 1px solid var(--marketing-border);
+  border-radius: 4px;
+  color: #ffffff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 900;
+  height: 16px;
+  justify-content: center;
+  line-height: 1;
+  width: 16px;
+}
+
+.choiceButtonActive .checkboxMark {
+  background: var(--marketing-blue);
+  border-color: var(--marketing-blue);
 }
 
 .choiceCount {
@@ -242,32 +278,194 @@
 .contentStack {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 20px;
   min-width: 0;
 }
 
+.executivePanel {
+  background: var(--marketing-card);
+  border: 1px solid var(--marketing-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card, 0 10px 28px rgba(15, 23, 42, 0.045));
+  padding: 20px;
+}
+
+.executiveHeader {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.scopePill {
+  background: var(--marketing-primary-bg);
+  border: 1px solid var(--app-focus-border, #f8a0b5);
+  border-radius: 999px;
+  color: var(--marketing-blue);
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 6px 10px;
+}
+
+.executiveGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 0.85fr) minmax(280px, 1.6fr);
+}
+
+.heroMetric,
+.executiveCardWide,
+.insightCard {
+  background: var(--marketing-card-soft);
+  border: 1px solid var(--marketing-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.035);
+  padding: 16px;
+}
+
+.metricLabel {
+  color: var(--marketing-muted);
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.heroMetric strong {
+  color: var(--marketing-text);
+  display: block;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  margin-top: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.metricSub {
+  color: var(--marketing-muted);
+  display: block;
+  font-size: 11px;
+  margin-top: 6px;
+}
+
+.metricTrack,
+.channelTrack,
+.walletRankingTrack {
+  background: rgba(100, 116, 139, 0.12);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.metricTrack {
+  margin-top: 13px;
+}
+
+.metricTrack span,
+.walletRankingTrack i {
+  background: var(--marketing-green);
+  display: block;
+  height: 100%;
+}
+
+.metricTrackAlert span {
+  background: var(--marketing-blue);
+}
+
+.channelBars,
+.providerSummary,
+.walletRanking {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.channelBarRow,
+.walletRankingRow {
+  align-items: center;
+  display: grid;
+  gap: 9px;
+  grid-template-columns: 86px minmax(0, 1fr) 34px;
+}
+
+.channelBarRow span,
+.walletRankingRow span {
+  color: var(--marketing-text);
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channelBarRow strong,
+.walletRankingRow strong {
+  color: var(--marketing-text);
+  font-size: 12px;
+  text-align: right;
+}
+
+.channelTrack i {
+  display: block;
+  height: 100%;
+}
+
+.insightGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  margin-top: 16px;
+}
+
+.providerSummaryRow {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 72px minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.providerSummaryRow strong {
+  color: var(--marketing-text);
+  font-size: 12px;
+}
+
+.providerSummaryRow span {
+  color: var(--marketing-muted);
+  font-size: 11px;
+}
+
+.walletRankingTrack i {
+  background: var(--marketing-blue);
+}
+
 .phasePanel {
-  padding: 14px;
+  padding: 20px;
 }
 
 .phaseGrid {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .phaseCard {
   background: var(--marketing-card-soft);
   border: 1px solid var(--marketing-border);
-  border-radius: 8px;
-  min-height: 88px;
-  padding: 12px;
-  transition: border-color 0.2s, transform 0.2s, background 0.2s;
+  border-radius: 12px;
+  min-height: 96px;
+  padding: 16px;
+  transition: var(--transition-base, border-color 0.2s, transform 0.2s, background 0.2s);
 }
 
 .phaseCard:hover {
   background: var(--marketing-card);
   border-color: var(--app-focus-border, #f8a0b5);
+  box-shadow: 0 4px 16px rgba(15,23,42,0.08);
   transform: translateY(-1px);
 }
 
@@ -294,9 +492,38 @@
 
 .phaseCount {
   color: var(--marketing-text);
-  font-size: 23px;
-  font-weight: 760;
-  margin-top: 12px;
+  font-size: 28px;
+  font-weight: 700;
+  margin-top: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.walletVariantGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.walletVariant {
+  background: var(--marketing-card-soft);
+  border: 1px solid var(--marketing-border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 64px;
+  padding: 12px 14px;
+}
+
+.walletVariant strong {
+  color: var(--marketing-text);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.walletVariant span {
+  color: var(--marketing-muted);
+  font-size: 11px;
 }
 
 .blue {
@@ -324,26 +551,118 @@
 }
 
 .tableToolbar {
-  background: linear-gradient(180deg, rgba(248, 250, 252, 0.86), rgba(255, 255, 255, 0));
+  background: linear-gradient(180deg, rgba(254, 242, 245, 0.7), rgba(255, 255, 255, 0));
 }
 
 .tableToolbar {
-  align-items: center;
+  align-items: flex-start;
   border-bottom: 1px solid var(--marketing-border);
   display: flex;
-  gap: 12px;
+  gap: 20px;
   justify-content: space-between;
-  padding: 13px 14px;
+  padding: 20px;
+}
+
+.tableTitleBlock {
+  min-width: 0;
+}
+
+.activeFilterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.activeFilterRow span {
+  background: var(--marketing-card);
+  border: 1px solid var(--marketing-border);
+  border-radius: 999px;
+  color: var(--marketing-muted);
+  font-size: 11px;
+  font-weight: 750;
+  padding: 5px 9px;
+}
+
+.tableExecutiveStrip {
+  align-items: stretch;
+  background: var(--marketing-card);
+  border-bottom: 1px solid var(--marketing-border);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(130px, 1fr)) minmax(260px, 1.3fr);
+  padding: 16px 20px;
+}
+
+.tableStatCard {
+  align-items: center;
+  background: var(--marketing-card-soft);
+  border: 1px solid var(--marketing-border);
+  border-radius: 12px;
+  display: flex;
+  gap: 10px;
+  min-height: 58px;
+  padding: 12px 14px;
+}
+
+.tableStatDot {
+  border-radius: 999px;
+  display: block;
+  height: 10px;
+  width: 10px;
+}
+
+.tableStatCard strong {
+  color: var(--marketing-text);
+  display: block;
+  font-size: 19px;
+  line-height: 1;
+}
+
+.tableStatCard span:last-child {
+  color: var(--marketing-muted);
+  display: block;
+  font-size: 11px;
+  font-weight: 750;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.tableLegend {
+  align-items: center;
+  background: var(--marketing-card-soft);
+  border: 1px solid var(--marketing-border);
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.tableLegend span {
+  align-items: center;
+  color: var(--marketing-muted);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 750;
+  gap: 6px;
+}
+
+.tableLegend i {
+  border-radius: 999px;
+  display: inline-block;
+  height: 10px;
+  width: 10px;
 }
 
 .searchBox {
   background: var(--marketing-card-soft);
   border: 1px solid var(--marketing-border);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--marketing-text);
   max-width: 340px;
-  min-height: 36px;
-  padding: 8px 10px;
+  min-height: 40px;
+  padding: 9px 12px;
   width: 100%;
 }
 
@@ -352,29 +671,52 @@
 }
 
 .table {
-  border-collapse: collapse;
-  min-width: 980px;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 1240px;
   width: 100%;
 }
 
 .table th {
-  background: var(--marketing-primary-bg);
+  background: linear-gradient(180deg, var(--marketing-primary-bg), var(--marketing-card-soft));
   color: var(--marketing-strong);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  padding: 11px 10px;
+  letter-spacing: 0.05em;
+  height: 46px;
+  padding: 12px;
+  position: sticky;
+  top: 0;
   text-align: left;
   text-transform: uppercase;
   white-space: nowrap;
+  z-index: 2;
 }
 
 .table td {
   border-bottom: 1px solid var(--marketing-border);
   color: var(--marketing-text);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 450;
-  padding: 11px 10px;
+  height: 48px;
+  padding: 12px;
   vertical-align: middle;
+}
+
+.table th:first-child,
+.table td:first-child {
+  left: 0;
+  position: sticky;
+  z-index: 3;
+}
+
+.table th:first-child {
+  background: linear-gradient(180deg, var(--marketing-primary-bg), var(--marketing-card-soft));
+}
+
+.table td:first-child {
+  background: var(--marketing-card);
+  box-shadow: 8px 0 14px rgba(15, 23, 42, 0.035);
 }
 
 .table tr:last-child td {
@@ -385,8 +727,40 @@
   transition: background 0.18s;
 }
 
+.table tbody tr:nth-child(even) td {
+  background-color: rgba(248, 250, 252, 0.52);
+}
+
+.table tbody tr:nth-child(even) td:first-child {
+  background-color: var(--marketing-card);
+}
+
 .table tbody tr:hover {
   background: rgba(225, 29, 72, 0.035);
+}
+
+.table tbody tr:hover td {
+  background: rgba(225, 29, 72, 0.035);
+}
+
+.walletNameCell {
+  min-width: 230px;
+}
+
+.walletNameCell strong {
+  color: var(--marketing-text);
+  display: block;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.walletNameCell span {
+  color: var(--marketing-muted);
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 4px;
+  text-transform: uppercase;
 }
 
 .templateLink {
@@ -427,6 +801,37 @@
   color: #92400e;
 }
 
+.providerBadge {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 800;
+  justify-content: center;
+  min-width: 82px;
+  padding: 5px 8px;
+  white-space: nowrap;
+}
+
+.provider_ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.provider_attention {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.provider_mapped {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.provider_none {
+  background: #f8fafc;
+  color: #64748b;
+}
+
 .noteGrid {
   display: grid;
   gap: 14px;
@@ -434,7 +839,7 @@
 }
 
 .notePanel {
-  padding: 14px;
+  padding: 20px;
 }
 
 .noteText {
@@ -447,17 +852,23 @@
 .figmaBox {
   background: var(--marketing-primary-bg);
   border: 1px solid var(--app-focus-border, #f8a0b5);
-  border-radius: 8px;
+  border-radius: 12px;
   color: #9f1239;
   font-size: 11px;
   font-weight: 600;
   line-height: 1.45;
-  padding: 13px;
+  padding: 16px;
 }
 
 @media (max-width: 1200px) {
   .summaryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .executiveGrid,
+  .insightGrid,
+  .tableExecutiveStrip {
+    grid-template-columns: 1fr;
   }
 
   .workspace {
@@ -477,13 +888,20 @@
 
 @media (max-width: 900px) {
   .header,
-  .tableToolbar {
+  .tableToolbar,
+  .executiveHeader {
     flex-direction: column;
     align-items: stretch;
   }
 
   .actions {
     justify-content: flex-start;
+  }
+
+  .tableToolbar .actions,
+  .searchBox {
+    max-width: none;
+    width: 100%;
   }
 
   .phaseGrid {
@@ -499,6 +917,17 @@
 @media (max-width: 560px) {
   .title {
     font-size: 22px;
+  }
+
+  .channelBarRow,
+  .walletRankingRow,
+  .providerSummaryRow {
+    grid-template-columns: 1fr;
+  }
+
+  .channelBarRow strong,
+  .walletRankingRow strong {
+    text-align: left;
   }
 
   .summaryGrid,
