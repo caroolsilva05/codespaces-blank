@@ -15,7 +15,7 @@
 
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 24px;
   width: 100%;
   min-width: 0;
   color: var(--app-text, #0f172a);
@@ -36,10 +36,10 @@
 .topbar {
   background: var(--app-surface, #ffffff);
   border: 1px solid var(--app-border, #e2e8f0);
-  border-radius: 8px;
-  box-shadow: var(--app-shadow-sm, 0 8px 20px rgba(15, 23, 42, 0.045));
+  border-radius: 12px;
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(15,23,42,0.05), 0 8px 24px rgba(15,23,42,0.05));
   justify-content: space-between;
-  padding: 16px;
+  padding: 20px 24px;
 }
 
 .topbar > div:last-child {
@@ -50,9 +50,9 @@
 
 .titleWrap h2 {
   margin: 0;
-  font-size: 23px;
-  font-weight: 760;
-  line-height: 1.2;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.16;
 }
 
 .live {
@@ -77,7 +77,7 @@
 
 .notice {
   border: 1px solid var(--app-focus-border, #f8a0b5);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--app-primary-bg, #fef2f5);
   color: #9f1239;
   font-size: 12px;
@@ -87,15 +87,15 @@
 
 .btn, .pill, .tab {
   border: 1px solid var(--app-border, #e2e8f0);
-  border-radius: 8px;
-  padding: 8px 13px;
+  border-radius: 10px;
+  padding: 9px 16px;
   background: var(--app-surface, #ffffff);
   color: var(--app-text-strong, #1e293b);
   font-size: 12px;
   font-weight: 650;
   cursor: pointer;
-  min-height: 36px;
-  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+  min-height: 40px;
+  transition: var(--transition-base, background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s);
 }
 
 .btn:hover,
@@ -131,30 +131,34 @@
 .kpi {
   border: 1px solid var(--app-border, #e2e8f0);
   border-top: 3px solid var(--app-primary, #e11d48);
-  border-radius: 8px;
-  box-shadow: var(--app-shadow-sm, 0 8px 20px rgba(15, 23, 42, 0.045));
-  padding: 14px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-card, 0 8px 20px rgba(15, 23, 42, 0.045));
+  padding: 20px;
   background: var(--app-surface, #ffffff);
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  transition: box-shadow 0.18s, transform 0.18s;
+  cursor: default;
 }
 
 .kpi:hover {
   border-color: var(--app-focus-border, #f8a0b5);
-  box-shadow: var(--app-shadow-md, 0 14px 34px rgba(15, 23, 42, 0.07));
-  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(15,23,42,0.10);
+  transform: translateY(-2px);
 }
 
 .kpiLabel {
   font-size: 12px;
   color: var(--app-text-muted, #64748b);
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
 }
 
 .kpiValue {
-  font-size: 21px;
-  font-weight: 760;
+  font-size: 30px;
+  font-weight: 700;
   line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
 
 .legend {
@@ -180,29 +184,30 @@
   max-width: 100%;
   border-radius: 12px;
   border: 1px solid var(--app-border, #e2e8f0);
-  box-shadow: var(--app-shadow-sm, 0 8px 20px rgba(15, 23, 42, 0.045));
+  box-shadow: var(--shadow-card, 0 8px 20px rgba(15, 23, 42, 0.045));
   -webkit-overflow-scrolling: touch;
 }
 
 .table {
   width: 100%;
   min-width: 980px;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   background: var(--app-surface, #ffffff);
 }
 
 .table th, .table td {
   border-bottom: 1px solid var(--app-border, #e2e8f0);
-  padding: 11px 9px;
+  padding: 12px;
   text-align: left;
   vertical-align: middle;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .table th {
   color: var(--app-text-strong, #1e293b);
   font-weight: 700;
-  background: var(--app-surface-soft, #f8fafc);
+  background: linear-gradient(180deg, var(--app-primary-bg, #fef2f5), var(--app-surface-soft, #f8fafc));
   position: sticky;
   top: 0;
   z-index: 1;
@@ -210,6 +215,7 @@
 
 .table td {
   font-weight: 450;
+  height: 50px;
 }
 
 .thSortable { cursor: pointer; user-select: none; }
@@ -221,7 +227,7 @@
 
 .portalName {
   font-weight: 700;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
 }
 
 .subText {
@@ -243,13 +249,14 @@
 .badgeAlta { background: #dcfce7; color: #166534; }
 
 .heatCell {
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid rgba(15, 23, 42, 0.04);
-  padding: 8px;
+  padding: 10px;
   display: inline-flex;
   flex-direction: column;
   gap: 2px;
   min-width: 88px;
+  transition: var(--transition-base, opacity 0.15s);
 }
 
 .heatMain {
@@ -271,8 +278,8 @@
 }
 
 .scoreRing {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
 }
 
 .riskBox {
@@ -283,14 +290,19 @@
 
 .actionBtn {
   border: 1px solid var(--app-border, #e2e8f0);
-  border-radius: 8px;
-  padding: 6px 10px;
+  border-radius: 10px;
+  padding: 8px 12px;
   background: var(--app-surface, #ffffff);
   color: var(--app-text-strong, #1e293b);
   cursor: pointer;
   font-size: 12px;
   font-weight: 650;
-  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  transition: var(--transition-base, background 0.2s, border-color 0.2s, transform 0.2s);
+}
+
+.actionBtn:hover {
+  box-shadow: 0 4px 12px rgba(15,23,42,0.10);
+  transform: translateY(-1px);
 }
 
 .footer {
