@@ -3,6 +3,27 @@
 }
 
 :root {
+  --font-sans: "Inter", "Geist", "Plus Jakarta Sans", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  --fs-h1: 40px;
+  --fs-h2: 32px;
+  --fs-h3: 24px;
+  --fs-h4: 20px;
+  --fs-body: 16px;
+  --fs-small: 14px;
+  --fs-caption: 12px;
+  --lh-tight: 1.15;
+  --lh-heading: 1.22;
+  --lh-body: 1.55;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
   --app-bg: #f2f4f8;
   --app-surface: #ffffff;
   --app-surface-soft: #f8fafc;
@@ -21,11 +42,20 @@
   --app-secondary-gradient: linear-gradient(135deg, #334155, #1f2937);
   --app-shadow-sm: 0 8px 20px rgba(15, 23, 42, 0.045);
   --app-shadow-md: 0 14px 34px rgba(15, 23, 42, 0.07);
+  --app-shadow-lg: 0 24px 70px rgba(15, 23, 42, 0.08);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --shadow-card: 0 1px 2px rgba(15,23,42,0.04), 0 10px 28px rgba(15,23,42,0.055);
+  --shadow-hover: 0 8px 22px rgba(15,23,42,0.09), 0 18px 46px rgba(15,23,42,0.08);
+  --transition-base: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 html {
-  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
   font-size: 16px;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -37,8 +67,9 @@ body {
   margin: 0;
   min-width: 320px;
   overflow-x: hidden;
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 400;
+  line-height: var(--lh-body);
   letter-spacing: 0;
 }
 
@@ -47,17 +78,22 @@ body {
   color: var(--app-text);
 }
 
-body::-webkit-scrollbar,
-.app-main::-webkit-scrollbar {
-  width: 10px;
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-body::-webkit-scrollbar-thumb,
-.app-main::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.26);
-  border: 3px solid transparent;
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100,116,139,0.22);
   border-radius: 999px;
-  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100,116,139,0.40);
 }
 
 button,
@@ -70,6 +106,40 @@ textarea {
 
 button {
   font-weight: 650;
+  transition: opacity 0.15s ease, transform 0.15s ease,
+    box-shadow 0.18s ease, background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+button:active {
+  transform: scale(0.97) !important;
+}
+
+input,
+select,
+textarea {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--app-text-muted);
+  opacity: 0.72;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--app-focus-border) !important;
+  box-shadow: 0 0 0 3px var(--app-focus-shadow);
+}
+
+code,
+kbd,
+samp,
+pre,
+.font-mono {
+  font-family: var(--font-mono);
 }
 
 button:focus-visible,
@@ -104,10 +174,56 @@ table {
 .app-main {
   min-width: 0;
   line-height: 1.45;
+  font-size: var(--fs-small);
 }
 
 .app-main table {
   min-width: max-content;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-main table th {
+  background: linear-gradient(180deg, var(--app-primary-bg), var(--app-surface-soft));
+  color: var(--app-text-strong);
+  font-size: var(--fs-caption) !important;
+  font-weight: 700 !important;
+  height: 42px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.app-main table td {
+  height: 44px;
+}
+
+.app-main table tbody tr:nth-child(even) td {
+  background-color: rgba(248, 250, 252, 0.46);
+}
+
+.app-main table tbody tr:hover {
+  background: linear-gradient(90deg, rgba(254, 242, 245, 0.82), transparent);
+}
+
+.app-main input,
+.app-main select,
+.app-main textarea,
+.login-page input,
+.login-page select,
+.login-page textarea {
+  border-radius: var(--radius-md) !important;
+  min-height: 40px;
+}
+
+.app-main button,
+.login-page button {
+  min-height: 38px;
+}
+
+.app-main a {
+  color: var(--app-primary);
+  text-underline-offset: 3px;
 }
 
 .app-main > * {
@@ -116,8 +232,30 @@ table {
 
 .app-main h1,
 .app-main h2,
-.app-main h3 {
+.app-main h3,
+.app-main h4 {
   letter-spacing: 0 !important;
+  line-height: var(--lh-heading) !important;
+}
+
+.app-main h1 {
+  font-size: var(--fs-h1) !important;
+  font-weight: 700 !important;
+}
+
+.app-main h2 {
+  font-size: var(--fs-h2) !important;
+  font-weight: 700 !important;
+}
+
+.app-main h3 {
+  font-size: var(--fs-h3) !important;
+  font-weight: 650 !important;
+}
+
+.app-main h4 {
+  font-size: var(--fs-h4) !important;
+  font-weight: 650 !important;
 }
 
 .app-main [style*="font-weight: 950"] {
