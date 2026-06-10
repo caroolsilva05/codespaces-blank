@@ -1,4 +1,4 @@
-export type ConversionStatus = 'baixa' | 'intermediaria' | 'alta';
+﻿export type ConversionStatus = 'baixa' | 'intermediaria' | 'alta';
 export type AlertLevel = 'critico' | 'atencao' | 'oportunidade';
 
 export interface FunnelStep {
@@ -27,4 +27,5 @@ export interface Portal {
   observacao: string;
   alertLevel: AlertLevel;
 }
+
 

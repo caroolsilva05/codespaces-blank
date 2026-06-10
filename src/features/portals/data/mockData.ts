@@ -1,15 +1,15 @@
-import type { Portal } from '../types/types';
+﻿import type { Portal } from '../types/types';
 
 export const portais: Portal[] = [
   {
     id: 'generico',
-    nome: 'Portal - Gen?rico',
+    nome: 'Portal - Genérico',
     status: 'baixa',
     healthScore: 21,
     totalInteracoes: 28857706,
     riscoContrato: 5481244639918,
     alertLevel: 'critico',
-    observacao: 'Gargalo cr?tico em Valida Token (+18% vs ontem)',
+    observacao: 'Gargalo crítico em Valida Token (+18% vs ontem)',
     funil: [
       { nome: 'BuscaCliente', volume: 150217, percentual: 100 },
       { nome: 'EnviaToken', volume: 20817, percentual: 13.9 },
@@ -41,7 +41,7 @@ export const portais: Portal[] = [
   },
   {
     id: 'itau-pf',
-    nome: 'Portal - Ita? PF',
+    nome: 'Portal - Itaú PF',
     status: 'intermediaria',
     healthScore: 28,
     totalInteracoes: 9956781,
@@ -60,13 +60,13 @@ export const portais: Portal[] = [
   },
   {
     id: 'itau',
-    nome: 'Portal - Ita?',
+    nome: 'Portal - Itaú',
     status: 'baixa',
     healthScore: 38,
     totalInteracoes: 0,
     riscoContrato: 36503236,
     alertLevel: 'oportunidade',
-    observacao: 'Zero formaliza??es - revisar oferta',
+    observacao: 'Zero formalizações - revisar oferta',
     funil: [
       { nome: 'BuscaCliente', volume: 242, percentual: 100 },
       { nome: 'EnviaToken', volume: 196, percentual: 81.0 },
@@ -78,5 +78,6 @@ export const portais: Portal[] = [
     percentuais: { envioBusca: 81, validacaoEnvio: 27.6, perdaToken: 72.4, formalizarOpcao: 0, formalizacoesPorMil: 0 },
   },
 ];
+
 
 

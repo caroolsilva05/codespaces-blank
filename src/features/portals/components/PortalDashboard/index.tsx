@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import styles from '../../styles/PortalDashboard.module.css';
 import { portais as initialPortais } from '../../data/mockData';
+import { fetchPortalDashboardData } from '../../services/portalSplunkService';
 import type { FunnelStep, Portal } from '../../types/types';
 import {
   actionLabel,
@@ -23,7 +24,30 @@ type SortKey =
   | 'healthScore'
   | 'riscoContrato';
 
+type PortalPeriod = 'Hoje' | '7 dias' | '30 dias';
+
 const CIRC = 2 * Math.PI * 15;
+
+const labels = {
+  title: 'Gest\u00e3o de portais',
+  sourceLive: 'Splunk ao vivo',
+  sourceMock: 'dados locais',
+  loading: 'carregando',
+  exportReport: 'Exportar relat\u00f3rio de portais',
+  criticalAlerts: 'Abrir alertas cr\u00edticos',
+  dailyTests: 'Testes Di\u00e1rios',
+  filterPeriod: 'Filtrar per\u00edodo',
+  totalInteractions: 'Total de intera\u00e7\u00f5es',
+  formalizations: 'Formaliza\u00e7\u00f5es',
+  searchDebt: 'Busca D\u00edvida',
+  action: 'A\u00e7\u00e3o',
+  interactions: 'intera\u00e7\u00f5es',
+  globalActions: 'A\u00e7\u00f5es globais',
+  availableFallback: 'Exibindo dados locais para manter a monitoria dispon\u00edvel.',
+  occurrences: 'ocorr\u00eancias',
+  variation: 'varia\u00e7\u00e3o',
+  conversion: 'convers\u00e3o',
+};
 
 function stepCell(step: FunnelStep | undefined, labelPrefix: string, isValida = false) {
   if (!step) {
@@ -37,8 +61,8 @@ function stepCell(step: FunnelStep | undefined, labelPrefix: string, isValida = 
   const perda = color.perda;
   const deltaText = typeof step.delta === 'number' ? `${step.delta > 0 ? '+' : ''}${formatPercent(step.delta)}` : null;
   const aria = isValida
-    ? `${labelPrefix}: ${step.volume} ocorr?ncias, ${formatPercent(perda ?? 0)} de perda${deltaText ? `, varia??o de ${deltaText} vs ontem` : ''}`
-    : `${labelPrefix}: ${step.volume} ocorr?ncias, ${formatPercent(step.percentual)} de convers?o`;
+    ? `${labelPrefix}: ${step.volume} ${labels.occurrences}, ${formatPercent(perda ?? 0)} de perda${deltaText ? `, ${labels.variation} de ${deltaText} vs ontem` : ''}`
+    : `${labelPrefix}: ${step.volume} ${labels.occurrences}, ${formatPercent(step.percentual)} de ${labels.conversion}`;
 
   return {
     sortValue: step.percentual,
@@ -59,27 +83,65 @@ function stepCell(step: FunnelStep | undefined, labelPrefix: string, isValida = 
 
 export default function PortalDashboard() {
   const [activeTab, setActiveTab] = useState('Monitoria');
-  const [periodo, setPeriodo] = useState<'Hoje' | '7 dias' | '30 dias'>('Hoje');
+  const [periodo, setPeriodo] = useState<PortalPeriod>('Hoje');
   const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'riscoContrato', dir: 'desc' });
+  const [portais, setPortais] = useState<Portal[]>(initialPortais);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  const [dataSource, setDataSource] = useState<'splunk' | 'mock'>('mock');
 
   const ticketsCount = 12;
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadSplunkData() {
+      setLoading(true);
+      setError('');
+
+      try {
+        const data = await fetchPortalDashboardData(periodo);
+        if (!active) return;
+
+        setPortais(data.portais.length ? data.portais : initialPortais);
+        setUpdatedAt(data.updatedAt);
+        setDataSource(data.portais.length ? 'splunk' : 'mock');
+      } catch (err) {
+        if (!active) return;
+
+        setPortais(initialPortais);
+        setUpdatedAt(null);
+        setDataSource('mock');
+        setError(err instanceof Error ? err.message : 'Erro ao carregar dados do Splunk.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadSplunkData();
+
+    return () => {
+      active = false;
+    };
+  }, [periodo]);
+
   const totalInteracoes = useMemo(
-    () => initialPortais.reduce((acc, p) => acc + p.totalInteracoes, 0),
-    [],
+    () => portais.reduce((acc, p) => acc + p.totalInteracoes, 0),
+    [portais],
   );
   const errosValidaToken = useMemo(
-    () => initialPortais.filter((p) => p.funil.some((s) => s.nome === 'ValidaToken' && s.perdaToken)).length,
-    [],
+    () => portais.filter((p) => p.funil.some((s) => s.nome === 'ValidaToken' && s.perdaToken)).length,
+    [portais],
   );
   const formalizacoes = useMemo(
-    () => initialPortais.reduce((acc, p) => acc + (getStep(p.funil, 'Formalizar')?.volume ?? 0), 0),
-    [],
+    () => portais.reduce((acc, p) => acc + (getStep(p.funil, 'Formalizar')?.volume ?? 0), 0),
+    [portais],
   );
-  const riscoTotal = useMemo(() => initialPortais.reduce((acc, p) => acc + p.riscoContrato, 0), []);
+  const riscoTotal = useMemo(() => portais.reduce((acc, p) => acc + p.riscoContrato, 0), [portais]);
 
   const sorted = useMemo(() => {
-    const data = [...initialPortais];
+    const data = [...portais];
     const factor = sort.dir === 'asc' ? 1 : -1;
     return data.sort((a, b) => {
       const value = (portal: Portal): number | string => {
@@ -95,7 +157,7 @@ export default function PortalDashboard() {
       if (typeof av === 'string' && typeof bv === 'string') return av.localeCompare(bv) * factor;
       return ((Number(av) || 0) - (Number(bv) || 0)) * factor;
     });
-  }, [sort]);
+  }, [portais, sort]);
 
   const onSort = (key: SortKey) => {
     setSort((prev) => ({
@@ -108,17 +170,19 @@ export default function PortalDashboard() {
     <section className={styles.dashboard}>
       <div className={styles.topbar}>
         <div className={styles.titleWrap}>
-          <h2>Gest?o de portais</h2>
-          <span className={styles.live}>ao vivo</span>
+          <h2>{labels.title}</h2>
+          <span className={dataSource === 'splunk' ? styles.live : styles.mockSource}>
+            {loading ? labels.loading : dataSource === 'splunk' ? labels.sourceLive : labels.sourceMock}
+          </span>
         </div>
         <div>
-          <button className={styles.btn} aria-label="Exportar relat?rio de portais">Exportar</button>
-          <button className={styles.btn} aria-label="Abrir alertas cr?ticos">Alertas</button>
+          <button className={styles.btn} aria-label={labels.exportReport}>Exportar</button>
+          <button className={styles.btn} aria-label={labels.criticalAlerts}>Alertas</button>
         </div>
       </div>
 
       <div className={styles.tabs}>
-        {['Monitoria', 'Testes Di?rios', 'Usabilidade', 'Tickets'].map((tab) => (
+        {['Monitoria', labels.dailyTests, 'Usabilidade', 'Tickets'].map((tab) => (
           <button
             key={tab}
             className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ''}`}
@@ -137,17 +201,23 @@ export default function PortalDashboard() {
             key={p}
             className={`${styles.pill} ${periodo === p ? styles.pillActive : ''}`}
             onClick={() => setPeriodo(p)}
-            aria-label={`Filtrar per?odo ${p}`}
+            aria-label={`${labels.filterPeriod} ${p}`}
           >
             {p}
           </button>
         ))}
       </div>
 
+      {error && (
+        <div className={styles.notice} role="status">
+          {error} {labels.availableFallback}
+        </div>
+      )}
+
       <div className={styles.kpis}>
-        <div className={styles.kpi}><div className={styles.kpiLabel}>Total de intera??es</div><div className={styles.kpiValue}>{formatCompactNumber(totalInteracoes)}</div></div>
+        <div className={styles.kpi}><div className={styles.kpiLabel}>{labels.totalInteractions}</div><div className={styles.kpiValue}>{formatCompactNumber(totalInteracoes)}</div></div>
         <div className={styles.kpi}><div className={styles.kpiLabel}>Erros Valida Token</div><div className={styles.kpiValue}>{errosValidaToken}</div></div>
-        <div className={styles.kpi}><div className={styles.kpiLabel}>Formaliza??es</div><div className={styles.kpiValue}>{formatCompactNumber(formalizacoes)}</div></div>
+        <div className={styles.kpi}><div className={styles.kpiLabel}>{labels.formalizations}</div><div className={styles.kpiValue}>{formatCompactNumber(formalizacoes)}</div></div>
         <div className={styles.kpi}><div className={styles.kpiLabel}>Risco total</div><div className={styles.kpiValue}>{formatRisk(riscoTotal)}</div></div>
       </div>
 
@@ -167,12 +237,12 @@ export default function PortalDashboard() {
               <th>Busca Cliente</th>
               <th className={styles.thSortable} onClick={() => onSort('enviaToken')}>Envia Token</th>
               <th className={`${styles.thValida} ${styles.thSortable}`} onClick={() => onSort('validaToken')}>Valida Token</th>
-              <th>Busca D?vida</th>
+              <th>{labels.searchDebt}</th>
               <th>Busca Acordo</th>
               <th className={styles.thSortable} onClick={() => onSort('formalizar')}>Formalizar</th>
               <th className={styles.thSortable} onClick={() => onSort('healthScore')}>Score</th>
               <th className={styles.thSortable} onClick={() => onSort('riscoContrato')}>Risco contrato</th>
-              <th>A??o</th>
+              <th>{labels.action}</th>
             </tr>
           </thead>
           <tbody>
@@ -189,7 +259,7 @@ export default function PortalDashboard() {
 
               const enviaCell = stepCell(envia, 'Envia Token');
               const validaCell = stepCell(valida, 'Valida Token', true);
-              const dividaCell = stepCell(divida, 'Busca D?vida');
+              const dividaCell = stepCell(divida, labels.searchDebt);
               const acordoCell = stepCell(acordo, 'Busca Acordo');
               const formalizarCell = stepCell(formalizar, 'Formalizar');
 
@@ -197,7 +267,7 @@ export default function PortalDashboard() {
                 <tr key={portal.id} className={styles.rowHover}>
                   <td>
                     <div className={styles.portalName}>{portal.nome}</div>
-                    <div className={styles.subText}>{formatCompactNumber(portal.totalInteracoes)} intera??es</div>
+                    <div className={styles.subText}>{formatCompactNumber(portal.totalInteracoes)} {labels.interactions}</div>
                     <div className={styles.subText}>{portal.observacao}</div>
                     <span
                       className={`${styles.badge} ${
@@ -245,7 +315,7 @@ export default function PortalDashboard() {
                     </div>
                   </td>
                   <td>
-                    <button className={styles.actionBtn} aria-label={`A??o para ${portal.nome}: ${actionLabel(portal.alertLevel)}`}>
+                    <button className={styles.actionBtn} aria-label={`${labels.action} para ${portal.nome}: ${actionLabel(portal.alertLevel)}`}>
                       {actionLabel(portal.alertLevel)}
                     </button>
                   </td>
@@ -257,9 +327,11 @@ export default function PortalDashboard() {
       </div>
 
       <div className={styles.footer}>
-        <small>Atualizado em {new Date().toLocaleString('pt-BR')}</small>
+        <small>
+          Atualizado em {updatedAt ? new Date(updatedAt).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR')}
+        </small>
         <div>
-          <button className={styles.btn} aria-label="Aplicar a??es globais">A??es globais</button>
+          <button className={styles.btn} aria-label="Aplicar acoes globais">{labels.globalActions}</button>
           <button className={styles.btn} aria-label="Salvar snapshot do dashboard">Salvar snapshot</button>
         </div>
       </div>
