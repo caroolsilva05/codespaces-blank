@@ -109,7 +109,7 @@ const getC = (dark) =>
         t2: "#cbd5e1",
         t3: "#94a3b8",
         t4: "#64748b",
-        sidebarW: 248,
+        sidebarW: 264,
         scrollbar: "#334155",
       }
     : {
@@ -142,7 +142,7 @@ const getC = (dark) =>
         t2: "#64748b",
         t3: "#94a3b8",
         t4: "#cbd5e1",
-        sidebarW: 248,
+        sidebarW: 264,
         scrollbar: "#cbd5e1",
       };
 
@@ -630,11 +630,11 @@ const Chip = ({ label, color, bg, border }) => (
     style={{
       display: "inline-flex",
       alignItems: "center",
-      padding: "3px 10px",
-      borderRadius: 6,
+      padding: "3px 9px",
+      borderRadius: 999,
       fontSize: 11,
       fontWeight: 600,
-      letterSpacing: "0.04em",
+      letterSpacing: "0.02em",
       color,
       background: bg,
       border: `1px solid ${border || color + "33"}`,
@@ -654,8 +654,8 @@ const ProgressBar = ({ val, color, C }) => (
     <div
       style={{
         flex: 1,
-        height: 4,
-        background: C.bg3,
+        height: 5,
+        background: `linear-gradient(90deg, ${C.bg3}, ${C.bg2})`,
         borderRadius: 99,
         overflow: "hidden",
       }}
@@ -666,7 +666,8 @@ const ProgressBar = ({ val, color, C }) => (
           height: "100%",
           background: color,
           borderRadius: 99,
-          transition: "width 0.9s ease",
+          boxShadow: `0 0 6px ${color}44`,
+          transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       />
     </div>
@@ -739,23 +740,28 @@ const KPICard = ({
     style={{
       background: C.card,
       border: `1px solid ${C.border}`,
-      borderRadius: 12,
-      padding: "20px 22px",
+      borderRadius: "var(--radius-md)",
+      padding: "24px",
       display: "flex",
       flexDirection: "column",
-      gap: 14,
+      gap: 16,
       position: "relative",
       overflow: "hidden",
-      transition: "border-color 0.2s, background 0.2s",
+      boxShadow: "var(--shadow-card)",
+      transition: "var(--transition-base)",
       backdropFilter: "blur(8px)",
     }}
     onMouseEnter={(e) => {
       e.currentTarget.style.borderColor = C.borderHov;
       e.currentTarget.style.background = C.cardHov;
+      e.currentTarget.style.boxShadow = "var(--shadow-hover)";
+      e.currentTarget.style.transform = "translateY(-2px)";
     }}
     onMouseLeave={(e) => {
       e.currentTarget.style.borderColor = C.border;
       e.currentTarget.style.background = C.card;
+      e.currentTarget.style.boxShadow = "var(--shadow-card)";
+      e.currentTarget.style.transform = "translateY(0)";
     }}
   >
     <div
@@ -784,6 +790,7 @@ const KPICard = ({
           borderRadius: 10,
           background: glow,
           border: `1px solid ${color}28`,
+          boxShadow: `0 2px 8px ${color}28`,
         }}
       >
         <Icon size={17} color={color} />
@@ -793,10 +800,14 @@ const KPICard = ({
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 4,
+            gap: 5,
             fontSize: 12,
-            fontWeight: 600,
+            fontWeight: 700,
             color: trend === "up" ? C.emerald : C.rose,
+            background: trend === "up" ? C.emeraldGlow : C.roseGlow,
+            border: `1px solid ${trend === "up" ? C.emerald : C.rose}24`,
+            borderRadius: 999,
+            padding: "4px 8px",
           }}
         >
           {trend === "up" ? (
@@ -811,18 +822,20 @@ const KPICard = ({
     <div>
       <div
         style={{
-          fontSize: 26,
+          fontSize: 30,
           fontWeight: 700,
           color: C.t1,
+          fontFamily: "'Inter', sans-serif",
+          fontVariantNumeric: "tabular-nums",
           letterSpacing: "-0.02em",
           lineHeight: 1.1,
         }}
       >
         {value}
       </div>
-      <div style={{ fontSize: 13, color: C.t2, marginTop: 4 }}>{label}</div>
+      <div style={{ fontSize: 13, color: C.t2, marginTop: 6, fontWeight: 600 }}>{label}</div>
       {sub && (
-        <div style={{ fontSize: 11, color: C.t3, marginTop: 3 }}>{sub}</div>
+        <div style={{ fontSize: 12, color: C.t3, marginTop: 4, lineHeight: 1.45 }}>{sub}</div>
       )}
     </div>
   </div>
@@ -835,9 +848,10 @@ const CT = ({ active, payload, label, C }) => {
       style={{
         background: C.bg2,
         border: `1px solid ${C.border}`,
-        borderRadius: 8,
-        padding: "10px 14px",
+        borderRadius: 12,
+        padding: "12px 14px",
         backdropFilter: "blur(12px)",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       <div style={{ fontSize: 12, color: C.t3, marginBottom: 6 }}>{label}</div>
@@ -874,22 +888,26 @@ const SectionHeader = ({ title, sub, actions, C }) => (
     style={{
       display: "flex",
       justifyContent: "space-between",
-      alignItems: "center",
+      alignItems: "flex-start",
+      gap: 16,
+      flexWrap: "wrap",
+      marginBottom: 16,
     }}
   >
     <div>
       <div
         style={{
-          fontSize: 22,
+          fontSize: 20,
           fontWeight: 700,
           color: C.t1,
-          letterSpacing: "-0.025em",
+          letterSpacing: 0,
+          lineHeight: 1.2,
         }}
       >
         {title}
       </div>
       {sub && (
-        <div style={{ fontSize: 13, color: C.t3, marginTop: 3 }}>{sub}</div>
+        <div style={{ fontSize: 13, color: C.t3, marginTop: 6, lineHeight: 1.55 }}>{sub}</div>
       )}
     </div>
     {actions && <div style={{ display: "flex", gap: 10 }}>{actions}</div>}
@@ -903,18 +921,33 @@ const Btn = ({ label, icon: Icon, primary, onClick, C }) => (
       display: "flex",
       alignItems: "center",
       gap: 6,
-      padding: "8px 16px",
-      borderRadius: 8,
+      minHeight: 40,
+      padding: "9px 16px",
+      borderRadius: 10,
       border: `1px solid ${primary ? "transparent" : C.border}`,
       background: primary ? C.blue : C.card,
       color: primary ? "#fff" : C.t2,
       fontSize: 13,
-      fontWeight: primary ? 600 : 400,
+      fontWeight: 700,
       cursor: "pointer",
-      transition: "opacity 0.15s",
+      transition: "var(--transition-base)",
+      boxShadow: primary ? `0 10px 22px ${C.blue}24` : "0 1px 2px rgba(15,23,42,0.04)",
     }}
-    onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-    onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+    onMouseEnter={(e) => {
+      if (primary) {
+        e.currentTarget.style.opacity = "0.88";
+        e.currentTarget.style.transform = "translateY(-1px)";
+      } else {
+        e.currentTarget.style.borderColor = C.borderHov;
+        e.currentTarget.style.background = C.blueGlow;
+      }
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.opacity = "1";
+      e.currentTarget.style.transform = "translateY(0)";
+      e.currentTarget.style.borderColor = primary ? "transparent" : C.border;
+      e.currentTarget.style.background = primary ? C.blue : C.card;
+    }}
   >
     {Icon && <Icon size={14} />} {label}
   </button>
@@ -925,16 +958,20 @@ const card = (C) => ({
   border: `1px solid ${C.border}`,
   borderRadius: 12,
   backdropFilter: "blur(8px)",
+  boxShadow: "var(--shadow-card)",
+  transition: "var(--transition-base)",
 });
 const inputStyle = (C) => ({
   width: "100%",
-  background: C.bg3,
+  minHeight: 42,
+  background: C.surface,
   border: `1px solid ${C.border}`,
   color: C.t1,
-  borderRadius: 10,
+  borderRadius: 12,
   padding: "11px 13px",
   fontSize: 13,
   outline: "none",
+  boxShadow: "0 1px 2px rgba(15,23,42,0.03)",
 });
 // ---
 function Dashboard({ C }) {
@@ -4542,7 +4579,7 @@ function PortaisView({ C }) {
       "</title>" +
       "<style>" +
       "*{box-sizing:border-box}" +
-      "body{margin:0;padding:24px;font-family:Segoe UI,Arial,sans-serif;background:#f2f4f8;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}" +
+      "body{margin:0;padding:24px;font-family:Inter,Arial,sans-serif;background:#f2f4f8;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}" +
       ".cover{background:#ffffff;border:1px solid #e2e8f0;border-top:4px solid #e11d48;border-radius:14px;padding:24px;margin-bottom:18px}" +
       ".tag{display:inline-flex;background:#ffe7ef;color:#e11d48;border:1px solid #f8a0b5;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}" +
       "h1{font-size:28px;margin:0 0 6px;color:#0f172a}" +
@@ -5851,7 +5888,7 @@ function PortaisView({ C }) {
       "</title>" +
       "<style>" +
       "*{box-sizing:border-box}" +
-      "body{margin:0;padding:24px;font-family:Segoe UI,Arial,sans-serif;background:#f2f4f8;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}" +
+      "body{margin:0;padding:24px;font-family:Inter,Arial,sans-serif;background:#f2f4f8;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}" +
       ".actions{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px}" +
       ".actions button{border:0;border-radius:10px;padding:10px 14px;font-weight:900;cursor:pointer}" +
       ".primary{background:#e11d48;color:#fff}" +
@@ -7197,7 +7234,7 @@ function PocView({ C }) {
                   style={{
                     padding: "14px 16px",
                     fontSize: 11,
-                    fontWeight: 800,
+                    fontWeight: 600,
                     color: C.t3,
                     textAlign: "left",
                     letterSpacing: "0.06em",
@@ -7346,7 +7383,7 @@ const navItems = [
   { id: "indicators", label: "Control Tower", icon: BarChart3 },
   { id: "projects", label: "Projetos", icon: FolderKanban },
   { id: "scrum", label: "Scrum", icon: Layers },
-  { id: "poc", label: "POC", icon: FlaskConical, badge: "Novo" },
+  { id: "poc", label: "POC", icon: FlaskConical },
   { id: "suppliers", label: "Fornecedores", icon: Globe },
   { id: "marketing", label: "Marketing", icon: Megaphone },
   { id: "portals", label: "Portais", icon: FileSearch },
@@ -7366,26 +7403,29 @@ function Sidebar({ active, setActive, C }) {
         height: "100vh",
         position: "sticky",
         top: 0,
+        boxShadow: "8px 0 32px rgba(15,23,42,0.045)",
         transition: "background 0.3s, border-color 0.3s",
       }}
     >
       <div
         style={{
-          padding: "22px 18px 18px",
-          borderBottom: `1px solid ${C.border}`,
+          padding: "24px 20px",
+          borderBottom: `1px solid ${C.border}55`,
+          background: `linear-gradient(180deg, ${C.blue}12, transparent)`,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div
             style={{
-              width: 33,
-              height: 33,
-              borderRadius: 9,
+              width: 38,
+              height: 38,
+              borderRadius: 12,
               background: `linear-gradient(135deg,${C.blue},${C.violet})`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
+              boxShadow: `0 10px 24px ${C.blue}24`,
             }}
           >
             <Zap size={16} color="#fff" />
@@ -7393,11 +7433,11 @@ function Sidebar({ active, setActive, C }) {
           <div>
             <div
               style={{
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: 800,
                 color: C.t1,
                 lineHeight: 1.2,
-                letterSpacing: "-0.01em",
+                letterSpacing: 0,
               }}
             >
               Bellinati Perez
@@ -7406,8 +7446,9 @@ function Sidebar({ active, setActive, C }) {
               style={{
                 fontSize: 9,
                 color: C.t3,
-                letterSpacing: "0.07em",
+                letterSpacing: "0.08em",
                 textTransform: "uppercase",
+                marginTop: 3,
               }}
             >
               Transformação Digital
@@ -7415,14 +7456,15 @@ function Sidebar({ active, setActive, C }) {
           </div>
         </div>
       </div>
-      <nav style={{ flex: 1, padding: "10px 10px", overflowY: "auto" }}>
+      <nav style={{ flex: 1, padding: "14px 12px", overflowY: "auto" }}>
         <div
           style={{
-            fontSize: 9,
+            fontSize: 10,
             color: C.t3,
             letterSpacing: "0.09em",
-            padding: "8px 10px 6px",
+            padding: "8px 10px 10px",
             textTransform: "uppercase",
+            fontWeight: 800,
           }}
         >
           Principal
@@ -7437,20 +7479,19 @@ function Sidebar({ active, setActive, C }) {
                 width: "100%",
                 display: "flex",
                 alignItems: "center",
-                gap: 9,
-                padding: "9px 10px",
-                borderRadius: 8,
-                border: "none",
+                gap: 10,
+                minHeight: 42,
+                padding: "10px 12px",
+                borderRadius: 12,
+                border: `1px solid ${isA ? C.blue + "24" : "transparent"}`,
                 cursor: "pointer",
                 background: isA ? C.blueGlow : "transparent",
                 color: isA ? C.blue : C.t2,
                 fontSize: 13,
-                fontWeight: isA ? 700 : 400,
-                marginBottom: 2,
-                transition: "all 0.15s",
-                borderLeft: isA
-                  ? `2px solid ${C.blue}`
-                  : "2px solid transparent",
+                fontWeight: isA ? 750 : 600,
+                marginBottom: 4,
+                transition: "var(--transition-base)",
+                boxShadow: isA ? `0 8px 18px ${C.blue}12` : "none",
               }}
               onMouseEnter={(e) => {
                 if (!isA) {
@@ -7486,13 +7527,14 @@ function Sidebar({ active, setActive, C }) {
           );
         })}
       </nav>
-      <div style={{ padding: "12px 18px", borderTop: `1px solid ${C.border}` }}>
+      <div style={{ padding: "16px 18px", borderTop: `1px solid ${C.border}` }}>
         <div
           style={{
-            padding: "9px 12px",
-            borderRadius: 8,
+            padding: "10px 12px",
+            borderRadius: 12,
             background: C.emeraldGlow,
             border: `1px solid ${C.emerald}28`,
+            boxShadow: `0 8px 20px ${C.emerald}12`,
             display: "flex",
             alignItems: "center",
             gap: 8,
@@ -7512,11 +7554,11 @@ function Sidebar({ active, setActive, C }) {
             Todos os sistemas OK
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 2px 0" }}>
           <div
             style={{
-              width: 30,
-              height: 30,
+              width: 34,
+              height: 34,
               borderRadius: "50%",
               background: `linear-gradient(135deg,${C.blue},${C.violet})`,
               display: "flex",
@@ -7552,8 +7594,8 @@ function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
   const [showSettings, setShowSettings] = useState(false);
 
   const iconButton = {
-    width: 34,
-    height: 34,
+    width: 38,
+    height: 38,
     borderRadius: 12,
     border: `1px solid ${C.border}`,
     background: C.surface,
@@ -7561,18 +7603,20 @@ function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
     display: "grid",
     placeItems: "center",
     cursor: "pointer",
+    transition: "var(--transition-base)",
+    boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
   };
 
   const popoverStyle = {
     position: "absolute",
     top: 42,
     right: 0,
-    width: 320,
+    width: 340,
     background: C.bg1,
     border: `1px solid ${C.border}`,
     borderRadius: 16,
-    boxShadow: "0 18px 45px rgba(15,23,42,0.22)",
-    padding: 14,
+    boxShadow: "var(--app-shadow-lg)",
+    padding: 16,
     zIndex: 99,
   };
 
@@ -7585,13 +7629,16 @@ function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
     <div
       className="app-topbar"
       style={{
-        height: 54,
+        minHeight: 64,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 26px",
+        padding: "0 32px",
         borderBottom: `1px solid ${C.border}`,
-        background: C.bg1,
+        background: `${C.bg1}ee`,
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        boxShadow: "0 1px 0 rgba(15,23,42,0.06), 0 10px 30px rgba(15,23,42,0.035)",
         position: "sticky",
         top: 0,
         zIndex: 20,
@@ -7605,9 +7652,10 @@ function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
           gap: 7,
           fontSize: 13,
           color: C.t3,
+          minWidth: 0,
         }}
       >
-        <span style={{ fontWeight: 600 }}>Bellinati Perez</span>
+        <span style={{ fontWeight: 700 }}>Bellinati Perez</span>
         <ChevronRight size={13} />
         <span style={{ color: C.t1, fontWeight: 500 }}>
           {navItems.find((n) => n.id === page)?.label || "Control Tower"}
@@ -7625,6 +7673,14 @@ function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
             }}
             style={iconButton}
             title="Notificações"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = C.blueGlow;
+              e.currentTarget.style.borderColor = C.borderHov;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = C.surface;
+              e.currentTarget.style.borderColor = C.border;
+            }}
           >
             <Bell size={16} />
             <span
@@ -7742,6 +7798,14 @@ function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
             }}
             style={iconButton}
             title="Configurações"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = C.blueGlow;
+              e.currentTarget.style.borderColor = C.borderHov;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = C.surface;
+              e.currentTarget.style.borderColor = C.border;
+            }}
           >
             <Settings size={16} />
           </button>
@@ -7806,7 +7870,7 @@ function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
                     padding: "10px 12px",
                     cursor: "pointer",
                     fontSize: 12,
-                    fontWeight: 800,
+                    fontWeight: 600,
                   }}
                 >
                   <span>Modo de exibição</span>
@@ -7908,10 +7972,11 @@ function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
             display: "flex",
             alignItems: "center",
             gap: 8,
-            padding: "4px 8px 4px 4px",
+            padding: "5px 10px 5px 5px",
             borderRadius: 999,
             background: C.surface,
             border: `1px solid ${C.border}`,
+            boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
           }}
         >
           <div
@@ -7972,16 +8037,17 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
 
   const field = {
     width: "100%",
-    minHeight: 46,
-    borderRadius: 14,
+    minHeight: 48,
+    borderRadius: 12,
     border: `1px solid ${C.border}`,
-    background: C.surface,
+    background: C.bg2,
     color: C.t1,
     padding: "12px 14px",
     fontSize: 14,
     outline: "none",
     boxSizing: "border-box",
     fontFamily: "inherit",
+    boxShadow: "0 1px 2px rgba(15,23,42,0.03)",
   };
 
   function handleSubmit(e) {
@@ -8008,11 +8074,13 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
       className="login-page"
       style={{
         minHeight: "100vh",
-        background: `radial-gradient(circle at top left, ${C.blueGlow}, transparent 34%), radial-gradient(circle at bottom right, ${C.violetGlow}, transparent 34%), ${C.bg0}`,
+        backgroundColor: C.bg0,
+        backgroundImage: `linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(135deg, ${C.bg0} 0%, ${C.bg2} 56%, ${C.bg3} 100%)`,
+        backgroundSize: "32px 32px, 32px 32px, auto",
         display: "grid",
         placeItems: "center",
-        padding: 24,
-        fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif",
+        padding: 32,
+        fontFamily: "'Inter','Geist','Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif",
         color: C.t1,
       }}
     >
@@ -8020,33 +8088,53 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
         className="login-panel"
         style={{
           width: "100%",
-          maxWidth: 980,
+          maxWidth: 1120,
           display: "grid",
-          gridTemplateColumns: "1.05fr 0.95fr",
-          gap: 18,
+          gridTemplateColumns: "1.18fr 0.82fr",
+          gap: 20,
           alignItems: "stretch",
         }}
       >
         <div
           style={{
             ...card(C),
-            padding: 34,
-            borderRadius: 26,
+            padding: 32,
+            borderRadius: 12,
             position: "relative",
             overflow: "hidden",
-            background: `linear-gradient(135deg, ${C.card}, ${C.blueGlow})`,
+            background: C.card,
+            borderTop: `4px solid ${C.blue}`,
+            minHeight: 540,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
           }}
         >
           <div
             style={{
+              display: "none",
               position: "absolute",
               top: -80,
               right: -80,
-              width: 240,
-              height: 240,
+              width: 280,
+              height: 280,
+              borderRadius: "50%",
+              background: C.violetGlow,
+              filter: "blur(28px)",
+            }}
+          />
+          <div
+            style={{
+              display: "none",
+              position: "absolute",
+              bottom: -60,
+              left: -60,
+              width: 160,
+              height: 160,
               borderRadius: "50%",
               background: C.violetGlow,
               filter: "blur(18px)",
+              pointerEvents: "none",
             }}
           />
 
@@ -8056,24 +8144,25 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
-                marginBottom: 34,
+                marginBottom: 32,
               }}
             >
               <div
                 style={{
-                  width: 46,
-                  height: 46,
-                  borderRadius: 14,
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
                   background: `linear-gradient(135deg,${C.blue},${C.violet})`,
                   display: "grid",
                   placeItems: "center",
+                  boxShadow: `0 14px 30px ${C.blue}24`,
                 }}
               >
                 <Zap size={22} color="#fff" />
               </div>
 
               <div>
-                <div style={{ fontSize: 18, fontWeight: 950, color: C.t1 }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: C.t1 }}>
                   Bellinati Perez
                 </div>
                 <div
@@ -8094,8 +8183,8 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
               style={{
                 fontSize: 34,
                 lineHeight: 1.12,
-                letterSpacing: "-0.04em",
-                fontWeight: 950,
+                letterSpacing: 0,
+                fontWeight: 650,
                 color: C.t1,
                 maxWidth: 520,
               }}
@@ -8108,7 +8197,7 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
                 fontSize: 14,
                 color: C.t2,
                 lineHeight: 1.7,
-                marginTop: 16,
+                marginTop: 18,
                 maxWidth: 560,
               }}
             >
@@ -8124,12 +8213,144 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
                 gap: 8,
                 color: C.emerald,
                 fontSize: 12,
-                fontWeight: 800,
+                fontWeight: 650,
+                background: C.emeraldGlow,
+                border: `1px solid ${C.emerald}22`,
+                borderRadius: 999,
+                padding: "8px 12px",
+                width: "fit-content",
               }}
             >
               <Shield size={15} />
               Acesso demonstrativo para validação do MVP
             </div>
+
+            <div
+              style={{
+                marginTop: 32,
+                display: "grid",
+                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gap: 12,
+              }}
+            >
+              {[
+                { label: "Projetos", value: "Scrum" },
+                { label: "POCs", value: "Validação" },
+                { label: "Portais", value: "Monitoria" },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  style={{
+                    background: C.bg2,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 12,
+                    padding: "14px 12px",
+                  }}
+                >
+                  <div
+                    style={{
+                      color: C.t3,
+                      fontSize: 10,
+                      fontWeight: 600,
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {item.label}
+                  </div>
+                  <div
+                    style={{
+                      color: C.t1,
+                      fontSize: 15,
+                      fontWeight: 650,
+                      marginTop: 6,
+                    }}
+                  >
+                    {item.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: 28,
+              background: C.bg2,
+              border: `1px solid ${C.border}`,
+              borderRadius: 12,
+              padding: 16,
+              display: "grid",
+              gap: 12,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    color: C.t1,
+                    fontSize: 13,
+                    fontWeight: 650,
+                  }}
+                >
+                  Visão executiva
+                </div>
+                <div style={{ color: C.t3, fontSize: 12, marginTop: 2 }}>
+                  Indicadores consolidados em tempo real
+                </div>
+              </div>
+              <div
+                style={{
+                  color: C.blue,
+                  background: C.blueGlow,
+                  border: `1px solid ${C.blue}22`,
+                  borderRadius: 999,
+                  padding: "5px 9px",
+                  fontSize: 11,
+                  fontWeight: 600,
+                }}
+              >
+                Online
+              </div>
+            </div>
+
+            {[
+              { label: "Projetos em acompanhamento", value: "Centralizado", color: C.blue },
+              { label: "Riscos e aprovações", value: "Rastreável", color: C.amber },
+              { label: "Operação digital", value: "Monitorada", color: C.emerald },
+            ].map((item) => (
+              <div
+                key={item.label}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "10px 1fr auto",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 999,
+                    background: item.color,
+                  }}
+                />
+                <span style={{ color: C.t2, fontSize: 12, fontWeight: 500 }}>
+                  {item.label}
+                </span>
+                <strong style={{ color: C.t1, fontSize: 12, fontWeight: 650 }}>
+                  {item.value}
+                </strong>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -8137,29 +8358,31 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
           onSubmit={handleSubmit}
           style={{
             ...card(C),
-            padding: 30,
-            borderRadius: 26,
+            padding: 34,
+            borderRadius: 12,
             background: C.card,
+            backdropFilter: "blur(8px)",
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
-            minHeight: 470,
+            minHeight: 540,
+            boxShadow: "var(--app-shadow-lg)",
           }}
         >
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "center",
+              alignItems: "flex-start",
               gap: 12,
-              marginBottom: 24,
+              marginBottom: 28,
             }}
           >
             <div>
-              <div style={{ fontSize: 24, color: C.t1, fontWeight: 950 }}>
+              <div style={{ fontSize: 30, color: C.t1, fontWeight: 650, lineHeight: 1.18 }}>
                 Acessar plataforma
               </div>
-              <div style={{ fontSize: 13, color: C.t3, marginTop: 5 }}>
+              <div style={{ fontSize: 14, color: C.t3, marginTop: 8, lineHeight: 1.5 }}>
                 Entre com as credenciais de teste
               </div>
             </div>
@@ -8174,13 +8397,14 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
                 background: C.surface,
                 color: C.t2,
                 borderRadius: 999,
-                padding: "8px 11px",
+                padding: "9px 12px",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
                 fontSize: 12,
-                fontWeight: 700,
+                fontWeight: 600,
+                boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
               }}
             >
               {dark ? (
@@ -8192,7 +8416,7 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
             </button>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
               <div
                 style={{
@@ -8200,8 +8424,8 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
                   color: C.t3,
                   textTransform: "uppercase",
                   letterSpacing: "0.07em",
-                  fontWeight: 900,
-                  marginBottom: 7,
+                  fontWeight: 600,
+                  marginBottom: 8,
                 }}
               >
                 E-mail
@@ -8223,8 +8447,8 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
                   color: C.t3,
                   textTransform: "uppercase",
                   letterSpacing: "0.07em",
-                  fontWeight: 900,
-                  marginBottom: 7,
+                  fontWeight: 600,
+                  marginBottom: 8,
                 }}
               >
                 Senha
@@ -8248,7 +8472,7 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
                   borderRadius: 12,
                   padding: "10px 12px",
                   fontSize: 12,
-                  fontWeight: 800,
+                  fontWeight: 650,
                 }}
               >
                 {error}
@@ -8261,16 +8485,28 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
               style={{
                 marginTop: 8,
                 width: "100%",
-                minHeight: 48,
-                borderRadius: 14,
+                minHeight: 50,
+                borderRadius: 12,
                 border: "none",
                 background: C.blue,
                 color: "#fff",
                 fontSize: 14,
-                fontWeight: 950,
+                fontWeight: 650,
                 cursor: loading ? "not-allowed" : "pointer",
                 opacity: loading ? 0.75 : 1,
-                boxShadow: "0 14px 28px rgba(225,29,72,0.18)",
+                boxShadow: "0 16px 30px rgba(225,29,72,0.22)",
+                letterSpacing: 0,
+                transition: "var(--transition-base)",
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.opacity = "0.88";
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = loading ? "0.75" : "1";
+                e.currentTarget.style.transform = "translateY(0)";
               }}
             >
               {loading ? "Validando acesso..." : "Entrar"}
@@ -8280,10 +8516,11 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
           <div
             style={{
               marginTop: 20,
-              background: C.bg3,
+              background: C.bg2,
               border: `1px solid ${C.border}`,
-              borderRadius: 14,
-              padding: 13,
+              borderLeft: `3px solid ${C.blue}`,
+              borderRadius: 12,
+              padding: 16,
             }}
           >
             <div
@@ -8292,13 +8529,13 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
                 color: C.t3,
                 textTransform: "uppercase",
                 letterSpacing: "0.06em",
-                fontWeight: 900,
-                marginBottom: 6,
+                fontWeight: 600,
+                marginBottom: 8,
               }}
             >
               Credencial de teste
             </div>
-            <div style={{ fontSize: 12, color: C.t2, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 13, color: C.t2, lineHeight: 1.7 }}>
               Login:{" "}
               <strong style={{ color: C.t1 }}>teste@digital.com.br</strong>
               <br />
@@ -8398,7 +8635,7 @@ export default function DashboardPage() {
           display: "flex",
           background: C.bg0,
           minHeight: "100vh",
-          fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif",
+          fontFamily: "'Inter','Geist','Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif",
           color: C.t1,
           transition: "background 0.3s",
         }}
