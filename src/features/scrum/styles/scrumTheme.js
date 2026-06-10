@@ -10,6 +10,12 @@ export const theme = {
   text: "#0f172a",
   textSecondary: "#64748b",
   textMuted: "#94a3b8",
+  fontSans: "'Inter','Geist','Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif",
+  fontMono: "'JetBrains Mono', monospace",
+  radiusCard: 12,
+  shadowCard: "0 1px 2px rgba(15,23,42,0.04), 0 10px 28px rgba(15,23,42,0.055)",
+  shadowHover: "0 8px 22px rgba(15,23,42,0.09), 0 18px 46px rgba(15,23,42,0.08)",
+  transitionBase: "all 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
   phases: {
     0: { bg: "#e11d48", light: "#ffe7ef", label: "Orçamento" },
     A: { bg: "#334155", light: "#f8fafc", label: "Aprovação" },

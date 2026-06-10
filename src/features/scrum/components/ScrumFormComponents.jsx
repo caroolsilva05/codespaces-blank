@@ -13,12 +13,12 @@ export const StatusBadge = ({ status, size = "normal" }) => {
         display: "inline-flex",
         alignItems: "center",
         gap: 5,
-        padding: size === "small" ? "2px 8px" : "4px 11px",
+        padding: size === "small" ? "3px 8px" : "5px 11px",
         borderRadius: 20,
         background: s.bg,
         color: s.text,
         fontSize: size === "small" ? 11 : 12,
-        fontWeight: 600,
+        fontWeight: 700,
         whiteSpace: "nowrap",
         letterSpacing: "0.3px",
       }}
@@ -43,8 +43,8 @@ export const RiskBadge = ({ level }) => {
     <span
       style={{
         display: "inline-block",
-        padding: "2px 9px",
-        borderRadius: 4,
+        padding: "4px 10px",
+        borderRadius: 999,
         background: c.bg,
         color: c.text,
         fontSize: 11,
@@ -62,11 +62,12 @@ export const PhaseSection = ({ phaseNum, title, expanded, onToggle, children }) 
     <div
       className="pdf-phase-section"
       style={{
-        marginBottom: 28,
-        borderRadius: 8,
+        marginBottom: 24,
+        borderRadius: theme.radiusCard,
         overflow: "hidden",
         border: `1px solid ${theme.border}`,
-        boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
+        boxShadow: theme.shadowCard,
+        transition: theme.transitionBase,
       }}
     >
       <div
@@ -75,7 +76,7 @@ export const PhaseSection = ({ phaseNum, title, expanded, onToggle, children }) 
         style={{
           background: p.bg,
           color: "#fff",
-          padding: "15px 24px",
+          padding: "16px 24px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -88,9 +89,9 @@ export const PhaseSection = ({ phaseNum, title, expanded, onToggle, children }) 
             <span
               style={{
                 background: "rgba(255,255,255,0.18)",
-                borderRadius: 6,
-                width: 30,
-                height: 30,
+                borderRadius: 10,
+                width: 32,
+                height: 32,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -105,7 +106,7 @@ export const PhaseSection = ({ phaseNum, title, expanded, onToggle, children }) 
             style={{
               fontSize: 14,
               fontWeight: 700,
-              letterSpacing: "0.8px",
+              letterSpacing: "0.04em",
               textTransform: "uppercase",
             }}
           >
@@ -119,7 +120,7 @@ export const PhaseSection = ({ phaseNum, title, expanded, onToggle, children }) 
       {expanded && (
         <div
           className="pdf-phase-body"
-          style={{ padding: "28px 28px 20px", background: "#fff" }}
+          style={{ padding: "24px", background: "#fff" }}
         >
           {children}
         </div>
@@ -129,16 +130,16 @@ export const PhaseSection = ({ phaseNum, title, expanded, onToggle, children }) 
 };
 
 export const SubSection = ({ title, children }) => (
-  <div className="pdf-subsection" style={{ marginBottom: 28 }}>
+  <div className="pdf-subsection" style={{ marginBottom: 24 }}>
     <h4
       style={{
         margin: "0 0 14px 0",
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: 700,
         color: theme.navy,
         textTransform: "uppercase",
-        letterSpacing: "1.2px",
-        borderBottom: `2px solid ${theme.border}`,
+        letterSpacing: "0.06em",
+        borderBottom: `1px solid ${theme.border}`,
         paddingBottom: 8,
       }}
     >
@@ -153,11 +154,12 @@ export const TableWrap = ({ children }) => (
     className="pdf-table-wrap"
     style={{
       overflowX: "auto",
-      borderRadius: 6,
+      borderRadius: theme.radiusCard,
       border: `1px solid ${theme.border}`,
+      boxShadow: "0 1px 2px rgba(15,23,42,0.03)",
     }}
   >
-    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+    <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, fontSize: 13 }}>
       {children}
     </table>
   </div>
@@ -170,12 +172,12 @@ export const THead = ({ children }) => (
 export const Th = ({ children, w }) => (
   <th
     style={{
-      padding: "10px 14px",
+      padding: "12px 14px",
       color: "#fff",
-      fontWeight: 600,
+      fontWeight: 700,
       textAlign: "left",
       fontSize: 11,
-      letterSpacing: "0.6px",
+      letterSpacing: "0.04em",
       width: w || "auto",
       whiteSpace: "nowrap",
       textTransform: "uppercase",
@@ -188,7 +190,7 @@ export const Th = ({ children, w }) => (
 export const Td = ({ children, style: sx = {} }) => (
   <td
     style={{
-      padding: "9px 14px",
+      padding: "10px 14px",
       borderBottom: `1px solid ${theme.borderLight}`,
       color: theme.text,
       verticalAlign: "middle",
@@ -202,9 +204,9 @@ export const Td = ({ children, style: sx = {} }) => (
 export const EditField = ({ value, onChange, placeholder, multi, minH }) => {
   const base = {
     width: "100%",
-    padding: "5px 8px",
-    border: "1px solid transparent",
-    borderRadius: 4,
+    padding: "8px 10px",
+    border: `1px solid transparent`,
+    borderRadius: 10,
     fontSize: 13,
     color: theme.text,
     background: "transparent",
@@ -212,15 +214,18 @@ export const EditField = ({ value, onChange, placeholder, multi, minH }) => {
     fontFamily: "inherit",
     boxSizing: "border-box",
     resize: multi ? "vertical" : "none",
-    minHeight: minH || (multi ? 64 : "auto"),
+    minHeight: minH || (multi ? 72 : 36),
+    transition: theme.transitionBase,
   };
   const focus = (e) => {
-    e.target.style.border = `1px solid ${theme.navy}`;
-    e.target.style.background = "#f5f8ff";
+    e.target.style.border = `1px solid ${theme.gold}`;
+    e.target.style.background = theme.borderLight;
+    e.target.style.boxShadow = "0 0 0 3px #ffe4ea";
   };
   const blur = (e) => {
     e.target.style.border = "1px solid transparent";
     e.target.style.background = "transparent";
+    e.target.style.boxShadow = "none";
   };
   return multi ? (
     <textarea
@@ -252,11 +257,12 @@ export const DateInput = ({ value, onChange }) => (
     style={{
       fontSize: 12,
       border: `1px solid ${theme.border}`,
-      borderRadius: 4,
-      padding: "4px 8px",
+      borderRadius: 10,
+      padding: "8px 10px",
       color: theme.text,
       fontFamily: "inherit",
       background: "#fff",
+      minHeight: 38,
     }}
   />
 );
@@ -268,12 +274,13 @@ export const SelectInput = ({ value, onChange, options }) => (
     style={{
       fontSize: 12,
       border: `1px solid ${theme.border}`,
-      borderRadius: 4,
-      padding: "4px 8px",
+      borderRadius: 10,
+      padding: "8px 10px",
       color: theme.text,
       fontFamily: "inherit",
       background: "#fff",
       cursor: "pointer",
+      minHeight: 38,
     }}
   >
     {options.map((o) => (
@@ -289,7 +296,7 @@ export const CheckItem = ({ checked, onChange, label }) => (
       alignItems: "flex-start",
       gap: 10,
       cursor: "pointer",
-      padding: "7px 0",
+      padding: "9px 0",
       borderBottom: `1px solid ${theme.borderLight}`,
     }}
   >
@@ -339,15 +346,15 @@ export const GhostBtn = ({ onClick, children }) => (
       display: "inline-flex",
       alignItems: "center",
       gap: 5,
-      padding: "7px 14px",
-      borderRadius: 6,
+      padding: "9px 16px",
+      borderRadius: 10,
       border: `1px dashed ${theme.border}`,
       background: "#f8fafc",
       color: theme.textSecondary,
       fontSize: 12,
       fontWeight: 600,
       cursor: "pointer",
-      transition: "all 0.15s",
+      transition: theme.transitionBase,
     }}
     onMouseOver={(e) => {
       e.currentTarget.style.borderColor = theme.navy;
@@ -371,8 +378,8 @@ export const DeleteBtn = ({ onClick }) => (
       color: "#cbd5e1",
       cursor: "pointer",
       fontSize: 16,
-      padding: "2px 6px",
-      transition: "color 0.15s",
+      padding: "4px 8px",
+      transition: theme.transitionBase,
     }}
     onMouseOver={(e) => (e.currentTarget.style.color = "#dc2626")}
     onMouseOut={(e) => (e.currentTarget.style.color = "#cbd5e1")}
@@ -386,8 +393,8 @@ export const FieldRow = ({ label, children }) => (
     style={{
       display: "grid",
       gridTemplateColumns: "190px 1fr",
-      gap: 12,
-      padding: "9px 0",
+      gap: 16,
+      padding: "12px 0",
       borderBottom: `1px solid ${theme.borderLight}`,
       alignItems: "center",
     }}
@@ -492,9 +499,10 @@ export const MonitoringConversionSection = ({ phase4, setP4Conversion }) => {
             key={label}
             style={{
               border: "1px solid " + theme.border,
-              borderRadius: 8,
+              borderRadius: theme.radiusCard,
               background: "#f8fafc",
-              padding: "13px 14px",
+              padding: "16px",
+              boxShadow: "0 1px 2px rgba(15,23,42,0.03)",
             }}
           >
             <div

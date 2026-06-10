@@ -381,7 +381,7 @@ export default function ScrumProjectRegisterPage({
       "</title>" +
       "<style>" +
       "* { box-sizing: border-box !important; }" +
-      "html, body { margin: 0; padding: 0; font-family: Segoe UI, Arial, sans-serif; background: #f0f4f8; color: #1e293b; -webkit-print-color-adjust: exact; print-color-adjust: exact; }" +
+      "html, body { margin: 0; padding: 0; font-family: Inter, Arial, sans-serif; background: #f0f4f8; color: #1e293b; -webkit-print-color-adjust: exact; print-color-adjust: exact; }" +
       "body { padding: 5mm; font-size: 9px; }" +
       "button { display: none !important; }" +
       ".pdf-phase-section { margin-bottom: 5mm !important; overflow: visible !important; break-before: page !important; page-break-before: always !important; break-inside: auto !important; page-break-inside: auto !important; }" +
@@ -501,7 +501,7 @@ export default function ScrumProjectRegisterPage({
       style={{
         minHeight: "100vh",
         background: theme.bg,
-        fontFamily: "'Segoe UI','Helvetica Neue',Arial,sans-serif",
+        fontFamily: theme.fontSans,
         color: theme.text,
       }}
     >
@@ -510,8 +510,8 @@ export default function ScrumProjectRegisterPage({
         style={{
           background: theme.white,
           borderBottom: `1px solid ${theme.border}`,
-          boxShadow: "0 8px 20px rgba(15,23,42,0.045)",
-          padding: "0 40px",
+          boxShadow: theme.shadowCard,
+          padding: "0 32px",
           position: "relative",
           overflow: "hidden",
         }}
@@ -543,7 +543,7 @@ export default function ScrumProjectRegisterPage({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            padding: "28px 0 24px",
+            padding: "32px 0 28px",
             position: "relative",
           }}
         >
@@ -560,9 +560,9 @@ export default function ScrumProjectRegisterPage({
                 style={{
                   background: theme.gold,
                   color: theme.white,
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: 800,
-                  padding: "3px 11px",
+                  padding: "4px 12px",
                   borderRadius: 20,
                   letterSpacing: "1.5px",
                   textTransform: "uppercase",
@@ -573,7 +573,7 @@ export default function ScrumProjectRegisterPage({
               <span style={{ color: theme.border, fontSize: 14 }}>
                 |
               </span>
-              <span style={{ color: theme.textSecondary, fontSize: 12 }}>
+              <span style={{ color: theme.textSecondary, fontSize: 13 }}>
                 Ciclo de Vida do Projeto
               </span>
             </div>
@@ -581,9 +581,10 @@ export default function ScrumProjectRegisterPage({
               style={{
                 margin: "0 0 5px",
                 color: theme.text,
-                fontSize: 24,
+                fontSize: 32,
                 fontWeight: 700,
-                letterSpacing: "-0.3px",
+                letterSpacing: 0,
+                lineHeight: 1.16,
               }}
             >
               Template de Projeto
@@ -592,7 +593,8 @@ export default function ScrumProjectRegisterPage({
               style={{
                 margin: 0,
                 color: theme.textSecondary,
-                fontSize: 13,
+                fontSize: 14,
+                lineHeight: 1.55,
               }}
             >
               Registro e acompanhamento completo — Metodologia Scrum/PMI
@@ -636,13 +638,15 @@ export default function ScrumProjectRegisterPage({
                 onClick={btn.fn}
                 style={{
                   ...btn.style,
-                  padding: "9px 18px",
-                  borderRadius: 7,
+                  minHeight: 42,
+                  padding: "10px 18px",
+                  borderRadius: 10,
                   fontSize: 13,
-                  fontWeight: 600,
+                  fontWeight: 700,
                   cursor: "pointer",
-                  letterSpacing: "0.2px",
-                  transition: "opacity .15s",
+                  letterSpacing: 0,
+                  boxShadow: "0 10px 22px rgba(225,29,72,0.18)",
+                  transition: theme.transitionBase,
                 }}
                 onMouseOver={(e) => (e.currentTarget.style.opacity = "0.85")}
                 onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
@@ -658,10 +662,10 @@ export default function ScrumProjectRegisterPage({
       <div
         style={{
           background: theme.bg,
-          padding: "16px 40px",
+          padding: "20px 32px",
           display: "grid",
           gridTemplateColumns: "repeat(6,1fr)",
-          gap: 12,
+          gap: 16,
           borderBottom: `1px solid ${theme.border}`,
         }}
       >
@@ -709,22 +713,33 @@ export default function ScrumProjectRegisterPage({
             style={{
               background: theme.white,
               border: `1px solid ${theme.border}`,
-              borderRadius: 8,
-              padding: "12px 16px",
+              borderRadius: theme.radiusCard,
+              padding: "16px",
+              boxShadow: theme.shadowCard,
+              transition: theme.transitionBase,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = theme.shadowHover;
+              e.currentTarget.style.transform = "translateY(-2px)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = theme.shadowCard;
+              e.currentTarget.style.transform = "translateY(0)";
             }}
           >
             <div
               style={{
                 fontSize: 10,
                 color: theme.textSecondary,
-                marginBottom: 5,
+                marginBottom: 8,
                 textTransform: "uppercase",
-                letterSpacing: "0.8px",
+                letterSpacing: "0.06em",
+                fontWeight: 800,
               }}
             >
               {c.icon} {c.label}
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: theme.text }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: theme.text, lineHeight: 1.25 }}>
               {c.val}
             </div>
           </div>
@@ -733,17 +748,17 @@ export default function ScrumProjectRegisterPage({
 
       {/* ── MAIN CONTENT ── */}
       <div
-        style={{ padding: "32px 40px 48px", maxWidth: 1280, margin: "0 auto" }}
+        style={{ padding: "32px 32px 48px", maxWidth: 1320, margin: "0 auto" }}
       >
         {/* ===== IDENTIFICAÇÃO ===== */}
         <div
           style={{
             background: "#fff",
-            borderRadius: 8,
+            borderRadius: theme.radiusCard,
             border: `1px solid ${theme.border}`,
-            marginBottom: 28,
+            marginBottom: 24,
             overflow: "hidden",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
+            boxShadow: theme.shadowCard,
           }}
         >
           <div
@@ -1136,9 +1151,10 @@ export default function ScrumProjectRegisterPage({
                   key={item.label}
                   style={{
                     border: `1px solid ${theme.border}`,
-                    borderRadius: 8,
+                    borderRadius: theme.radiusCard,
                     background: "#f8fafc",
-                    padding: "14px 16px",
+                    padding: "16px",
+                    boxShadow: "0 1px 2px rgba(15,23,42,0.03)",
                   }}
                 >
                   <div
@@ -1327,8 +1343,8 @@ export default function ScrumProjectRegisterPage({
                 background: aprovacaoCompleta(aprovacaoProjeto)
                   ? "#f0fdf4"
                   : "#fffbeb",
-                borderRadius: 8,
-                padding: "12px 16px",
+                borderRadius: theme.radiusCard,
+                padding: "14px 16px",
                 fontSize: 12,
                 color: aprovacaoCompleta(aprovacaoProjeto)
                   ? "#166534"
