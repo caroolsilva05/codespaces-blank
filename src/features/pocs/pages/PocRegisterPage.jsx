@@ -56,23 +56,24 @@ export default function PocRegisterPage({
   }, [data.evaluation]);
   const field = {
     width: "100%",
-    minHeight: 42,
+    minHeight: 44,
     borderRadius: 12,
     border: `1px solid ${C.border}`,
-    background: C.surface,
+    background: C.bg2,
     color: C.t1,
-    padding: "10px 12px",
-    fontSize: 13,
+    padding: "11px 14px",
+    fontSize: 14,
     outline: "none",
     boxSizing: "border-box",
     fontFamily: "inherit",
+    boxShadow: "0 1px 2px rgba(15,23,42,0.03)",
   };
   const smallField = {
     ...field,
     minHeight: 36,
-    padding: "7px 9px",
-    fontSize: 12,
-    borderRadius: 9,
+    padding: "8px 10px",
+    fontSize: 13,
+    borderRadius: 10,
   };
   function update(path, value) {
     setLastEditedAt(new Date());
@@ -321,7 +322,7 @@ export default function PocRegisterPage({
     const css =
       "<style>" +
       "* { box-sizing: border-box !important; }" +
-      "html, body { margin: 0; padding: 0; font-family: Segoe UI, Arial, sans-serif; background: #f2f4f8; color: #0f172a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }" +
+      "html, body { margin: 0; padding: 0; font-family: Inter, Arial, sans-serif; background: #f2f4f8; color: #0f172a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }" +
       "body { padding: 8mm; font-size: 11px; overflow: visible !important; }" +
       ".print-actions { position: sticky; top: 0; z-index: 9999; display: flex; justify-content: flex-end; gap: 8px; background: #f2f4f8; padding: 8px 0 12px; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; }" +
       ".print-actions button { border-radius: 10px; padding: 10px 14px; font-weight: 900; cursor: pointer; }" +
@@ -675,7 +676,8 @@ export default function PocRegisterPage({
     <button
       onClick={() => setTab(id)}
       style={{
-        padding: "9px 13px",
+        minHeight: 40,
+        padding: "9px 16px",
         borderRadius: 10,
         border: `1px solid ${tab === id ? C.blue : C.border}`,
         background: tab === id ? C.blueGlow : C.surface,
@@ -683,6 +685,8 @@ export default function PocRegisterPage({
         cursor: "pointer",
         fontSize: 12,
         fontWeight: tab === id ? 800 : 600,
+        transition: "var(--transition-base)",
+        boxShadow: tab === id ? `0 8px 18px ${C.blue}12` : "0 1px 2px rgba(15,23,42,0.04)",
       }}
     >
       {" "}
@@ -694,18 +698,20 @@ export default function PocRegisterPage({
       style={{
         background: C.card,
         border: `1px solid ${C.border}`,
-        borderRadius: 18,
-        padding: 20,
+        borderRadius: 12,
+        padding: 24,
+        boxShadow: "var(--shadow-card)",
+        transition: "var(--transition-base)",
       }}
     >
       {" "}
       <div style={{ marginBottom: 16 }}>
         {" "}
-        <div style={{ fontSize: 15, fontWeight: 800, color: C.t1 }}>
+        <div style={{ fontSize: 20, fontWeight: 700, color: C.t1, lineHeight: 1.25 }}>
           {title}
         </div>{" "}
         {sub && (
-          <div style={{ fontSize: 12, color: C.t3, marginTop: 4 }}>{sub}</div>
+          <div style={{ fontSize: 14, color: C.t3, marginTop: 6, lineHeight: 1.55 }}>{sub}</div>
         )}{" "}
       </div>{" "}
       {children}{" "}
@@ -716,8 +722,18 @@ export default function PocRegisterPage({
       style={{
         background: C.card,
         border: `1px solid ${C.border}`,
-        borderRadius: 16,
-        padding: "16px 18px",
+        borderRadius: 12,
+        padding: "20px 22px",
+        boxShadow: "var(--shadow-card)",
+        transition: "var(--transition-base)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-2px)";
+        e.currentTarget.style.boxShadow = "var(--shadow-hover)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "var(--shadow-card)";
       }}
     >
       {" "}
@@ -727,12 +743,23 @@ export default function PocRegisterPage({
           color: C.t3,
           textTransform: "uppercase",
           letterSpacing: "0.06em",
+          fontWeight: 800,
         }}
       >
         {" "}
         {label}{" "}
       </div>{" "}
-      <div style={{ fontSize: 38, fontWeight: 950, color, marginTop: 7 }}>
+      <div
+        style={{
+          fontSize: 40,
+          fontWeight: 700,
+          color,
+          marginTop: 7,
+          fontVariantNumeric: "tabular-nums",
+          letterSpacing: "-0.01em",
+          lineHeight: 1.05,
+        }}
+      >
         {value}
       </div>{" "}
       {sub && (
@@ -789,6 +816,7 @@ export default function PocRegisterPage({
         background: C.bg0,
         color: C.t1,
         padding: 24,
+        fontFamily: "'Inter','Geist','Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif",
       }}
     >
       <style>{`
@@ -821,9 +849,10 @@ export default function PocRegisterPage({
         style={{
           background: `linear-gradient(135deg, ${C.bg1}, ${C.bg2})`,
           border: `1px solid ${C.border}`,
-          borderRadius: 22,
-          padding: 22,
-          marginBottom: 18,
+          borderRadius: 12,
+          padding: 24,
+          marginBottom: 24,
+          boxShadow: "var(--shadow-card)",
         }}
       >
         {" "}
@@ -838,14 +867,14 @@ export default function PocRegisterPage({
           {" "}
           <div>
             {" "}
-            <div style={{ fontSize: 12, color: C.t3, marginBottom: 6 }}>
+            <div style={{ fontSize: 12, color: C.t3, marginBottom: 8, fontWeight: 700 }}>
               POC › Registro de Prova de Conceito
             </div>{" "}
-            <div style={{ fontSize: 24, fontWeight: 900, color: C.t1 }}>
+            <div style={{ fontSize: 32, fontWeight: 700, color: C.t1, lineHeight: 1.16 }}>
               {" "}
               {data.general.pocName || "Nova POC"}{" "}
             </div>{" "}
-            <div style={{ fontSize: 13, color: C.t2, marginTop: 6 }}>
+            <div style={{ fontSize: 14, color: C.t2, marginTop: 8, lineHeight: 1.55 }}>
               {" "}
               Gestão completa da POC com acompanhamento técnico, analítico e
               recomendação.{" "}
@@ -860,11 +889,13 @@ export default function PocRegisterPage({
                 background: C.blue,
                 border: "none",
                 color: "#fff",
-                borderRadius: 12,
-                padding: "11px 18px",
-                fontWeight: 900,
+                borderRadius: 10,
+                minHeight: 42,
+                padding: "10px 18px",
+                fontWeight: 700,
                 cursor: saving ? "not-allowed" : "pointer",
                 opacity: saving ? 0.75 : 1,
+                boxShadow: `0 10px 22px ${C.blue}24`,
               }}
             >
               {" "}
@@ -877,9 +908,10 @@ export default function PocRegisterPage({
                   background: C.violet,
                   border: "none",
                   color: "#fff",
-                  borderRadius: 12,
-                  padding: "11px 18px",
-                  fontWeight: 900,
+                  borderRadius: 10,
+                  minHeight: 42,
+                  padding: "10px 18px",
+                  fontWeight: 700,
                   cursor: "pointer",
                 }}
               >
@@ -893,9 +925,10 @@ export default function PocRegisterPage({
                   background: C.surface,
                   border: `1px solid ${C.border}`,
                   color: C.t2,
-                  borderRadius: 12,
-                  padding: "11px 16px",
-                  fontWeight: 800,
+                  borderRadius: 10,
+                  minHeight: 42,
+                  padding: "10px 16px",
+                  fontWeight: 700,
                   cursor: "pointer",
                 }}
               >
