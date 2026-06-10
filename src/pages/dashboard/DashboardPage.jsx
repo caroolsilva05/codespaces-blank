@@ -73,43 +73,44 @@ import {
 } from "lucide-react";
 
 // ---
-const ThemeCtx = createContext({ dark: true, toggle: () => {} });
+const THEME_STORAGE_KEY = "bp-theme";
+const ThemeCtx = createContext({ dark: false, toggle: () => {} });
 const useTheme = () => useContext(ThemeCtx);
 
 const getC = (dark) =>
   dark
     ? {
-        // Identidade clara corporativa: cinzas azulados + destaque rosa
-        bg0: "#f2f4f8",
-        bg1: "#ffffff",
-        bg2: "#f8fafc",
-        bg3: "#fef2f5",
-        bg4: "#ffe7ef",
-        card: "#ffffff",
-        cardHov: "#ffffff",
-        surface: "#f8fafc",
-        border: "#e2e8f0",
-        borderHov: "#f8a0b5",
-        borderStrong: "#cbd5e1",
+        // Modo escuro mantendo a identidade rosa/vermelho da plataforma
+        bg0: "#0f172a",
+        bg1: "#111827",
+        bg2: "#1e293b",
+        bg3: "#2a1320",
+        bg4: "#3f1d2b",
+        card: "rgba(15,23,42,0.92)",
+        cardHov: "rgba(30,41,59,0.96)",
+        surface: "rgba(255,255,255,0.055)",
+        border: "rgba(226,232,240,0.12)",
+        borderHov: "rgba(248,160,181,0.56)",
+        borderStrong: "rgba(226,232,240,0.22)",
         blue: "#e11d48",
-        blueD: "#be123c",
-        blueGlow: "rgba(225,29,72,0.10)",
-        emerald: "#16a34a",
-        emeraldGlow: "rgba(22,163,74,0.10)",
-        amber: "#d97706",
-        amberGlow: "rgba(217,119,6,0.10)",
+        blueD: "#fb7185",
+        blueGlow: "rgba(225,29,72,0.18)",
+        emerald: "#22c55e",
+        emeraldGlow: "rgba(34,197,94,0.16)",
+        amber: "#f59e0b",
+        amberGlow: "rgba(245,158,11,0.16)",
         rose: "#e11d48",
-        roseGlow: "#ffe7ef",
-        violet: "#334155",
-        violetGlow: "rgba(51,65,85,0.10)",
-        cyan: "#64748b",
-        cyanGlow: "rgba(100,116,139,0.10)",
-        t1: "#0f172a",
-        t2: "#64748b",
+        roseGlow: "rgba(225,29,72,0.16)",
+        violet: "#94a3b8",
+        violetGlow: "rgba(148,163,184,0.14)",
+        cyan: "#38bdf8",
+        cyanGlow: "rgba(56,189,248,0.12)",
+        t1: "#f8fafc",
+        t2: "#cbd5e1",
         t3: "#94a3b8",
-        t4: "#cbd5e1",
+        t4: "#64748b",
         sidebarW: 248,
-        scrollbar: "#cbd5e1",
+        scrollbar: "#334155",
       }
     : {
         // Identidade clara corporativa: cinzas azulados + destaque rosa
@@ -144,6 +145,42 @@ const getC = (dark) =>
         sidebarW: 248,
         scrollbar: "#cbd5e1",
       };
+
+async function readThemePreference() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const result = await window.storage?.get?.(THEME_STORAGE_KEY);
+    if (result?.value === "dark" || result?.value === "light") {
+      return result.value;
+    }
+  } catch {}
+
+  try {
+    const value = window.localStorage?.getItem(THEME_STORAGE_KEY);
+    return value === "dark" || value === "light" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveThemePreference(theme) {
+  if (typeof window === "undefined") return;
+
+  try {
+    await window.storage?.set?.(THEME_STORAGE_KEY, theme);
+  } catch {}
+
+  try {
+    window.localStorage?.setItem(THEME_STORAGE_KEY, theme);
+  } catch {}
+}
+
+function applyThemePreference(isDark) {
+  if (typeof document === "undefined") return;
+  document.documentElement.dataset.theme = isDark ? "dark" : "light";
+  document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+}
 
 // ---
 const roiData = [
@@ -7755,6 +7792,8 @@ function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
               >
                 <button
                   onClick={toggleTheme}
+                  aria-label={`Alternar para modo ${dark ? "claro" : "escuro"}`}
+                  title={`Alternar para modo ${dark ? "claro" : "escuro"}`}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -7780,7 +7819,7 @@ function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
                     }}
                   >
                     {dark ? <Sun size={14} /> : <Moon size={14} />}
-                    {dark ? "Dark" : "Light"}
+                    {dark ? "Light" : "Dark"}
                   </span>
                 </button>
 
@@ -8128,6 +8167,8 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
             <button
               type="button"
               onClick={toggleTheme}
+              aria-label={`Alternar para modo ${dark ? "claro" : "escuro"}`}
+              title={`Alternar para modo ${dark ? "claro" : "escuro"}`}
               style={{
                 border: `1px solid ${C.border}`,
                 background: C.surface,
@@ -8293,19 +8334,18 @@ export default function DashboardPage() {
 
   useEffect(() => {
     (async () => {
-      try {
-        const res = await window.storage.get("bp-theme");
-        if (res) setDark(res.value === "dark");
-      } catch {}
+      const theme = await readThemePreference();
+      const nextDark = theme === "dark";
+      setDark(nextDark);
+      applyThemePreference(nextDark);
     })();
   }, []);
 
   const toggleTheme = useCallback(async () => {
     const next = !dark;
     setDark(next);
-    try {
-      await window.storage.set("bp-theme", next ? "dark" : "light");
-    } catch {}
+    applyThemePreference(next);
+    await saveThemePreference(next ? "dark" : "light");
   }, [dark]);
 
   function handleLogin(email) {
