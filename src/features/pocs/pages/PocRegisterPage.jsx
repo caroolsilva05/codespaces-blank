@@ -2,6 +2,16 @@ import React, { useMemo, useRef, useState } from "react";
 import { emptyPoc } from "../data/emptyPoc";
 import { savePocRecord } from "../services/pocRecordService";
 import { brDate, calcEnrichmentMetrics, calcMetrics, calcOrchestrationMetrics, cloneData, deepMerge, pct, toNum } from "../utils/pocUtils";
+import {
+  notifyError,
+  notifySuccess,
+  notifyWarning,
+} from "../../../shared/notifications";
+import {
+  describeAppError,
+  getMissingFields,
+  missingFieldsMessage,
+} from "../../../shared/errorMessages";
 export default function PocRegisterPage({
   C,
   registroInicial = null,
@@ -280,7 +290,7 @@ export default function PocRegisterPage({
     const janela = window.open("", "_blank", "width=1400,height=950");
 
     if (!janela) {
-      alert(
+      notifyWarning(
         "O navegador bloqueou a janela de impressão. Libere pop-ups e tente novamente.",
       );
       return;
@@ -290,7 +300,7 @@ export default function PocRegisterPage({
 
     if (!conteudo) {
       janela.close();
-      alert("Não foi possível preparar o PDF.");
+      notifyError("Não foi possível preparar o PDF.");
       return;
     }
 
@@ -639,10 +649,40 @@ export default function PocRegisterPage({
   }
 
   async function savePoc() {
-    if (!data.general.pocName.trim()) {
-      alert("Informe o nome da POC antes de salvar.");
+    const geral = data.general || {};
+    const camposPendentes = getMissingFields([
+      { label: "Nome da POC", value: geral.pocName },
+      { label: "Fornecedor / tecnologia", value: geral.supplier },
+      { label: "Responsável", value: geral.responsible },
+      { label: "Gestor / sponsor", value: geral.sponsor },
+      { label: "Carteira / cliente", value: geral.wallet },
+      { label: "Produto / solução testada", value: geral.product },
+      { label: "Início do período", value: geral.periodStart },
+      { label: "Fim do período", value: geral.periodEnd },
+    ]);
+
+    if (camposPendentes.length > 0) {
+      setTab("overview");
+      notifyWarning(
+        missingFieldsMessage(camposPendentes, "cadastro de POC"),
+        "Campos obrigatórios pendentes",
+      );
       return;
     }
+
+    if (
+      geral.periodStart &&
+      geral.periodEnd &&
+      geral.periodEnd < geral.periodStart
+    ) {
+      setTab("overview");
+      notifyWarning(
+        "O fim do período da POC não pode ser anterior ao início.",
+        "Período inválido",
+      );
+      return;
+    }
+
     setSaving(true);
     const payload = {
       poc_name: data.general.pocName,
@@ -660,10 +700,15 @@ export default function PocRegisterPage({
     setSaving(false);
     if (response.error) {
       console.log("Erro ao salvar POC:", response.error);
-      alert("Erro ao salvar POC. Veja o console.");
+      notifyError(
+        describeAppError(response.error, {
+          action: "salvar",
+          subject: "cadastro de POC",
+        }),
+      );
       return;
     }
-    alert(
+    notifySuccess(
       registroInicial?.id
         ? "POC atualizada com sucesso!"
         : "POC salva com sucesso!",
