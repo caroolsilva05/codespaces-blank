@@ -7,6 +7,26 @@ import { initialData } from "../data/initialScrumProject";
 import { CheckItem, DateInput, DeleteBtn, EditField, FieldRow, GhostBtn, MonitoringConversionSection, PhaseSection, RiskBadge, SelectInput, StatusBadge, SubSection, TableWrap, Td, Th, THead } from "../components/ScrumFormComponents";
 import { saveScrumProjectRecord } from "../services/scrumProjectService";
 import { theme } from "../styles/scrumTheme";
+import {
+  Activity,
+  CalendarClock,
+  ClipboardList,
+  Flag,
+  LayoutDashboard,
+  PlayCircle,
+  ShieldCheck,
+  WalletCards,
+} from "lucide-react";
+import {
+  notifyError,
+  notifySuccess,
+  notifyWarning,
+} from "../../../shared/notifications";
+import {
+  describeAppError,
+  getMissingFields,
+  missingFieldsMessage,
+} from "../../../shared/errorMessages";
 export default function ScrumProjectRegisterPage({
   registroInicial = null,
   onSaved = null,
@@ -20,20 +40,39 @@ export default function ScrumProjectRegisterPage({
     return dadosSalvos || initialData;
   });
   const [phases, setPhases] = useState({
-    0: true,
-    A: true,
+    0: false,
+    A: false,
     1: true,
-    2: true,
-    3: true,
-    4: true,
-    5: true,
+    2: false,
+    3: false,
+    4: false,
+    5: false,
   });
+  const [activeProjectSection, setActiveProjectSection] = useState("id");
   const [monitorTab, setMonitorTab] = useState("disparos");
   const [flash, setFlash] = useState("");
   const [saving, setSaving] = useState(false);
   const printRef = useRef(null);
 
   const toggle = (n) => setPhases((p) => ({ ...p, [n]: !p[n] }));
+
+  const openPhase = (phaseKey) => {
+    setActiveProjectSection(String(phaseKey));
+    setPhases((p) => ({ ...p, [phaseKey]: true }));
+
+    window.setTimeout(() => {
+      document
+        .getElementById(`project-phase-${phaseKey}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 40);
+  };
+
+  const scrollToIdentification = () => {
+    setActiveProjectSection("id");
+    document
+      .getElementById("project-identification")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const setPI = (field, val) =>
     setData((d) => ({ ...d, projectInfo: { ...d.projectInfo, [field]: val } }));
@@ -72,7 +111,7 @@ export default function ScrumProjectRegisterPage({
 
   function setFaseAtualComValidacao(fase) {
     if (faseRequerAprovacao(fase) && !aprovacaoCompleta()) {
-      alert(
+      notifyWarning(
         "Para avançar o projeto, é necessário registrar o De Acordo com status aprovado, anexo e aprovador.",
       );
       return;
@@ -191,8 +230,36 @@ export default function ScrumProjectRegisterPage({
     }));
 
   const handleSave = async () => {
-    if (!data.projectInfo.nome || !data.projectInfo.nome.trim()) {
-      alert("Informe o nome do projeto antes de salvar.");
+    const info = data.projectInfo || {};
+    const camposObrigatorios = [
+      { label: "Nome do projeto", value: info.nome },
+      { label: "Código / ID", value: info.codigoId },
+      { label: "Fornecedor", value: info.fornecedor },
+      { label: "Responsável", value: info.responsavel },
+      { label: "Data de abertura", value: info.dataAbertura },
+      { label: "Previsão de encerramento", value: info.previsaoEncerramento },
+    ];
+    const camposPendentes = getMissingFields(camposObrigatorios);
+
+    if (camposPendentes.length > 0) {
+      scrollToIdentification();
+      notifyWarning(
+        missingFieldsMessage(camposPendentes, "projeto"),
+        "Campos obrigatórios pendentes",
+      );
+      return;
+    }
+
+    if (
+      info.dataAbertura &&
+      info.previsaoEncerramento &&
+      info.previsaoEncerramento < info.dataAbertura
+    ) {
+      scrollToIdentification();
+      notifyWarning(
+        "A previsão de encerramento não pode ser anterior à data de abertura do projeto.",
+        "Período inválido",
+      );
       return;
     }
 
@@ -202,8 +269,22 @@ export default function ScrumProjectRegisterPage({
     );
 
     if (fasePrecisaAprovacao && !aprovacaoCompleta(aprovacaoAtual)) {
-      alert(
-        "Para salvar o projeto em fase avançada, registre o De Acordo com status aprovado, anexo e aprovador.",
+      const camposAprovacaoPendentes = getMissingFields([
+        {
+          label: "Status aprovado pela Diretoria",
+          value:
+            aprovacaoAtual.statusAprovacao === "Aprovado pela Diretoria"
+              ? "ok"
+              : "",
+        },
+        { label: "Anexo do De Acordo", value: aprovacaoAtual.evidenciaArquivo },
+        { label: "Aprovador", value: aprovacaoAtual.aprovador },
+      ]);
+
+      openPhase("A");
+      notifyWarning(
+        `Para salvar este projeto nesta fase, finalize a aprovação executiva. Campos pendentes: ${camposAprovacaoPendentes.join(", ")}.`,
+        "Aprovação executiva pendente",
       );
       return;
     }
@@ -212,8 +293,15 @@ export default function ScrumProjectRegisterPage({
       aprovacaoAtual.statusAprovacao === "Aprovado pela Diretoria" &&
       !aprovacaoCompleta(aprovacaoAtual)
     ) {
-      alert(
-        "Para marcar como aprovado, informe o anexo do De Acordo e o aprovador.",
+      const camposAprovacaoPendentes = getMissingFields([
+        { label: "Anexo do De Acordo", value: aprovacaoAtual.evidenciaArquivo },
+        { label: "Aprovador", value: aprovacaoAtual.aprovador },
+      ]);
+
+      openPhase("A");
+      notifyWarning(
+        `Para marcar como aprovado, preencha: ${camposAprovacaoPendentes.join(", ")}.`,
+        "Aprovação incompleta",
       );
       return;
     }
@@ -246,12 +334,14 @@ export default function ScrumProjectRegisterPage({
 
     if (ultimoErro) {
       console.log("Erro ao salvar registro Scrum:", ultimoErro);
-      alert("Erro ao salvar projeto. Veja o console.");
+      notifyError(
+        describeAppError(ultimoErro, { action: "salvar", subject: "projeto" }),
+      );
       return;
     }
 
     setFlash("saved");
-    alert(
+    notifySuccess(
       registroInicial?.id
         ? "Projeto atualizado com sucesso!"
         : "Projeto salvo com sucesso!",
@@ -268,7 +358,7 @@ export default function ScrumProjectRegisterPage({
     const conteudo = printRef.current;
 
     if (!conteudo) {
-      alert("Não foi possível preparar o PDF.");
+      notifyError("Não foi possível preparar o PDF.");
       return;
     }
 
@@ -365,7 +455,7 @@ export default function ScrumProjectRegisterPage({
     const janela = window.open("", "_blank", "width=1400,height=950");
 
     if (!janela) {
-      alert(
+      notifyWarning(
         "O navegador bloqueou a janela de impressão. Libere pop-ups para exportar o PDF.",
       );
       return;
@@ -494,6 +584,94 @@ export default function ScrumProjectRegisterPage({
         100
       : 0;
 
+  const requiredFields = [
+    pi.nome,
+    pi.codigoId,
+    pi.responsavel,
+    pi.fornecedor,
+    pi.dataAbertura,
+    pi.previsaoEncerramento,
+  ];
+  const completedRequired = requiredFields.filter((value) =>
+    String(value || "").trim(),
+  ).length;
+  const essentialProgress = Math.round(
+    (completedRequired / requiredFields.length) * 100,
+  );
+
+  const approvalReady = aprovacaoCompleta(aprovacaoProjeto);
+  const projectMode = registroInicial?.id ? "Editar projeto" : "Novo projeto";
+  const phaseNavItems = [
+    {
+      key: "id",
+      label: "Essenciais",
+      helper: "Identidade do projeto",
+      icon: ClipboardList,
+      color: theme.gold,
+      light: "#fef2f5",
+    },
+    {
+      key: 0,
+      label: "Orcamento",
+      helper: "Custos e previsao",
+      icon: WalletCards,
+      color: theme.phases[0].bg,
+      light: theme.phases[0].light,
+    },
+    {
+      key: "A",
+      label: "Aprovacao",
+      helper: "De Acordo executivo",
+      icon: ShieldCheck,
+      color: theme.phases.A.bg,
+      light: theme.phases.A.light,
+    },
+    {
+      key: 1,
+      label: "Backlog",
+      helper: "Objetivo e abertura",
+      icon: LayoutDashboard,
+      color: theme.phases[1].bg,
+      light: theme.phases[1].light,
+    },
+    {
+      key: 2,
+      label: "Planejamento",
+      helper: "Escopo, riscos e cronograma",
+      icon: CalendarClock,
+      color: theme.phases[2].bg,
+      light: theme.phases[2].light,
+    },
+    {
+      key: 3,
+      label: "Execucao",
+      helper: "Atividades e impedimentos",
+      icon: PlayCircle,
+      color: theme.phases[3].bg,
+      light: theme.phases[3].light,
+    },
+    {
+      key: 4,
+      label: "Monitoramento",
+      helper: "KPIs e desempenho",
+      icon: Activity,
+      color: theme.phases[4].bg,
+      light: theme.phases[4].light,
+    },
+    {
+      key: 5,
+      label: "Encerramento",
+      helper: "Aceites e resultados",
+      icon: Flag,
+      color: theme.phases[5].bg,
+      light: theme.phases[5].light,
+    },
+  ];
+  const activeNavItem =
+    phaseNavItems.find((item) => String(item.key) === activeProjectSection) ||
+    phaseNavItems[0];
+  const ActiveNavIcon = activeNavItem.icon;
+
   // ──────────────────────────────────────────────────────────
   return (
     <div
@@ -512,7 +690,9 @@ export default function ScrumProjectRegisterPage({
           borderBottom: `1px solid ${theme.border}`,
           boxShadow: theme.shadowCard,
           padding: "0 32px",
-          position: "relative",
+          position: "sticky",
+          top: 0,
+          zIndex: 9990,
           overflow: "hidden",
         }}
       >
@@ -574,7 +754,7 @@ export default function ScrumProjectRegisterPage({
                 |
               </span>
               <span style={{ color: theme.textSecondary, fontSize: 13 }}>
-                Ciclo de Vida do Projeto
+                Cadastro integrado
               </span>
             </div>
             <h1
@@ -587,7 +767,7 @@ export default function ScrumProjectRegisterPage({
                 lineHeight: 1.16,
               }}
             >
-              Template de Projeto
+              {projectMode}
             </h1>
             <p
               style={{
@@ -658,12 +838,225 @@ export default function ScrumProjectRegisterPage({
         </div>
       </div>
 
+      <div
+        style={{
+          background:
+            "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
+          borderBottom: `1px solid ${theme.border}`,
+          padding: "20px 32px 22px",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1320,
+            margin: "0 auto",
+            display: "grid",
+            gridTemplateColumns: "minmax(260px, 0.9fr) minmax(420px, 1.6fr)",
+            gap: 16,
+            alignItems: "stretch",
+          }}
+        >
+          <div
+            style={{
+              background: activeNavItem.light,
+              border: `1px solid ${activeNavItem.color}2e`,
+              borderRadius: 16,
+              padding: 18,
+              boxShadow: "0 14px 34px rgba(15,23,42,0.07)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 14,
+              }}
+            >
+              <span
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 12,
+                  background: activeNavItem.color,
+                  color: "#fff",
+                  display: "grid",
+                  placeItems: "center",
+                  boxShadow: `0 10px 22px ${activeNavItem.color}30`,
+                }}
+              >
+                <ActiveNavIcon size={20} />
+              </span>
+              <div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: activeNavItem.color,
+                    fontWeight: 900,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.04em",
+                  }}
+                >
+                  Etapa ativa
+                </div>
+                <div style={{ fontSize: 18, color: theme.text, fontWeight: 950 }}>
+                  {activeNavItem.label}
+                </div>
+              </div>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 28, fontWeight: 950, color: theme.text }}>
+                  {essentialProgress}%
+                </div>
+                <div style={{ fontSize: 12, color: theme.textSecondary }}>
+                  Campos essenciais preenchidos
+                </div>
+              </div>
+              <StatusBadge status={pi.status} />
+            </div>
+            <div
+              style={{
+                height: 8,
+                background: theme.borderLight,
+                borderRadius: 999,
+                marginTop: 14,
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: `${essentialProgress}%`,
+                  height: "100%",
+                  background: activeNavItem.color,
+                  borderRadius: 999,
+                }}
+              />
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: theme.white,
+              border: `1px solid ${theme.border}`,
+              borderRadius: 16,
+              padding: 16,
+              boxShadow: "0 14px 34px rgba(15,23,42,0.07)",
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+                gap: 10,
+                marginBottom: 14,
+              }}
+            >
+              {[
+                ["Fase atual", pi.faseAtual || "Backlog"],
+                ["Previsao", pi.previsaoEncerramento || "-"],
+                ["Aprovacao", approvalReady ? "Liberada" : "Pendente"],
+                ["Impedimentos", blockers > 0 ? `${blockers} ativo(s)` : "Nenhum"],
+              ].map(([label, value]) => (
+                <div
+                  key={label}
+                  style={{
+                    background: "#f8fafc",
+                    border: `1px solid ${theme.borderLight}`,
+                    borderRadius: 10,
+                    padding: "10px 12px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: theme.textMuted,
+                      fontWeight: 850,
+                      marginBottom: 5,
+                    }}
+                  >
+                    {label}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color:
+                        label === "Impedimentos" && blockers > 0
+                          ? "#dc2626"
+                          : theme.text,
+                      fontWeight: 850,
+                      lineHeight: 1.25,
+                    }}
+                  >
+                    {value}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(118px, 1fr))",
+                gap: 8,
+              }}
+            >
+              {phaseNavItems.map((item) => {
+                const active = activeProjectSection === String(item.key);
+                const Icon = item.icon;
+
+                return (
+                  <button
+                    key={String(item.key)}
+                    type="button"
+                    onClick={() =>
+                      item.key === "id"
+                        ? scrollToIdentification()
+                        : openPhase(item.key)
+                    }
+                    style={{
+                      border: `1px solid ${active ? item.color : theme.border}`,
+                      background: active ? item.light : "#fff",
+                      color: active ? item.color : theme.textSecondary,
+                      borderRadius: 10,
+                      padding: "9px 10px",
+                      cursor: "pointer",
+                      fontSize: 12,
+                      fontWeight: 850,
+                      boxShadow: active
+                        ? `0 8px 18px ${item.color}18`
+                        : "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 7,
+                      justifyContent: "flex-start",
+                      minHeight: 42,
+                    }}
+                    title={item.helper}
+                  >
+                    <Icon size={15} />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* ── SUMMARY CARDS ── */}
       <div
         style={{
           background: theme.bg,
           padding: "20px 32px",
-          display: "grid",
+          display: "none",
           gridTemplateColumns: "repeat(6,1fr)",
           gap: 16,
           borderBottom: `1px solid ${theme.border}`,
@@ -750,9 +1143,125 @@ export default function ScrumProjectRegisterPage({
       <div
         style={{ padding: "32px 32px 48px", maxWidth: 1320, margin: "0 auto" }}
       >
-        {/* ===== IDENTIFICAÇÃO ===== */}
         <div
           style={{
+            display: "grid",
+            gridTemplateColumns: "280px minmax(0, 1fr)",
+            gap: 22,
+            alignItems: "start",
+          }}
+        >
+          <aside
+            style={{
+              position: "sticky",
+              top: 18,
+              background: "#fff",
+              border: `1px solid ${theme.border}`,
+              borderRadius: 16,
+              padding: 14,
+              boxShadow: "0 14px 34px rgba(15,23,42,0.07)",
+            }}
+          >
+            <div
+              style={{
+                padding: "8px 8px 12px",
+                borderBottom: `1px solid ${theme.borderLight}`,
+                marginBottom: 10,
+              }}
+            >
+              <div style={{ fontSize: 14, fontWeight: 950, color: theme.text }}>
+                Project Studio
+              </div>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: theme.textSecondary,
+                  marginTop: 3,
+                  lineHeight: 1.35,
+                }}
+              >
+                Navegue por contexto. Cada tela mostra somente o que precisa ser tratado agora.
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {phaseNavItems.map((item, index) => {
+                const active = activeProjectSection === String(item.key);
+                const Icon = item.icon;
+
+                return (
+                  <button
+                    key={String(item.key)}
+                    type="button"
+                    onClick={() =>
+                      item.key === "id"
+                        ? scrollToIdentification()
+                        : openPhase(item.key)
+                    }
+                    style={{
+                      width: "100%",
+                      border: `1px solid ${active ? item.color : "transparent"}`,
+                      background: active ? item.light : "transparent",
+                      color: active ? item.color : theme.textSecondary,
+                      borderRadius: 12,
+                      padding: "10px 11px",
+                      cursor: "pointer",
+                      display: "grid",
+                      gridTemplateColumns: "32px 1fr",
+                      gap: 10,
+                      alignItems: "center",
+                      textAlign: "left",
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 10,
+                        display: "grid",
+                        placeItems: "center",
+                        background: active ? item.color : "#f8fafc",
+                        color: active ? "#fff" : theme.textMuted,
+                        border: `1px solid ${active ? item.color : theme.border}`,
+                      }}
+                    >
+                      <Icon size={16} />
+                    </span>
+                    <span>
+                      <span
+                        style={{
+                          display: "block",
+                          fontSize: 12,
+                          fontWeight: 900,
+                          color: active ? item.color : theme.text,
+                        }}
+                      >
+                        {String(index + 1).padStart(2, "0")} - {item.label}
+                      </span>
+                      <span
+                        style={{
+                          display: "block",
+                          fontSize: 10,
+                          color: theme.textMuted,
+                          marginTop: 2,
+                          lineHeight: 1.25,
+                        }}
+                      >
+                        {item.helper}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+
+          <div style={{ minWidth: 0 }}>
+        {/* ===== IDENTIFICAÇÃO ===== */}
+        <div
+          id="project-identification"
+          style={{
+            display: activeProjectSection === "id" ? "block" : "none",
             background: "#fff",
             borderRadius: theme.radiusCard,
             border: `1px solid ${theme.border}`,
@@ -1048,6 +1557,8 @@ export default function ScrumProjectRegisterPage({
 
         {/* ===== FASE 0 — ORÇAMENTO DO PROJETO ===== */}
         <PhaseSection
+          id="project-phase-0"
+          visible={activeProjectSection === "0"}
           phaseNum={0}
           title="Orçamento do Projeto"
           expanded={phases[0]}
@@ -1198,6 +1709,8 @@ export default function ScrumProjectRegisterPage({
 
         {/* ===== DE ACORDO — APROVAÇÃO EXECUTIVA ===== */}
         <PhaseSection
+          id="project-phase-A"
+          visible={activeProjectSection === "A"}
           phaseNum="A"
           title="De Acordo — Aprovação Executiva"
           expanded={phases.A}
@@ -1362,6 +1875,8 @@ export default function ScrumProjectRegisterPage({
 
         {/* ===== FASE 1 — BACKLOG ===== */}
         <PhaseSection
+          id="project-phase-1"
+          visible={activeProjectSection === "1"}
           phaseNum={1}
           title="Fase 1 — Backlog"
           expanded={phases[1]}
@@ -1562,6 +2077,8 @@ export default function ScrumProjectRegisterPage({
 
         {/* ===== FASE 2 — PLANEJAMENTO ===== */}
         <PhaseSection
+          id="project-phase-2"
+          visible={activeProjectSection === "2"}
           phaseNum={2}
           title="Fase 2 — Planejamento"
           expanded={phases[2]}
@@ -1853,6 +2370,8 @@ export default function ScrumProjectRegisterPage({
 
         {/* ===== FASE 3 — EXECUÇÃO ===== */}
         <PhaseSection
+          id="project-phase-3"
+          visible={activeProjectSection === "3"}
           phaseNum={3}
           title="Fase 3 — Execução"
           expanded={phases[3]}
@@ -2145,6 +2664,8 @@ export default function ScrumProjectRegisterPage({
 
         {/* ===== FASE 4 — MONITORAMENTO ===== */}
         <PhaseSection
+          id="project-phase-4"
+          visible={activeProjectSection === "4"}
           phaseNum={4}
           title="Fase 4 — Monitoramento / Desempenho"
           expanded={phases[4]}
@@ -2345,6 +2866,8 @@ export default function ScrumProjectRegisterPage({
 
         {/* ===== FASE 5 — ENCERRAMENTO ===== */}
         <PhaseSection
+          id="project-phase-5"
+          visible={activeProjectSection === "5"}
           phaseNum={5}
           title="Fase 5 — Encerramento"
           expanded={phases[5]}
@@ -2791,6 +3314,9 @@ export default function ScrumProjectRegisterPage({
         </PhaseSection>
 
         {/* ── FOOTER ── */}
+          </div>
+        </div>
+
         <div
           style={{
             textAlign: "center",

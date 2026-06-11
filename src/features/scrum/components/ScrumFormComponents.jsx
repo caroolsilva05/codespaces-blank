@@ -56,58 +56,70 @@ export const RiskBadge = ({ level }) => {
   );
 };
 
-export const PhaseSection = ({ phaseNum, title, expanded, onToggle, children }) => {
+export const PhaseSection = ({
+  phaseNum,
+  title,
+  expanded,
+  onToggle,
+  children,
+  id,
+  visible = true,
+}) => {
   const p = theme.phases[phaseNum];
   return (
     <div
+      id={id}
       className="pdf-phase-section"
       style={{
-        marginBottom: 24,
+        display: visible ? "block" : "none",
+        marginBottom: 16,
         borderRadius: theme.radiusCard,
         overflow: "hidden",
         border: `1px solid ${theme.border}`,
         boxShadow: theme.shadowCard,
         transition: theme.transitionBase,
+        background: "#fff",
       }}
     >
       <div
         className="pdf-phase-header"
         onClick={onToggle}
         style={{
-          background: p.bg,
-          color: "#fff",
-          padding: "16px 24px",
+          background: "#fff",
+          color: theme.text,
+          padding: "14px 18px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           cursor: "pointer",
           userSelect: "none",
+          borderLeft: `4px solid ${p.bg}`,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {phaseNum !== "A" && phaseNum !== 0 && (
-            <span
-              style={{
-                background: "rgba(255,255,255,0.18)",
-                borderRadius: 10,
-                width: 32,
-                height: 32,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 13,
-                fontWeight: 800,
-              }}
-            >
-              {phaseNum}
-            </span>
-          )}
+          <span
+            style={{
+              background: p.light,
+              border: `1px solid ${p.bg}22`,
+              borderRadius: 8,
+              color: p.bg,
+              width: 34,
+              height: 34,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 12,
+              fontWeight: 900,
+              flexShrink: 0,
+            }}
+          >
+            {phaseNum === "A" ? "OK" : phaseNum}
+          </span>
           <span
             style={{
               fontSize: 14,
-              fontWeight: 700,
-              letterSpacing: "0.04em",
-              textTransform: "uppercase",
+              fontWeight: 850,
+              letterSpacing: 0,
             }}
           >
             {title}
@@ -120,7 +132,11 @@ export const PhaseSection = ({ phaseNum, title, expanded, onToggle, children }) 
       {expanded && (
         <div
           className="pdf-phase-body"
-          style={{ padding: "24px", background: "#fff" }}
+          style={{
+            padding: "20px 22px 22px",
+            background: "#fff",
+            borderTop: `1px solid ${theme.borderLight}`,
+          }}
         >
           {children}
         </div>
@@ -130,15 +146,15 @@ export const PhaseSection = ({ phaseNum, title, expanded, onToggle, children }) 
 };
 
 export const SubSection = ({ title, children }) => (
-  <div className="pdf-subsection" style={{ marginBottom: 24 }}>
+  <div className="pdf-subsection" style={{ marginBottom: 22 }}>
     <h4
       style={{
-        margin: "0 0 14px 0",
+        margin: "0 0 12px 0",
         fontSize: 13,
-        fontWeight: 700,
-        color: theme.navy,
-        textTransform: "uppercase",
-        letterSpacing: "0.06em",
+        fontWeight: 850,
+        color: theme.text,
+        textTransform: "none",
+        letterSpacing: 0,
         borderBottom: `1px solid ${theme.border}`,
         paddingBottom: 8,
       }}
@@ -392,9 +408,9 @@ export const FieldRow = ({ label, children }) => (
   <div
     style={{
       display: "grid",
-      gridTemplateColumns: "190px 1fr",
-      gap: 16,
-      padding: "12px 0",
+      gridTemplateColumns: "170px minmax(0, 1fr)",
+      gap: 14,
+      padding: "10px 0",
       borderBottom: `1px solid ${theme.borderLight}`,
       alignItems: "center",
     }}
@@ -402,10 +418,10 @@ export const FieldRow = ({ label, children }) => (
     <span
       style={{
         fontSize: 11,
-        fontWeight: 700,
+        fontWeight: 800,
         color: theme.textSecondary,
-        textTransform: "uppercase",
-        letterSpacing: "0.8px",
+        textTransform: "none",
+        letterSpacing: 0,
       }}
     >
       {label}
