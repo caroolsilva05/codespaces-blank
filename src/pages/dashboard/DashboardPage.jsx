@@ -25,11 +25,23 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { supabase } from "../../services/supabase";
+import { isSupabaseConfigured, supabase } from "../../services/supabase";
 import ScrumProjectRegister from "../../features/scrum";
 import PocRegister from "../../features/pocs";
 import PortalDashboard from "../../features/portals";
 import MarketingPage from "../../features/marketing";
+import {
+  notifyError,
+  notifyInfo,
+  notifySuccess,
+  notifyWarning,
+  requestAppPrompt,
+} from "../../shared/notifications";
+import {
+  describeAppError,
+  getMissingFields,
+  missingFieldsMessage,
+} from "../../shared/errorMessages";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -67,10 +79,23 @@ import {
   Microscope,
   CircleDot,
   ChevronDown,
+  CalendarDays,
   Download,
   RefreshCw,
   Eye,
 } from "lucide-react";
+
+let databaseConfigWarningShown = false;
+
+function notifyDatabaseConfigMissingOnce() {
+  if (databaseConfigWarningShown) return;
+
+  databaseConfigWarningShown = true;
+  notifyWarning(
+    "O banco de dados ainda não está configurado neste ambiente. Crie um arquivo .env com VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para carregar projetos, POCs e fornecedores.",
+    "Banco de dados não configurado",
+  );
+}
 
 // ---
 const THEME_STORAGE_KEY = "bp-theme";
@@ -883,15 +908,21 @@ const CT = ({ active, payload, label, C }) => {
   );
 };
 
-const SectionHeader = ({ title, sub, actions, C }) => (
+const SectionHeader = ({ title, sub, actions, C, sticky = false, stickyTop = 0 }) => (
   <div
     style={{
+      position: sticky ? "sticky" : "relative",
+      top: sticky ? stickyTop : "auto",
+      zIndex: sticky ? 80 : "auto",
       display: "flex",
       justifyContent: "space-between",
       alignItems: "flex-start",
       gap: 16,
       flexWrap: "wrap",
+      padding: sticky ? "12px 0" : 0,
       marginBottom: 16,
+      background: sticky ? C.bg0 : "transparent",
+      boxShadow: sticky ? `0 12px 26px ${C.bg0}f2` : "none",
     }}
   >
     <div>
@@ -1070,6 +1101,12 @@ function Dashboard({ C }) {
   }
 
   async function carregarDashboard() {
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      notifyDatabaseConfigMissingOnce();
+      return;
+    }
+
     setLoading(true);
 
     const [projectsRes, pocsRes, suppliersRes] = await Promise.all([
@@ -1078,15 +1115,39 @@ function Dashboard({ C }) {
       supabase.from("fornecedores").select("*"),
     ]);
 
-    if (projectsRes.error)
+    if (projectsRes.error) {
       console.log("Erro ao carregar projetos no dashboard:", projectsRes.error);
-    if (pocsRes.error)
+      notifyError(
+        describeAppError(projectsRes.error, {
+          action: "carregar",
+          subject: "painel de projetos",
+        }),
+        "Erro ao carregar dados",
+      );
+    }
+    if (pocsRes.error) {
       console.log("Erro ao carregar POC no dashboard:", pocsRes.error);
-    if (suppliersRes.error)
+      notifyError(
+        describeAppError(pocsRes.error, {
+          action: "carregar",
+          subject: "painel de POCs",
+        }),
+        "Erro ao carregar dados",
+      );
+    }
+    if (suppliersRes.error) {
       console.log(
         "Erro ao carregar fornecedores no dashboard:",
         suppliersRes.error,
       );
+      notifyError(
+        describeAppError(suppliersRes.error, {
+          action: "carregar",
+          subject: "painel de fornecedores",
+        }),
+        "Erro ao carregar dados",
+      );
+    }
 
     const projetosNormalizados = (projectsRes.data || []).map((registro) => {
       const dados = registro.dados_do_registro || registro.record_data || {};
@@ -1340,6 +1401,7 @@ function Dashboard({ C }) {
           />,
         ]}
         C={C}
+        sticky
       />
 
       <div
@@ -1978,6 +2040,8 @@ function ProjectsView({ C }) {
   ];
 
   const [filter, setFilter] = useState("Todos");
+  const [projectView, setProjectView] = useState("executive");
+  const [showProjectRegister, setShowProjectRegister] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [scrumProjects, setScrumProjects] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
@@ -2220,6 +2284,12 @@ function ProjectsView({ C }) {
   }
 
   async function carregarProjetosDoScrum() {
+    if (!isSupabaseConfigured) {
+      setLoadingProjects(false);
+      notifyDatabaseConfigMissingOnce();
+      return;
+    }
+
     setLoadingProjects(true);
 
     const { data, error } = await supabase
@@ -2230,6 +2300,13 @@ function ProjectsView({ C }) {
 
     if (error) {
       console.log("Erro ao carregar projetos a partir do Scrum:", error);
+      notifyError(
+        describeAppError(error, {
+          action: "carregar",
+          subject: "projetos do Scrum",
+        }),
+        "Erro ao carregar projetos",
+      );
       return;
     }
 
@@ -2250,6 +2327,31 @@ function ProjectsView({ C }) {
     carregarProjetosDoScrum();
   }, []);
 
+  async function sincronizarVisualizacoesDeProjetos() {
+    await carregarProjetosDoScrum();
+  }
+
+  async function alterarVisualizacaoDeProjeto(viewId) {
+    setProjectView(viewId);
+
+    if (viewId !== "scrum") {
+      await carregarProjetosDoScrum();
+    }
+  }
+
+  function abrirNovoProjeto() {
+    setShowProjectRegister(true);
+  }
+
+  async function fecharNovoProjeto() {
+    setShowProjectRegister(false);
+    await sincronizarVisualizacoesDeProjetos();
+  }
+
+  async function salvarNovoProjeto() {
+    await sincronizarVisualizacoesDeProjetos();
+  }
+
   const sourceProjects = scrumProjects;
 
   const filtered =
@@ -2269,151 +2371,421 @@ function ProjectsView({ C }) {
     return acc;
   }, {});
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+  const projectViewOptions = [
+    { id: "executive", label: "Executivo", icon: BarChart3 },
+    { id: "kanban", label: "Kanban", icon: FolderKanban },
+    { id: "scrum", label: "Scrum", icon: Layers },
+    { id: "timeline", label: "Timeline", icon: Clock },
+    { id: "calendar", label: "Calendário", icon: CalendarDays },
+  ];
+
+  const projetosEmExecucao = sourceProjects.filter(
+    (p) => normalizarEtapa(p.etapa) === "Execução",
+  ).length;
+  const projetosConcluidos = sourceProjects.filter(
+    (p) => normalizarEtapa(p.etapa) === "Encerramento",
+  ).length;
+  const projetosAtencao = sourceProjects.filter((p) =>
+    ["Atenção", "Atencao", "Atrasado"].includes(String(p.statusGeral || "")),
+  ).length;
+  const progressoMedio =
+    sourceProjects.length > 0
+      ? Math.round(
+          sourceProjects.reduce((acc, p) => acc + Number(p.prog || 0), 0) /
+            sourceProjects.length,
+        )
+      : 0;
+
+  const projetosComPrazo = filtered
+    .map((projeto) => ({
+      ...projeto,
+      prazoDate:
+        projeto.prazo && projeto.prazo !== "-"
+          ? new Date(
+              String(projeto.prazo).includes("/")
+                ? String(projeto.prazo).split("/").reverse().join("-")
+                : projeto.prazo,
+            )
+          : null,
+    }))
+    .filter((projeto) => projeto.prazoDate && !Number.isNaN(projeto.prazoDate.getTime()))
+    .sort((a, b) => a.prazoDate - b.prazoDate);
+
+  function ProjectMiniCard({ projeto, accent }) {
+    return (
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 16,
+          ...card(C),
+          padding: 13,
+          borderLeft: `4px solid ${accent}`,
+          boxShadow: "0 8px 20px rgba(15,23,42,0.055)",
         }}
       >
-        <div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: C.t1 }}>
-            Gestão de Projetos
+        <div style={{ fontSize: 13, fontWeight: 850, color: C.t1, lineHeight: 1.35 }}>
+          {projeto.name}
+        </div>
+        <div style={{ fontSize: 11, color: C.t3, marginTop: 6 }}>
+          {projeto.id} · {projeto.resp}
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <ProgressBar val={projeto.prog} color={accent} C={C} />
+        </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 8,
+            marginTop: 10,
+            alignItems: "center",
+          }}
+        >
+          <span style={{ fontSize: 11, color: C.t3 }}>{projeto.prazo}</span>
+          <Chip
+            label={projeto.statusGeral}
+            color={projeto.statusGeral === "Atrasado" ? C.rose : projeto.statusGeral === "Atenção" ? C.amber : C.emerald}
+            bg={projeto.statusGeral === "Atrasado" ? C.roseGlow : projeto.statusGeral === "Atenção" ? C.amberGlow : C.emeraldGlow}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {showProjectRegister && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: C.bg0,
+            overflow: "auto",
+          }}
+        >
+          <button
+            onClick={fecharNovoProjeto}
+            style={{
+              position: "fixed",
+              top: 18,
+              right: 22,
+              zIndex: 10000,
+              background: "linear-gradient(135deg, #334155, #1f2937)",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: 8,
+              padding: "10px 16px",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: "0 8px 20px rgba(15, 23, 42, 0.14)",
+            }}
+          >
+            Fechar Cadastro
+          </button>
+
+          <ScrumProjectRegister
+            registroInicial={null}
+            onSaved={salvarNovoProjeto}
+          />
+        </div>
+      )}
+
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 90,
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          padding: "12px 0",
+          background: C.bg0,
+          boxShadow: `0 14px 28px ${C.bg0}f2`,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: C.t1 }}>
+              Gestão de Projetos
+            </div>
+            <div style={{ fontSize: 13, color: C.t3, marginTop: 4 }}>
+              {loadingProjects
+                ? "Carregando projetos..."
+                : `${filtered.length} projetos · Visualizações executivas, Kanban, Scrum, Timeline e Calendário`}
+            </div>
           </div>
-          <div style={{ fontSize: 13, color: C.t3, marginTop: 4 }}>
-            {loadingProjects
-              ? "Carregando projetos do Scrum..."
-              : `${filtered.length} projetos · Sincronizados automaticamente do Scrum`}
+
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              position: "relative",
+              alignItems: "center",
+              flexWrap: "wrap",
+              justifyContent: "flex-end",
+            }}
+          >
+            <Chip
+              label="Fonte única: Scrum"
+              color={C.emerald}
+              bg={C.emeraldGlow}
+            />
+
+            <Btn
+              label="Novo Projeto"
+              icon={Plus}
+              primary
+              C={C}
+              onClick={abrirNovoProjeto}
+            />
+
+            <button
+              onClick={() => setShowFilters((prev) => !prev)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 14px",
+                borderRadius: 10,
+                background: showFilters ? C.blueGlow : C.surface,
+                border: `1px solid ${showFilters ? C.blue : C.border}`,
+                color: showFilters ? C.blue : C.t2,
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: showFilters ? 700 : 500,
+              }}
+            >
+              Filtros
+            </button>
+
+            <button
+              onClick={carregarProjetosDoScrum}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 14px",
+                borderRadius: 10,
+                background: C.surface,
+                border: `1px solid ${C.border}`,
+                color: C.t2,
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: 700,
+              }}
+            >
+              Atualizar
+            </button>
+
+            {showFilters && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 44,
+                  right: 0,
+                  width: 260,
+                  zIndex: 20,
+                  ...card(C),
+                  padding: 12,
+                  boxShadow: "0 18px 45px rgba(0,0,0,0.18)",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: C.t1,
+                    marginBottom: 10,
+                  }}
+                >
+                  Filtrar por status do ciclo
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {filters.map((f) => {
+                    const active = filter === f;
+                    const cores =
+                      f === "Todos"
+                        ? { color: C.blue, bg: C.blueGlow }
+                        : corEtapa(f);
+
+                    return (
+                      <button
+                        key={f}
+                        onClick={() => {
+                          setFilter(f);
+                          setShowFilters(false);
+                        }}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          width: "100%",
+                          padding: "9px 10px",
+                          borderRadius: 9,
+                          border: `1px solid ${active ? cores.color : C.border}`,
+                          background: active ? cores.bg : "transparent",
+                          color: active ? cores.color : C.t2,
+                          cursor: "pointer",
+                          fontSize: 12,
+                          fontWeight: active ? 700 : 500,
+                        }}
+                      >
+                        <span>{f}</span>
+                        <span
+                          style={{
+                            fontSize: 10,
+                            color: active ? cores.color : C.t3,
+                          }}
+                        >
+                          {totalPorFiltro[f] || 0}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         <div
           style={{
             display: "flex",
-            gap: 10,
-            position: "relative",
-            alignItems: "center",
+            gap: 8,
+            flexWrap: "wrap",
+            padding: 4,
+            border: `1px solid ${C.border}`,
+            background: C.surface,
+            borderRadius: 12,
+            width: "fit-content",
           }}
         >
-          <Chip
-            label="Fonte única: Scrum"
-            color={C.emerald}
-            bg={C.emeraldGlow}
-          />
+          {projectViewOptions.map((option) => {
+            const Icon = option.icon;
+            const active = projectView === option.id;
 
-          <button
-            onClick={() => setShowFilters((prev) => !prev)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "8px 14px",
-              borderRadius: 10,
-              background: showFilters ? C.blueGlow : C.surface,
-              border: `1px solid ${showFilters ? C.blue : C.border}`,
-              color: showFilters ? C.blue : C.t2,
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: showFilters ? 700 : 500,
-            }}
-          >
-            Filtros
-          </button>
+            return (
+              <button
+                key={option.id}
+                onClick={() => alterarVisualizacaoDeProjeto(option.id)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 7,
+                  minHeight: 34,
+                  padding: "7px 13px",
+                  borderRadius: 9,
+                  border: `1px solid ${active ? C.blue : "transparent"}`,
+                  background: active ? C.blueGlow : "transparent",
+                  color: active ? C.blue : C.t2,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: active ? 800 : 650,
+                }}
+              >
+                <Icon size={14} />
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-          <button
-            onClick={carregarProjetosDoScrum}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "8px 14px",
-              borderRadius: 10,
-              background: C.surface,
-              border: `1px solid ${C.border}`,
-              color: C.t2,
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 700,
-            }}
-          >
-            Atualizar
-          </button>
+      {projectView === "scrum" && (
+        <ScrumView
+          C={C}
+          embedded
+          onProjectsChanged={sincronizarVisualizacoesDeProjetos}
+        />
+      )}
 
-          {showFilters && (
+      {projectView !== "scrum" && projectView === "executive" && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: 12,
+          }}
+        >
+          {[
+            {
+              label: "Total de projetos",
+              value: sourceProjects.length,
+              color: C.blue,
+              bg: C.blueGlow,
+            },
+            {
+              label: "Em execução",
+              value: projetosEmExecucao,
+              color: C.violet,
+              bg: C.violetGlow,
+            },
+            {
+              label: "Atenção",
+              value: projetosAtencao,
+              color: projetosAtencao > 0 ? C.rose : C.emerald,
+              bg: projetosAtencao > 0 ? C.roseGlow : C.emeraldGlow,
+            },
+            {
+              label: "Concluídos",
+              value: projetosConcluidos,
+              color: C.emerald,
+              bg: C.emeraldGlow,
+            },
+            {
+              label: "Progresso médio",
+              value: `${progressoMedio}%`,
+              color: C.amber,
+              bg: C.amberGlow,
+            },
+          ].map((item) => (
             <div
+              key={item.label}
               style={{
-                position: "absolute",
-                top: 44,
-                right: 0,
-                width: 260,
-                zIndex: 20,
                 ...card(C),
-                padding: 12,
-                boxShadow: "0 18px 45px rgba(0,0,0,0.18)",
+                padding: 16,
+                background: item.bg,
+                borderColor: item.color + "33",
               }}
             >
               <div
                 style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: C.t1,
-                  marginBottom: 10,
+                  fontSize: 11,
+                  color: item.color,
+                  fontWeight: 900,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
                 }}
               >
-                Filtrar por status do ciclo
+                {item.label}
               </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {filters.map((f) => {
-                  const active = filter === f;
-                  const cores =
-                    f === "Todos"
-                      ? { color: C.blue, bg: C.blueGlow }
-                      : corEtapa(f);
-
-                  return (
-                    <button
-                      key={f}
-                      onClick={() => {
-                        setFilter(f);
-                        setShowFilters(false);
-                      }}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        width: "100%",
-                        padding: "9px 10px",
-                        borderRadius: 9,
-                        border: `1px solid ${active ? cores.color : C.border}`,
-                        background: active ? cores.bg : "transparent",
-                        color: active ? cores.color : C.t2,
-                        cursor: "pointer",
-                        fontSize: 12,
-                        fontWeight: active ? 700 : 500,
-                      }}
-                    >
-                      <span>{f}</span>
-                      <span
-                        style={{
-                          fontSize: 10,
-                          color: active ? cores.color : C.t3,
-                        }}
-                      >
-                        {totalPorFiltro[f] || 0}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div
+                style={{
+                  fontSize: 26,
+                  color: C.t1,
+                  fontWeight: 950,
+                  marginTop: 8,
+                  lineHeight: 1,
+                }}
+              >
+                {item.value}
               </div>
             </div>
-          )}
+          ))}
         </div>
-      </div>
+      )}
 
+      {projectView !== "scrum" && (
+        <>
       <div
         style={{
           ...card(C),
@@ -2429,8 +2801,8 @@ function ProjectsView({ C }) {
           style={{ fontSize: 12, color: C.t2, marginTop: 4, lineHeight: 1.5 }}
         >
           Esta tela é somente uma visão consolidada. Para criar ou alterar um
-          projeto, utilize o módulo Scrum. Qualquer projeto salvo no Scrum
-          aparece automaticamente aqui.
+          projeto, utilize a visão Scrum dentro de Projetos. Qualquer projeto
+          salvo no Scrum aparece automaticamente nas demais visualizações.
         </div>
       </div>
 
@@ -2461,6 +2833,208 @@ function ProjectsView({ C }) {
         })}
       </div>
 
+      {projectView === "kanban" && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(5, minmax(220px, 1fr))",
+            gap: 14,
+            alignItems: "start",
+            overflowX: "auto",
+            paddingBottom: 8,
+          }}
+        >
+          {etapasCiclo.map((etapa) => {
+            const cores = corEtapa(etapa);
+            const projetosDaEtapa = filtered.filter(
+              (projeto) => normalizarEtapa(projeto.etapa) === etapa,
+            );
+
+            return (
+              <div key={etapa} style={{ minWidth: 220 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    background: cores.bg,
+                    border: `1px solid ${cores.color}33`,
+                    marginBottom: 10,
+                  }}
+                >
+                  <span style={{ fontSize: 12, fontWeight: 900, color: cores.color }}>
+                    {etapa}
+                  </span>
+                  <span style={{ fontSize: 11, color: cores.color, fontWeight: 900 }}>
+                    {projetosDaEtapa.length}
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {projetosDaEtapa.map((projeto) => (
+                    <ProjectMiniCard
+                      key={getProjectKey(projeto)}
+                      projeto={projeto}
+                      accent={cores.color}
+                    />
+                  ))}
+
+                  {projetosDaEtapa.length === 0 && (
+                    <div
+                      style={{
+                        border: `1px dashed ${C.border}`,
+                        borderRadius: 10,
+                        padding: 16,
+                        textAlign: "center",
+                        color: C.t3,
+                        fontSize: 12,
+                      }}
+                    >
+                      Sem projetos
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {projectView === "timeline" && (
+        <div style={{ ...card(C), padding: 18 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "180px 1fr 82px",
+              gap: 12,
+              fontSize: 11,
+              color: C.t3,
+              fontWeight: 900,
+              textTransform: "uppercase",
+              marginBottom: 12,
+            }}
+          >
+            <span>Projeto</span>
+            <span>Linha do tempo</span>
+            <span>Prazo</span>
+          </div>
+
+          {filtered.map((projeto) => {
+            const cores = corEtapa(projeto.etapa);
+
+            return (
+              <div
+                key={getProjectKey(projeto)}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "180px 1fr 82px",
+                  gap: 12,
+                  alignItems: "center",
+                  padding: "12px 0",
+                  borderTop: `1px solid ${C.border}`,
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, color: C.t1, fontWeight: 850 }}>
+                    {projeto.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: C.t3, marginTop: 2 }}>
+                    {projeto.resp}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    height: 26,
+                    borderRadius: 999,
+                    background: C.bg3,
+                    overflow: "hidden",
+                    border: `1px solid ${C.border}`,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${Math.max(8, projeto.prog)}%`,
+                      height: "100%",
+                      background: `linear-gradient(90deg, ${cores.color}, ${C.emerald})`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "flex-end",
+                      paddingRight: 10,
+                      color: "#fff",
+                      fontSize: 11,
+                      fontWeight: 900,
+                    }}
+                  >
+                    {projeto.prog}%
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: C.t2 }}>{projeto.prazo}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {projectView === "calendar" && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 12,
+          }}
+        >
+          {projetosComPrazo.map((projeto) => {
+            const cores = corEtapa(projeto.etapa);
+            const dia = projeto.prazoDate.toLocaleDateString("pt-BR", { day: "2-digit" });
+            const mes = projeto.prazoDate.toLocaleDateString("pt-BR", { month: "short" });
+
+            return (
+              <div key={getProjectKey(projeto)} style={{ ...card(C), padding: 14 }}>
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  <div
+                    style={{
+                      width: 48,
+                      height: 52,
+                      borderRadius: 8,
+                      border: `1px solid ${cores.color}44`,
+                      background: cores.bg,
+                      display: "grid",
+                      placeItems: "center",
+                      color: cores.color,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <div style={{ textAlign: "center", lineHeight: 1 }}>
+                      <div style={{ fontSize: 18, fontWeight: 950 }}>{dia}</div>
+                      <div style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase" }}>
+                        {mes}
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, color: C.t1, fontWeight: 850 }}>
+                      {projeto.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: C.t3, marginTop: 4 }}>
+                      {normalizarEtapa(projeto.etapa)} · {projeto.resp}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {projetosComPrazo.length === 0 && (
+            <div style={{ ...card(C), padding: 24, color: C.t3, fontSize: 13 }}>
+              Nenhum prazo encontrado para o filtro atual.
+            </div>
+          )}
+        </div>
+      )}
+
+      {projectView === "list" && (
       <div
         style={{
           ...card(C),
@@ -2897,11 +3471,14 @@ function ProjectsView({ C }) {
           </tbody>
         </table>
       </div>
+      )}
+        </>
+      )}
     </div>
   );
 }
 
-function ScrumView({ C }) {
+function ScrumView({ C, embedded = false, onProjectsChanged }) {
   const [showScrumRegister, setShowScrumRegister] = useState(false);
   const [selectedScrumRecord, setSelectedScrumRecord] = useState(null);
   const [scrumRecords, setScrumRecords] = useState([]);
@@ -2919,6 +3496,12 @@ function ScrumView({ C }) {
   })();
 
   async function carregarRegistrosScrum() {
+    if (!isSupabaseConfigured) {
+      setLoadingScrum(false);
+      notifyDatabaseConfigMissingOnce();
+      return;
+    }
+
     setLoadingScrum(true);
 
     const { data, error } = await supabase
@@ -2929,6 +3512,13 @@ function ScrumView({ C }) {
 
     if (error) {
       console.log("Erro ao carregar registros Scrum:", error);
+      notifyError(
+        describeAppError(error, {
+          action: "carregar",
+          subject: "registros do Scrum",
+        }),
+        "Erro ao carregar Scrum",
+      );
       return;
     }
 
@@ -2959,29 +3549,46 @@ function ScrumView({ C }) {
     setShowScrumRegister(true);
   }
 
-  function fecharRegistro() {
+  async function sincronizarRegistrosScrum() {
+    await carregarRegistrosScrum();
+    if (onProjectsChanged) {
+      await onProjectsChanged();
+    }
+  }
+
+  async function fecharRegistro() {
     setShowScrumRegister(false);
     setSelectedScrumRecord(null);
-    carregarRegistrosScrum();
+    await sincronizarRegistrosScrum();
+  }
+
+  async function salvarRegistroScrum() {
+    await sincronizarRegistrosScrum();
   }
 
   async function excluirRegistroScrum(registro, nomeProjeto) {
     if (!isAdminScrum) {
-      alert("Apenas administradores podem excluir registros do Scrum.");
+      notifyWarning("Apenas administradores podem excluir registros do Scrum.");
       return;
     }
 
     if (!registro?.id) {
-      alert("Registro sem ID para exclusão.");
+      notifyError(
+        "Não foi possível excluir este projeto porque o registro não possui ID. Atualize a página e tente novamente.",
+      );
       return;
     }
 
-    const senhaAdmin = window.prompt(
-      `Para excluir o projeto "${nomeProjeto}", informe sua senha de administrador.`,
-    );
+    const senhaAdmin = await requestAppPrompt({
+      title: "Confirmar exclusão",
+      message: `Para excluir o projeto "${nomeProjeto}", informe sua senha de administrador.`,
+      label: "Senha de administrador",
+      type: "password",
+      confirmLabel: "Excluir projeto",
+    });
 
     if (senhaAdmin !== "Teste@2026") {
-      alert("Senha de administrador inválida. Exclusão cancelada.");
+      notifyWarning("Senha de administrador inválida. Exclusão cancelada.");
       return;
     }
 
@@ -2993,12 +3600,14 @@ function ScrumView({ C }) {
 
     if (error) {
       console.log("Erro ao excluir registro Scrum:", error);
-      alert("Erro ao excluir projeto. Veja o console.");
+      notifyError(
+        describeAppError(error, { action: "excluir", subject: "projeto" }),
+      );
       return;
     }
 
     if (!data || data.length === 0) {
-      alert(
+      notifyWarning(
         "Nenhum registro foi excluído. Verifique se o projeto ainda existe ou se há permissão de exclusão.",
       );
       return;
@@ -3008,9 +3617,9 @@ function ScrumView({ C }) {
       prev.filter((item) => String(item.id) !== String(registro.id)),
     );
 
-    alert("Projeto excluído com sucesso.");
+    notifySuccess("Projeto excluído com sucesso.");
 
-    await carregarRegistrosScrum();
+    await sincronizarRegistrosScrum();
   }
 
   const fases = [
@@ -3056,14 +3665,14 @@ function ScrumView({ C }) {
 
           <ScrumProjectRegister
             registroInicial={selectedScrumRecord}
-            onSaved={carregarRegistrosScrum}
+            onSaved={salvarRegistroScrum}
           />
         </div>
       )}
 
       <SectionHeader
-        title="Scrum de Projetos"
-        sub="Ciclo de vida dos projetos"
+        title={embedded ? "Visualização Scrum" : "Scrum de Projetos"}
+        sub={embedded ? "Quadro operacional dentro de Projetos" : "Ciclo de vida dos projetos"}
         actions={[
           <Btn
             key="n"
@@ -3075,6 +3684,7 @@ function ScrumView({ C }) {
           />,
         ]}
         C={C}
+        sticky={!embedded}
       />
 
       {loadingScrum && (
@@ -3536,6 +4146,12 @@ function SuppliersView({ C }) {
   }
 
   async function carregarFornecedores() {
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      notifyDatabaseConfigMissingOnce();
+      return;
+    }
+
     setLoading(true);
 
     const { data, error } = await supabase
@@ -3547,6 +4163,13 @@ function SuppliersView({ C }) {
 
     if (error) {
       console.log("Erro ao carregar fornecedores:", error);
+      notifyError(
+        describeAppError(error, {
+          action: "carregar",
+          subject: "fornecedores",
+        }),
+        "Erro ao carregar fornecedores",
+      );
       return;
     }
 
@@ -3565,8 +4188,30 @@ function SuppliersView({ C }) {
       risco: form.risco || formRefFornecedor.current.risco || "Baixo",
     };
 
-    if (!String(currentForm.nome || "").trim()) {
-      alert("Informe o nome do fornecedor.");
+    const camposPendentes = getMissingFields([
+      { label: "Nome do fornecedor", value: currentForm.nome },
+      { label: "Categoria", value: currentForm.categoria },
+      { label: "Canais atendidos", value: currentForm.canais },
+      { label: "Responsável interno", value: currentForm.responsavel },
+      { label: "E-mail principal", value: currentForm.email },
+    ]);
+
+    if (camposPendentes.length > 0) {
+      notifyWarning(
+        missingFieldsMessage(camposPendentes, "fornecedor"),
+        "Campos obrigatórios pendentes",
+      );
+      return;
+    }
+
+    const emailFornecedor = String(currentForm.email || "").trim();
+    const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailFornecedor);
+
+    if (!emailValido) {
+      notifyWarning(
+        "Para salvar este fornecedor, informe um e-mail válido no campo E-mail principal.",
+        "E-mail inválido",
+      );
       return;
     }
 
@@ -3607,11 +4252,16 @@ function SuppliersView({ C }) {
 
     if (response.error) {
       console.log("Erro ao salvar fornecedor:", response.error);
-      alert("Erro ao salvar fornecedor. Veja o console.");
+      notifyError(
+        describeAppError(response.error, {
+          action: "salvar",
+          subject: "fornecedor",
+        }),
+      );
       return;
     }
 
-    alert(
+    notifySuccess(
       editingFornecedorId
         ? "Fornecedor atualizado com sucesso!"
         : "Fornecedor salvo com sucesso!",
@@ -3743,6 +4393,7 @@ function SuppliersView({ C }) {
           />,
         ]}
         C={C}
+        sticky
       />
 
       <div
@@ -4537,7 +5188,7 @@ function PortaisView({ C }) {
 
   function exportCsv(filename, rows) {
     if (!rows || rows.length === 0) {
-      alert("Não há dados para exportar.");
+      notifyWarning("Não há dados para exportar.");
       return;
     }
 
@@ -4563,7 +5214,7 @@ function PortaisView({ C }) {
     const janela = window.open("", "_blank", "width=1400,height=950");
 
     if (!janela) {
-      alert(
+      notifyWarning(
         "O navegador bloqueou a janela de impressão. Libere pop-ups e tente novamente.",
       );
       return;
@@ -5335,7 +5986,7 @@ function PortaisView({ C }) {
                     <td style={{ padding: "15px 16px" }}>
                       <button
                         onClick={() =>
-                          alert("MVP: abrir ticket a partir desta falha.")
+                          notifyInfo("MVP: abrir ticket a partir desta falha.")
                         }
                         style={{
                           border: "1px solid " + C.border,
@@ -5784,7 +6435,7 @@ function PortaisView({ C }) {
 
   function baixarCsvPortais(filename, rows) {
     if (!rows || rows.length === 0) {
-      alert("Não há dados para exportar.");
+      notifyWarning("Não há dados para exportar.");
       return;
     }
 
@@ -5872,7 +6523,7 @@ function PortaisView({ C }) {
     const janela = window.open("", "_blank", "width=1400,height=950");
 
     if (!janela) {
-      alert(
+      notifyWarning(
         "O navegador bloqueou a janela de impressão. Libere pop-ups e tente novamente.",
       );
       return;
@@ -5958,6 +6609,7 @@ function PortaisView({ C }) {
           />,
         ]}
         C={C}
+        sticky
       />
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -6090,6 +6742,12 @@ function IndicatorsView({ C }) {
   }
 
   async function carregarIndicadores() {
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      notifyDatabaseConfigMissingOnce();
+      return;
+    }
+
     setLoading(true);
 
     const [projectsRes, pocsRes, suppliersRes] = await Promise.all([
@@ -6098,11 +6756,36 @@ function IndicatorsView({ C }) {
       supabase.from("fornecedores").select("*"),
     ]);
 
-    if (projectsRes.error)
+    if (projectsRes.error) {
       console.log("Erro ao carregar projetos:", projectsRes.error);
-    if (pocsRes.error) console.log("Erro ao carregar POC:", pocsRes.error);
-    if (suppliersRes.error)
+      notifyError(
+        describeAppError(projectsRes.error, {
+          action: "carregar",
+          subject: "indicadores de projetos",
+        }),
+        "Erro ao carregar indicadores",
+      );
+    }
+    if (pocsRes.error) {
+      console.log("Erro ao carregar POC:", pocsRes.error);
+      notifyError(
+        describeAppError(pocsRes.error, {
+          action: "carregar",
+          subject: "indicadores de POC",
+        }),
+        "Erro ao carregar indicadores",
+      );
+    }
+    if (suppliersRes.error) {
       console.log("Erro ao carregar fornecedores:", suppliersRes.error);
+      notifyError(
+        describeAppError(suppliersRes.error, {
+          action: "carregar",
+          subject: "indicadores de fornecedores",
+        }),
+        "Erro ao carregar indicadores",
+      );
+    }
 
     const projetosNormalizados = (projectsRes.data || []).map((registro) => {
       const dados = registro.dados_do_registro || registro.record_data || {};
@@ -6301,6 +6984,7 @@ function IndicatorsView({ C }) {
           />,
         ]}
         C={C}
+        sticky
       />
 
       <div
@@ -6931,6 +7615,12 @@ function PocView({ C }) {
   }
 
   async function carregarPocs() {
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      notifyDatabaseConfigMissingOnce();
+      return;
+    }
+
     setLoading(true);
 
     const { data, error } = await supabase
@@ -6942,6 +7632,13 @@ function PocView({ C }) {
 
     if (error) {
       console.log("Erro ao carregar POC:", error);
+      notifyError(
+        describeAppError(error, {
+          action: "carregar",
+          subject: "lista de POCs",
+        }),
+        "Erro ao carregar POCs",
+      );
       return;
     }
 
@@ -7159,6 +7856,7 @@ function PocView({ C }) {
           />,
         ]}
         C={C}
+        sticky
       />
 
       <div
@@ -7382,7 +8080,6 @@ function PocView({ C }) {
 const navItems = [
   { id: "indicators", label: "Control Tower", icon: BarChart3 },
   { id: "projects", label: "Projetos", icon: FolderKanban },
-  { id: "scrum", label: "Scrum", icon: Layers },
   { id: "poc", label: "POC", icon: FlaskConical },
   { id: "suppliers", label: "Fornecedores", icon: Globe },
   { id: "marketing", label: "Marketing", icon: Megaphone },
@@ -8561,19 +9258,6 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
 
 // ---
 export default function DashboardPage() {
-  useEffect(() => {
-    async function testarConexao() {
-      const { data, error } = await supabase.from("projects").select("*");
-
-      if (error) {
-        console.log("Erro:", error);
-      } else {
-        console.log("Conectado Supabase:", data);
-      }
-    }
-
-    testarConexao();
-  }, []);
   const [dark, setDark] = useState(false);
   const [active, setActive] = useState("indicators");
   const [auth, setAuth] = useState(false);
