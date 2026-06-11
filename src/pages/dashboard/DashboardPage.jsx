@@ -7414,21 +7414,32 @@ function Sidebar({ active, setActive, C }) {
           background: `linear-gradient(180deg, ${C.blue}12, transparent)`,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div
             style={{
-              width: 38,
-              height: 38,
-              borderRadius: 12,
-              background: `linear-gradient(135deg,${C.blue},${C.violet})`,
+              width: 56,
+              height: 56,
+              borderRadius: 14,
+              background: "#fff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
-              boxShadow: `0 10px 24px ${C.blue}24`,
+              border: `1px solid ${C.border}`,
+              boxShadow: "0 10px 28px rgba(15,23,42,0.10)",
+              overflow: "hidden",
             }}
           >
-            <Zap size={16} color="#fff" />
+            <img
+              src="/app-icon.svg"
+              alt="Bellinati Perez"
+              style={{
+                width: 48,
+                height: 48,
+                display: "block",
+                objectFit: "contain",
+              }}
+            />
           </div>
           <div>
             <div
