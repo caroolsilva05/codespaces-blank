@@ -2409,16 +2409,167 @@ function ProjectsView({ C }) {
           : null,
     }))
     .filter((projeto) => projeto.prazoDate && !Number.isNaN(projeto.prazoDate.getTime()))
-    .sort((a, b) => a.prazoDate - b.prazoDate);
+    .sort((a, b) => {
+      const dateDiff = a.prazoDate - b.prazoDate;
+      if (dateDiff !== 0) return dateDiff;
 
-  function ProjectMiniCard({ projeto, accent }) {
+      const prioridade = { Atrasado: 0, "Atenção": 1, Atencao: 1 };
+      const prioridadeA = prioridade[a.statusGeral] ?? 2;
+      const prioridadeB = prioridade[b.statusGeral] ?? 2;
+      if (prioridadeA !== prioridadeB) return prioridadeA - prioridadeB;
+
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    });
+
+  const hojeCarteira = new Date();
+  hojeCarteira.setHours(0, 0, 0, 0);
+
+  const totalCarteiraExecutiva = filtered.length;
+  const projetosConcluidosExecutivo = filtered.filter(
+    (p) => normalizarEtapa(p.etapa) === "Encerramento",
+  ).length;
+  const projetosEmMovimento = filtered.filter((p) =>
+    ["Planejamento", "Execução", "Monitoramento"].includes(
+      normalizarEtapa(p.etapa),
+    ),
+  ).length;
+  const projetosComPrazoAberto = projetosComPrazo.filter(
+    (p) => normalizarEtapa(p.etapa) !== "Encerramento",
+  );
+  const prazosVencidos = projetosComPrazoAberto.filter(
+    (p) => p.prazoDate < hojeCarteira,
+  );
+  const proximos30Dias = projetosComPrazoAberto.filter((p) => {
+    const diffDias = Math.ceil(
+      (p.prazoDate.getTime() - hojeCarteira.getTime()) / 86400000,
+    );
+    return diffDias >= 0 && diffDias <= 30;
+  });
+  const chavesPrazosVencidos = new Set(prazosVencidos.map(getProjectKey));
+  const projetosComRiscoExecutivo = filtered.filter((p) => {
+    const status = String(p.statusGeral || "");
+    return (
+      ["Atenção", "Atencao", "Atrasado"].includes(status) ||
+      chavesPrazosVencidos.has(getProjectKey(p))
+    );
+  }).length;
+  const proximoPrazoExecutivo =
+    projetosComPrazoAberto.find((p) => p.prazoDate >= hojeCarteira) ||
+    prazosVencidos[0] ||
+    null;
+  const percentualEntregaExecutivo = totalCarteiraExecutiva
+    ? Math.round((projetosConcluidosExecutivo / totalCarteiraExecutiva) * 100)
+    : 0;
+
+  const statusCarteiraExecutiva =
+    totalCarteiraExecutiva === 0
+      ? { label: "Sem carteira", color: C.t3 }
+      : projetosComRiscoExecutivo > 0
+        ? { label: "Atenção executiva", color: C.rose }
+        : projetosConcluidosExecutivo === totalCarteiraExecutiva
+          ? { label: "Carteira concluída", color: C.emerald }
+          : { label: "Carteira sob controle", color: C.emerald };
+
+  const metricasExecutivasAutomaticas = [
+    {
+      label: "Risco",
+      value: projetosComRiscoExecutivo,
+      detail:
+        prazosVencidos.length > 0
+          ? `${prazosVencidos.length} prazo(s) vencido(s)`
+          : `${proximos30Dias.length} prazo(s) em 30 dias`,
+      color: projetosComRiscoExecutivo > 0 ? C.rose : C.emerald,
+    },
+    {
+      label: "Em movimento",
+      value: projetosEmMovimento,
+      detail: "Planejamento, execução ou monitoramento",
+      color: C.blue,
+    },
+    {
+      label: "Entrega",
+      value: `${percentualEntregaExecutivo}%`,
+      detail: `${projetosConcluidosExecutivo}/${totalCarteiraExecutiva || 0} concluído(s)`,
+      color: percentualEntregaExecutivo === 100 ? C.emerald : C.amber,
+    },
+    {
+      label: "Próximo prazo",
+      value: proximoPrazoExecutivo ? proximoPrazoExecutivo.prazo : "-",
+      detail: proximoPrazoExecutivo
+        ? proximoPrazoExecutivo.prazoDate < hojeCarteira
+          ? `Vencido: ${proximoPrazoExecutivo.name}`
+          : proximoPrazoExecutivo.name
+        : "Sem prazo cadastrado",
+      color: proximoPrazoExecutivo ? corEtapa(proximoPrazoExecutivo.etapa).color : C.t3,
+    },
+  ];
+
+  const projetosPorEtapa = etapasCiclo.map((etapa) => {
+    const total = sourceProjects.filter(
+      (projeto) => normalizarEtapa(projeto.etapa) === etapa,
+    ).length;
+
+    return {
+      etapa,
+      total,
+      perc: sourceProjects.length
+        ? Math.round((total / sourceProjects.length) * 100)
+        : 0,
+      cores: corEtapa(etapa),
+    };
+  });
+
+  const projetosExecutivos = [...filtered]
+    .sort((a, b) => {
+      const prioridade = { Atrasado: 0, "Atenção": 1, Atencao: 1 };
+      const prioridadeA = prioridade[a.statusGeral] ?? 2;
+      const prioridadeB = prioridade[b.statusGeral] ?? 2;
+
+      if (prioridadeA !== prioridadeB) return prioridadeA - prioridadeB;
+      return Number(a.prog || 0) - Number(b.prog || 0);
+    })
+    .slice(0, 6);
+
+  function statusProjetoStyle(status) {
+    if (status === "Atrasado") return { color: C.rose, bg: C.roseGlow };
+    if (status === "Atenção" || status === "Atencao")
+      return { color: C.amber, bg: C.amberGlow };
+    return { color: C.emerald, bg: C.emeraldGlow };
+  }
+
+  function ProjectMiniCard({ projeto, accent, onClick }) {
     return (
       <div
+        role={onClick ? "button" : undefined}
+        tabIndex={onClick ? 0 : undefined}
+        title={onClick ? "Abrir projeto para edição" : undefined}
+        onClick={onClick}
+        onKeyDown={(e) => {
+          if (!onClick) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+        onMouseEnter={(e) => {
+          if (!onClick) return;
+          e.currentTarget.style.transform = "translateY(-2px)";
+          e.currentTarget.style.borderColor = `${accent}66`;
+          e.currentTarget.style.borderLeftColor = accent;
+        }}
+        onMouseLeave={(e) => {
+          if (!onClick) return;
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.borderColor = C.border;
+          e.currentTarget.style.borderLeftColor = accent;
+        }}
         style={{
           ...card(C),
           padding: 13,
           borderLeft: `4px solid ${accent}`,
           boxShadow: "0 8px 20px rgba(15,23,42,0.055)",
+          cursor: onClick ? "pointer" : "default",
+          transition: "transform 0.15s, border-color 0.2s",
         }}
       >
         <div style={{ fontSize: 13, fontWeight: 850, color: C.t1, lineHeight: 1.35 }}>
