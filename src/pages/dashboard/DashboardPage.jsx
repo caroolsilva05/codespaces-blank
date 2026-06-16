@@ -63,7 +63,6 @@ import {
   MoreHorizontal,
   Plus,
   Filter,
-  Layers,
   Globe,
   Sun,
   Moon,
@@ -2042,6 +2041,7 @@ function ProjectsView({ C }) {
   const [filter, setFilter] = useState("Todos");
   const [projectView, setProjectView] = useState("executive");
   const [showProjectRegister, setShowProjectRegister] = useState(false);
+  const [selectedProjectRecord, setSelectedProjectRecord] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [scrumProjects, setScrumProjects] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
@@ -2274,6 +2274,7 @@ function ProjectsView({ C }) {
       statusGeral,
       observacao: getUltimaAtualizacao(registro),
       subtarefa: getUltimaSubtarefa(registro),
+      registroOriginal: registro,
       updatedAt:
         registro.updated_at ||
         registro.atualizado_em ||
@@ -2332,24 +2333,33 @@ function ProjectsView({ C }) {
   }
 
   async function alterarVisualizacaoDeProjeto(viewId) {
-    setProjectView(viewId);
-
-    if (viewId !== "scrum") {
-      await carregarProjetosDoScrum();
-    }
+    setProjectView(viewId === "scrum" ? "kanban" : viewId);
+    await carregarProjetosDoScrum();
   }
 
   function abrirNovoProjeto() {
+    setSelectedProjectRecord(null);
+    setShowProjectRegister(true);
+  }
+
+  function abrirProjetoExistente(projeto) {
+    if (!projeto?.registroOriginal) return;
+
+    setSelectedProjectRecord(projeto.registroOriginal);
     setShowProjectRegister(true);
   }
 
   async function fecharNovoProjeto() {
     setShowProjectRegister(false);
+    setSelectedProjectRecord(null);
     await sincronizarVisualizacoesDeProjetos();
   }
 
   async function salvarNovoProjeto() {
     await sincronizarVisualizacoesDeProjetos();
+    setProjectView("kanban");
+    setSelectedProjectRecord(null);
+    setShowProjectRegister(false);
   }
 
   const sourceProjects = scrumProjects;
@@ -2374,7 +2384,6 @@ function ProjectsView({ C }) {
   const projectViewOptions = [
     { id: "executive", label: "Executivo", icon: BarChart3 },
     { id: "kanban", label: "Kanban", icon: FolderKanban },
-    { id: "scrum", label: "Scrum", icon: Layers },
     { id: "timeline", label: "Timeline", icon: Clock },
     { id: "calendar", label: "Calendário", icon: CalendarDays },
   ];
@@ -2635,7 +2644,7 @@ function ProjectsView({ C }) {
           </button>
 
           <ScrumProjectRegister
-            registroInicial={null}
+            registroInicial={selectedProjectRecord}
             onSaved={salvarNovoProjeto}
           />
         </div>
@@ -2670,7 +2679,7 @@ function ProjectsView({ C }) {
             <div style={{ fontSize: 13, color: C.t3, marginTop: 4 }}>
               {loadingProjects
                 ? "Carregando projetos..."
-                : `${filtered.length} projetos · Visualizações executivas, Kanban, Scrum, Timeline e Calendário`}
+                : `${filtered.length} projetos · Visualizações executivas, Kanban, Timeline e Calendário`}
             </div>
           </div>
 
@@ -2685,7 +2694,7 @@ function ProjectsView({ C }) {
             }}
           >
             <Chip
-              label="Fonte única: Scrum"
+              label="Fonte única: Projetos"
               color={C.emerald}
               bg={C.emeraldGlow}
             />
@@ -2851,91 +2860,427 @@ function ProjectsView({ C }) {
         </div>
       </div>
 
-      {projectView === "scrum" && (
-        <ScrumView
-          C={C}
-          embedded
-          onProjectsChanged={sincronizarVisualizacoesDeProjetos}
-        />
-      )}
-
-      {projectView !== "scrum" && projectView === "executive" && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: 12,
-          }}
-        >
-          {[
-            {
-              label: "Total de projetos",
-              value: sourceProjects.length,
-              color: C.blue,
-              bg: C.blueGlow,
-            },
-            {
-              label: "Em execução",
-              value: projetosEmExecucao,
-              color: C.violet,
-              bg: C.violetGlow,
-            },
-            {
-              label: "Atenção",
-              value: projetosAtencao,
-              color: projetosAtencao > 0 ? C.rose : C.emerald,
-              bg: projetosAtencao > 0 ? C.roseGlow : C.emeraldGlow,
-            },
-            {
-              label: "Concluídos",
-              value: projetosConcluidos,
-              color: C.emerald,
-              bg: C.emeraldGlow,
-            },
-            {
-              label: "Progresso médio",
-              value: `${progressoMedio}%`,
-              color: C.amber,
-              bg: C.amberGlow,
-            },
-          ].map((item) => (
-            <div
-              key={item.label}
-              style={{
-                ...card(C),
-                padding: 16,
-                background: item.bg,
-                borderColor: item.color + "33",
-              }}
-            >
+      {projectView === "executive" && (
+        <>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 12,
+            }}
+          >
+            {[
+              {
+                label: "Total de projetos",
+                value: sourceProjects.length,
+                color: C.blue,
+                bg: C.blueGlow,
+              },
+              {
+                label: "Em execução",
+                value: projetosEmExecucao,
+                color: C.violet,
+                bg: C.violetGlow,
+              },
+              {
+                label: "Atenção",
+                value: projetosAtencao,
+                color: projetosAtencao > 0 ? C.rose : C.emerald,
+                bg: projetosAtencao > 0 ? C.roseGlow : C.emeraldGlow,
+              },
+              {
+                label: "Concluídos",
+                value: projetosConcluidos,
+                color: C.emerald,
+                bg: C.emeraldGlow,
+              },
+              {
+                label: "Progresso médio",
+                value: `${progressoMedio}%`,
+                color: C.amber,
+                bg: C.amberGlow,
+              },
+            ].map((item) => (
               <div
+                key={item.label}
                 style={{
-                  fontSize: 11,
-                  color: item.color,
-                  fontWeight: 900,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.04em",
+                  ...card(C),
+                  padding: "14px 16px",
+                  background: C.surface,
+                  borderColor: C.border,
+                  borderTop: `3px solid ${item.color}`,
+                  boxShadow: "0 6px 16px rgba(15,23,42,0.035)",
                 }}
               >
-                {item.label}
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: C.t3,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  {item.label}
+                </div>
+                <div
+                  style={{
+                    fontSize: 24,
+                    color: C.t1,
+                    fontWeight: 800,
+                    marginTop: 8,
+                    lineHeight: 1,
+                  }}
+                >
+                  {item.value}
+                </div>
               </div>
+            ))}
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gap: 14,
+              alignItems: "stretch",
+            }}
+          >
+            <div style={{ ...card(C), padding: 18 }}>
               <div
                 style={{
-                  fontSize: 26,
-                  color: C.t1,
-                  fontWeight: 950,
-                  marginTop: 8,
-                  lineHeight: 1,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 14,
+                  alignItems: "flex-start",
+                  marginBottom: 16,
                 }}
               >
-                {item.value}
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: C.t1 }}>
+                    Resumo executivo
+                  </div>
+                  <div style={{ fontSize: 12, color: C.t3, marginTop: 3 }}>
+                    Atualizado automaticamente pelos projetos cadastrados
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 7,
+                    color: statusCarteiraExecutiva.color,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: "50%",
+                      background: statusCarteiraExecutiva.color,
+                    }}
+                  />
+                  {statusCarteiraExecutiva.label}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                  gap: 10,
+                  padding: "2px 0 16px",
+                  borderBottom: `1px solid ${C.border}`,
+                  marginBottom: 4,
+                }}
+              >
+                {metricasExecutivasAutomaticas.map((item) => (
+                  <div
+                    key={item.label}
+                    style={{
+                      borderLeft: `3px solid ${item.color}`,
+                      padding: "4px 10px",
+                      minHeight: 58,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: C.t3,
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.03em",
+                      }}
+                    >
+                      {item.label}
+                    </div>
+                    <div
+                      style={{
+                        color: C.t1,
+                        fontSize: 19,
+                        fontWeight: 800,
+                        lineHeight: 1.1,
+                        marginTop: 5,
+                      }}
+                    >
+                      {item.value}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: C.t3,
+                        marginTop: 4,
+                        lineHeight: 1.35,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                      title={item.detail}
+                    >
+                      {item.detail}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {projetosExecutivos.map((projeto) => {
+                  const etapa = normalizarEtapa(projeto.etapa);
+                  const cores = corEtapa(etapa);
+                  const statusStyle = statusProjetoStyle(projeto.statusGeral);
+
+                  return (
+                    <div
+                      key={getProjectKey(projeto)}
+                      role="button"
+                      tabIndex={0}
+                      title="Abrir projeto para edição"
+                      onClick={() => abrirProjetoExistente(projeto)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          abrirProjetoExistente(projeto);
+                        }
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = C.bg0;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "transparent";
+                      }}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                        gap: 12,
+                        alignItems: "center",
+                        padding: "13px 0",
+                        borderTop: `1px solid ${C.border}`,
+                        cursor: "pointer",
+                        transition: "background 0.15s",
+                      }}
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: 13,
+                            color: C.t1,
+                            fontWeight: 750,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                          title={projeto.name}
+                        >
+                          {projeto.name}
+                        </div>
+                        <div style={{ fontSize: 11, color: C.t3, marginTop: 4 }}>
+                          {projeto.id} · {projeto.fornecedor}
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 7,
+                          color: C.t2,
+                          fontSize: 12,
+                          fontWeight: 500,
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 7,
+                            height: 7,
+                            borderRadius: "50%",
+                            background: cores.color,
+                          }}
+                        />
+                        {etapa}
+                      </div>
+
+                      <div style={{ minWidth: 0 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            gap: 8,
+                            fontSize: 11,
+                            color: C.t3,
+                            marginBottom: 6,
+                          }}
+                        >
+                          <span>{projeto.resp}</span>
+                          <span style={{ color: C.t2, fontWeight: 700 }}>
+                            {projeto.prog}%
+                          </span>
+                        </div>
+                        <ProgressBar val={projeto.prog} color={cores.color} C={C} />
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          color: statusStyle.color,
+                          fontSize: 12,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {projeto.statusGeral}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {projetosExecutivos.length === 0 && (
+                  <div
+                    style={{
+                      borderTop: `1px solid ${C.border}`,
+                      paddingTop: 14,
+                      color: C.t3,
+                      fontSize: 13,
+                    }}
+                  >
+                    Nenhum projeto encontrado para o filtro atual.
+                  </div>
+                )}
               </div>
             </div>
-          ))}
-        </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ ...card(C), padding: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: C.t1 }}>
+                  Distribuição por etapa
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 11, marginTop: 14 }}>
+                  {projetosPorEtapa.map((item) => (
+                    <div key={item.etapa}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: 11,
+                          color: C.t2,
+                          fontWeight: 500,
+                          marginBottom: 6,
+                        }}
+                      >
+                        <span>{item.etapa}</span>
+                        <span style={{ color: C.t3 }}>
+                          {item.total} · {item.perc}%
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          height: 6,
+                          borderRadius: 999,
+                          background: C.bg3,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: `${item.perc}%`,
+                            height: "100%",
+                            background: item.cores.color,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ ...card(C), padding: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: C.t1 }}>
+                  Próximos prazos
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", marginTop: 8 }}>
+                  {projetosComPrazo.slice(0, 4).map((projeto) => {
+                    const cores = corEtapa(projeto.etapa);
+
+                    return (
+                      <div
+                        key={getProjectKey(projeto)}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "86px 1fr",
+                          gap: 12,
+                          alignItems: "center",
+                          borderTop: `1px solid ${C.border}`,
+                          padding: "11px 0",
+                        }}
+                      >
+                        <div
+                          style={{
+                            color: cores.color,
+                            borderLeft: `3px solid ${cores.color}`,
+                            paddingLeft: 8,
+                            fontSize: 11,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {projeto.prazo}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: C.t1,
+                              fontWeight: 700,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                            title={projeto.name}
+                          >
+                            {projeto.name}
+                          </div>
+                          <div style={{ fontSize: 11, color: C.t3, marginTop: 3 }}>
+                            {normalizarEtapa(projeto.etapa)} · {projeto.resp}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {projetosComPrazo.length === 0 && (
+                    <div style={{ color: C.t3, fontSize: 13, paddingTop: 8 }}>
+                      Nenhum prazo cadastrado nos projetos filtrados.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
-      {projectView !== "scrum" && (
+      {projectView !== "scrum" && projectView !== "executive" && (
         <>
       <div
         style={{
@@ -2952,8 +3297,8 @@ function ProjectsView({ C }) {
           style={{ fontSize: 12, color: C.t2, marginTop: 4, lineHeight: 1.5 }}
         >
           Esta tela é somente uma visão consolidada. Para criar ou alterar um
-          projeto, utilize a visão Scrum dentro de Projetos. Qualquer projeto
-          salvo no Scrum aparece automaticamente nas demais visualizações.
+          projeto, use o botão Novo Projeto. Qualquer projeto salvo aparece
+          automaticamente no Kanban e nas demais visualizações.
         </div>
       </div>
 
@@ -3029,6 +3374,7 @@ function ProjectsView({ C }) {
                       key={getProjectKey(projeto)}
                       projeto={projeto}
                       accent={cores.color}
+                      onClick={() => abrirProjetoExistente(projeto)}
                     />
                   ))}
 
@@ -3078,6 +3424,22 @@ function ProjectsView({ C }) {
             return (
               <div
                 key={getProjectKey(projeto)}
+                role="button"
+                tabIndex={0}
+                title="Abrir projeto para edição"
+                onClick={() => abrirProjetoExistente(projeto)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    abrirProjetoExistente(projeto);
+                  }
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = C.bg0;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
                 style={{
                   display: "grid",
                   gridTemplateColumns: "180px 1fr 82px",
@@ -3085,6 +3447,8 @@ function ProjectsView({ C }) {
                   alignItems: "center",
                   padding: "12px 0",
                   borderTop: `1px solid ${C.border}`,
+                  cursor: "pointer",
+                  transition: "background 0.15s",
                 }}
               >
                 <div>
@@ -3142,7 +3506,33 @@ function ProjectsView({ C }) {
             const mes = projeto.prazoDate.toLocaleDateString("pt-BR", { month: "short" });
 
             return (
-              <div key={getProjectKey(projeto)} style={{ ...card(C), padding: 14 }}>
+              <div
+                key={getProjectKey(projeto)}
+                role="button"
+                tabIndex={0}
+                title="Abrir projeto para edição"
+                onClick={() => abrirProjetoExistente(projeto)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    abrirProjetoExistente(projeto);
+                  }
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.borderColor = `${cores.color}66`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.borderColor = C.border;
+                }}
+                style={{
+                  ...card(C),
+                  padding: 14,
+                  cursor: "pointer",
+                  transition: "transform 0.15s, border-color 0.2s",
+                }}
+              >
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                   <div
                     style={{
@@ -3255,7 +3645,21 @@ function ProjectsView({ C }) {
 
               return (
                 <React.Fragment key={projectKey}>
-                  <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                  <tr
+                    onClick={() => abrirProjetoExistente(p)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = C.bg0;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                    title="Abrir projeto para edição"
+                    style={{
+                      borderBottom: `1px solid ${C.border}`,
+                      cursor: "pointer",
+                      transition: "background 0.15s",
+                    }}
+                  >
                     <td
                       style={{
                         padding: "14px 16px",
@@ -8468,15 +8872,15 @@ function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
 
   const popoverStyle = {
     position: "absolute",
-    top: 42,
+    top: 48,
     right: 0,
-    width: 340,
+    width: "min(340px, calc(100vw - 32px))",
     background: C.bg1,
     border: `1px solid ${C.border}`,
     borderRadius: 16,
     boxShadow: "var(--app-shadow-lg)",
     padding: 16,
-    zIndex: 99,
+    zIndex: 1001,
   };
 
   function closeAll() {
@@ -8500,7 +8904,7 @@ function Topbar({ page, C, dark, toggleTheme, userEmail, onLogout }) {
         boxShadow: "0 1px 0 rgba(15,23,42,0.06), 0 10px 30px rgba(15,23,42,0.035)",
         position: "sticky",
         top: 0,
-        zIndex: 20,
+        zIndex: 1000,
         transition: "background 0.3s, border-color 0.3s",
       }}
     >
