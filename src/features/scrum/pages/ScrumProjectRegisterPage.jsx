@@ -612,15 +612,15 @@ export default function ScrumProjectRegisterPage({
     },
     {
       key: 0,
-      label: "Orcamento",
-      helper: "Custos e previsao",
+      label: "Orçamento",
+      helper: "Custos e previsão",
       icon: WalletCards,
       color: theme.phases[0].bg,
       light: theme.phases[0].light,
     },
     {
       key: "A",
-      label: "Aprovacao",
+      label: "Aprovação",
       helper: "De Acordo executivo",
       icon: ShieldCheck,
       color: theme.phases.A.bg,
@@ -644,7 +644,7 @@ export default function ScrumProjectRegisterPage({
     },
     {
       key: 3,
-      label: "Execucao",
+      label: "Execução",
       helper: "Atividades e impedimentos",
       icon: PlayCircle,
       color: theme.phases[3].bg,
@@ -961,8 +961,8 @@ export default function ScrumProjectRegisterPage({
             >
               {[
                 ["Fase atual", pi.faseAtual || "Backlog"],
-                ["Previsao", pi.previsaoEncerramento || "-"],
-                ["Aprovacao", approvalReady ? "Liberada" : "Pendente"],
+                ["Previsão", pi.previsaoEncerramento || "-"],
+                ["Aprovação", approvalReady ? "Liberada" : "Pendente"],
                 ["Impedimentos", blockers > 0 ? `${blockers} ativo(s)` : "Nenhum"],
               ].map(([label, value]) => (
                 <div
@@ -1448,12 +1448,19 @@ export default function ScrumProjectRegisterPage({
                     placeholder="Responsável pelo projeto"
                   />
                 </FieldRow>
-                <FieldRow label="Solicitante">
-                  <EditField
-                    value={pi.solicitante}
-                    onChange={(v) => setPI("solicitante", v)}
-                    placeholder="Área / pessoa solicitante"
-                  />
+                <FieldRow label="Solicitante / Carteira">
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <EditField
+                      value={pi.solicitante}
+                      onChange={(v) => setPI("solicitante", v)}
+                      placeholder="Ex: Rodrigo Pacheco — Marketing"
+                    />
+                    <EditField
+                      value={pi.carteira}
+                      onChange={(v) => setPI("carteira", v)}
+                      placeholder="Ex: Cartões, Varejo, Pessoa Física"
+                    />
+                  </div>
                 </FieldRow>
               </div>
               {/* RIGHT */}

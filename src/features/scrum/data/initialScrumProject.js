@@ -8,6 +8,7 @@ export const initialData = {
     fornecedor: "",
     responsavel: "",
     solicitante: "",
+    carteira: "",
     equipe: "",
     dataAbertura: "",
     previsaoEncerramento: "",

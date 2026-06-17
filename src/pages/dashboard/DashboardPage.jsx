@@ -29,7 +29,6 @@ import { isSupabaseConfigured, supabase } from "../../services/supabase";
 import ScrumProjectRegister from "../../features/scrum";
 import PocRegister from "../../features/pocs";
 import PortalDashboard from "../../features/portals";
-import MarketingPage from "../../features/marketing";
 import {
   notifyError,
   notifyInfo,
@@ -8637,7 +8636,6 @@ const navItems = [
   { id: "projects", label: "Projetos", icon: FolderKanban },
   { id: "poc", label: "POC", icon: FlaskConical },
   { id: "suppliers", label: "Fornecedores", icon: Globe },
-  { id: "marketing", label: "Marketing", icon: Megaphone },
   { id: "portals", label: "Portais", icon: FileSearch },
 ];
 
@@ -9337,9 +9335,12 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
       className="login-page"
       style={{
         minHeight: "100vh",
-        backgroundColor: C.bg0,
-        backgroundImage: `linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(135deg, ${C.bg0} 0%, ${C.bg2} 56%, ${C.bg3} 100%)`,
-        backgroundSize: "32px 32px, 32px 32px, auto",
+        backgroundImage: dark
+          ? `linear-gradient(rgba(15,23,42,0.45), rgba(15,23,42,0.45)), url('/login-bp-relevo.png'), linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(135deg, ${C.bg0} 0%, ${C.bg2} 56%, ${C.bg3} 100%)`
+          : `linear-gradient(rgba(255,255,255,0.76), rgba(255,255,255,0.76)), url('/login-bp-relevo.png'), linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(135deg, ${C.bg0} 0%, ${C.bg2} 56%, ${C.bg3} 100%)`,
+        backgroundSize: "auto, cover, 32px 32px, 32px 32px, auto",
+        backgroundPosition: "center, center right, 0 0, 0 0, auto",
+        backgroundRepeat: "no-repeat",
         display: "grid",
         placeItems: "center",
         padding: 32,
@@ -9349,13 +9350,14 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
     >
       <div
         className="login-panel"
-        style={{
+          style={{
           width: "100%",
           maxWidth: 1120,
           display: "grid",
           gridTemplateColumns: "1.18fr 0.82fr",
           gap: 20,
           alignItems: "stretch",
+          transform: "translateX(70px)",
         }}
       >
         <div
@@ -9412,16 +9414,20 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
             >
               <div
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  background: `linear-gradient(135deg,${C.blue},${C.violet})`,
-                  display: "grid",
-                  placeItems: "center",
-                  boxShadow: `0 14px 30px ${C.blue}24`,
+                  width: 56,
+                  height: 56,
+                  borderRadius: 14,
+                  background: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  border: `1px solid ${C.border}`,
+                  boxShadow: "0 10px 28px rgba(15,23,42,0.10)",
+                  overflow: "hidden",
                 }}
               >
-                <Zap size={22} color="#fff" />
+                <img src="/app-icon.svg" alt="Bellinati Perez" style={{ width: 48, height: 48, display: "block", objectFit: "contain" }} />
               </div>
 
               <div>
@@ -9623,8 +9629,13 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
             ...card(C),
             padding: 34,
             borderRadius: 12,
-            background: C.card,
-            backdropFilter: "blur(8px)",
+            backgroundImage: dark
+              ? `linear-gradient(rgba(15,23,42,0.82), rgba(15,23,42,0.82)), url('/login-bp-relevo.jpg')`
+              : `linear-gradient(rgba(255,255,255,0.96), rgba(255,255,255,0.96)), url('/login-bp-relevo.jpg')`,
+            backgroundSize: "cover",
+            backgroundPosition: "center right",
+            backgroundRepeat: "no-repeat",
+            backdropFilter: "blur(6px)",
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
@@ -9859,7 +9870,7 @@ export default function DashboardPage() {
     scrum: ScrumView,
     poc: PocView,
     suppliers: SuppliersView,
-    marketing: MarketingPage,
+    
     portals: PortaisView,
   };
   const View = views[active] || IndicatorsView;
@@ -9916,13 +9927,3 @@ export default function DashboardPage() {
     </ThemeCtx.Provider>
   );
 }
-
-
-
-
-
-
-
-
-
-
