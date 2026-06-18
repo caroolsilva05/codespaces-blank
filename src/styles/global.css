@@ -28,8 +28,8 @@
   --app-surface: #ffffff;
   --app-surface-soft: #f8fafc;
   --app-text: #0f172a;
-  --app-text-strong: #1e293b;
-  --app-text-muted: #64748b;
+  --app-text-strong: #0b1723;
+  --app-text-muted: #475569;
   --app-border: #e2e8f0;
   --app-primary: #e11d48;
   --app-primary-soft: #ffe7ef;
@@ -123,8 +123,8 @@ textarea {
 
 input::placeholder,
 textarea::placeholder {
-  color: var(--app-text-muted);
-  opacity: 0.72;
+  color: var(--app-text-strong);
+  opacity: 1;
 }
 
 input:focus,

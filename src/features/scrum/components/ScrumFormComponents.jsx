@@ -189,7 +189,7 @@ export const Th = ({ children, w }) => (
   <th
     style={{
       padding: "12px 14px",
-      color: "#fff",
+      color: "#1e293b",
       fontWeight: 700,
       textAlign: "left",
       fontSize: 11,
@@ -221,11 +221,11 @@ export const EditField = ({ value, onChange, placeholder, multi, minH }) => {
   const base = {
     width: "100%",
     padding: "8px 10px",
-    border: `1px solid transparent`,
+    border: `1px solid ${theme.border}`,
     borderRadius: 10,
     fontSize: 13,
     color: theme.text,
-    background: "transparent",
+    background: "#fff",
     outline: "none",
     fontFamily: "inherit",
     boxSizing: "border-box",
@@ -234,20 +234,22 @@ export const EditField = ({ value, onChange, placeholder, multi, minH }) => {
     transition: theme.transitionBase,
   };
   const focus = (e) => {
-    e.target.style.border = `1px solid ${theme.gold}`;
-    e.target.style.background = theme.borderLight;
-    e.target.style.boxShadow = "0 0 0 3px #ffe4ea";
+    e.target.style.border = `1px solid ${theme.phases[1].bg}`;
+    e.target.style.background = "#fff";
+    e.target.style.boxShadow = `0 6px 22px ${theme.phases[1].bg}22`;
   };
   const blur = (e) => {
-    e.target.style.border = "1px solid transparent";
-    e.target.style.background = "transparent";
+    e.target.style.border = `1px solid ${theme.border}`;
+    e.target.style.background = "#fff";
     e.target.style.boxShadow = "none";
   };
+  const ph = placeholder || (multi ? "Ex: descreva detalhadamente" : "Ex: Texto curto");
+
   return multi ? (
     <textarea
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
+      placeholder={ph}
       style={base}
       onFocus={focus}
       onBlur={blur}
@@ -257,7 +259,7 @@ export const EditField = ({ value, onChange, placeholder, multi, minH }) => {
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
+      placeholder={ph}
       style={base}
       onFocus={focus}
       onBlur={blur}
@@ -417,9 +419,9 @@ export const FieldRow = ({ label, children }) => (
   >
     <span
       style={{
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: 800,
-        color: theme.textSecondary,
+        color: theme.text,
         textTransform: "none",
         letterSpacing: 0,
       }}

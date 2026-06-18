@@ -8,8 +8,9 @@ export const theme = {
   border: "#e2e8f0",
   borderLight: "#f8fafc",
   text: "#0f172a",
-  textSecondary: "#64748b",
-  textMuted: "#94a3b8",
+  // aumentar contraste para melhor legibilidade
+  textSecondary: "#334155",
+  textMuted: "#475569",
   fontSans: "'Inter','Geist','Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif",
   fontMono: "'JetBrains Mono', monospace",
   radiusCard: 12,
