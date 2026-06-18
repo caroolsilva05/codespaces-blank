@@ -190,6 +190,12 @@ export default function NotificationHost() {
           <form
             onSubmit={(event) => {
               event.preventDefault();
+              // For confirm dialogs we don't use the input value — return true
+              if (prompt?.type === "confirm") {
+                closePrompt(true);
+                return;
+              }
+
               closePrompt(promptValue);
             }}
             style={{
@@ -223,33 +229,37 @@ export default function NotificationHost() {
                 {prompt.message}
               </div>
             )}
-            <label
-              style={{
-                display: "block",
-                fontSize: 12,
-                fontWeight: 800,
-                color: "#475569",
-                marginBottom: 7,
-              }}
-            >
-              {prompt.label}
-            </label>
-            <input
-              autoFocus
-              type={prompt.type || "text"}
-              value={promptValue}
-              onChange={(event) => setPromptValue(event.target.value)}
-              placeholder={prompt.placeholder}
-              style={{
-                width: "100%",
-                border: "1px solid #e2e8f0",
-                borderRadius: 10,
-                minHeight: 42,
-                padding: "9px 11px",
-                fontSize: 14,
-                marginBottom: 16,
-              }}
-            />
+            {prompt?.type !== "confirm" && (
+              <>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 12,
+                    fontWeight: 800,
+                    color: "#475569",
+                    marginBottom: 7,
+                  }}
+                >
+                  {prompt.label}
+                </label>
+                <input
+                  autoFocus
+                  type={prompt.type || "text"}
+                  value={promptValue}
+                  onChange={(event) => setPromptValue(event.target.value)}
+                  placeholder={prompt.placeholder}
+                  style={{
+                    width: "100%",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 10,
+                    minHeight: 42,
+                    padding: "9px 11px",
+                    fontSize: 14,
+                    marginBottom: 16,
+                  }}
+                />
+              </>
+            )}
             <div
               style={{
                 display: "flex",
@@ -259,7 +269,9 @@ export default function NotificationHost() {
             >
               <button
                 type="button"
-                onClick={() => closePrompt(null)}
+                onClick={() =>
+                  closePrompt(prompt?.type === "confirm" ? false : null)
+                }
                 style={{
                   border: "1px solid #e2e8f0",
                   background: "#fff",
