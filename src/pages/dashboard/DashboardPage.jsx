@@ -2645,6 +2645,7 @@ function ProjectsView({ C }) {
           <ScrumProjectRegister
             registroInicial={selectedProjectRecord}
             onSaved={salvarNovoProjeto}
+            onClose={fecharNovoProjeto}
           />
         </div>
       )}
@@ -4220,6 +4221,7 @@ function ScrumView({ C, embedded = false, onProjectsChanged }) {
           <ScrumProjectRegister
             registroInicial={selectedScrumRecord}
             onSaved={salvarRegistroScrum}
+            onClose={fecharRegistro}
           />
         </div>
       )}
