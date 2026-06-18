@@ -7,6 +7,7 @@ import { initialData } from "../data/initialScrumProject";
 import { CheckItem, DateInput, DeleteBtn, EditField, FieldRow, GhostBtn, MonitoringConversionSection, PhaseSection, RiskBadge, SelectInput, StatusBadge, SubSection, TableWrap, Td, Th, THead } from "../components/ScrumFormComponents";
 import { saveScrumProjectRecord } from "../services/scrumProjectService";
 import { theme } from "../styles/scrumTheme";
+import { supabase } from "../../../services/supabase";
 import {
   Activity,
   CalendarClock,
@@ -21,6 +22,7 @@ import {
   notifyError,
   notifySuccess,
   notifyWarning,
+  requestAppPrompt,
 } from "../../../shared/notifications";
 import {
   describeAppError,
@@ -30,6 +32,7 @@ import {
 export default function ScrumProjectRegisterPage({
   registroInicial = null,
   onSaved = null,
+  onClose = null,
 } = {}) {
   const [data, setData] = useState(() => {
     const dadosSalvos =
@@ -97,12 +100,10 @@ export default function ScrumProjectRegisterPage({
 
   function aprovacaoCompleta(aprovacao = data.aprovacaoProjeto || {}) {
     const statusOk = aprovacao.statusAprovacao === "Aprovado pela Diretoria";
-    const evidenciaOk = Boolean(
-      String(aprovacao.evidenciaArquivo || "").trim(),
-    );
     const aprovadorOk = Boolean(String(aprovacao.aprovador || "").trim());
 
-    return statusOk && evidenciaOk && aprovadorOk;
+    // Nota: tornamos o anexo (evidenciaArquivo) opcional — somente status e aprovador são requeridos
+    return statusOk && aprovadorOk;
   }
 
   function faseRequerAprovacao(fase) {
@@ -112,7 +113,7 @@ export default function ScrumProjectRegisterPage({
   function setFaseAtualComValidacao(fase) {
     if (faseRequerAprovacao(fase) && !aprovacaoCompleta()) {
       notifyWarning(
-        "Para avançar o projeto, é necessário registrar o De Acordo com status aprovado, anexo e aprovador.",
+        "Para avançar o projeto, é necessário registrar o De Acordo com status aprovado e aprovador.",
       );
       return;
     }
@@ -512,6 +513,64 @@ export default function ScrumProjectRegisterPage({
     }, 700);
   };
 
+  const handleDeleteProject = async () => {
+    if (!registroInicial?.id) {
+      notifyError("Não é possível excluir um projeto sem ID.");
+      return;
+    }
+
+    const nomeProjeto =
+      data?.projectInfo?.nome || registroInicial?.nome_do_projeto || "Projeto";
+
+    const confirmed = await requestAppPrompt({
+      title: "Confirmar exclusão",
+      message: `Tem certeza que deseja excluir o projeto "${nomeProjeto}"?`,
+      type: "confirm",
+      confirmLabel: "Sim",
+      cancelLabel: "Não",
+    });
+
+    if (!confirmed) {
+      notifyWarning("Exclusão cancelada.");
+      return;
+    }
+
+    const { data: delData, error } = await supabase
+      .from("registros_do_projeto_scrum")
+      .delete()
+      .eq("id", registroInicial.id)
+      .select("id");
+
+    if (error) {
+      console.error("Erro ao excluir projeto:", error);
+      notifyError(describeAppError(error, { action: "excluir", subject: "projeto" }));
+      return;
+    }
+
+    if (!delData || delData.length === 0) {
+      notifyWarning("Nenhum registro foi excluído. Verifique permissão ou existência do projeto.");
+      return;
+    }
+
+    notifySuccess("Projeto excluído com sucesso.");
+
+    if (typeof onSaved === "function") {
+      await onSaved();
+    }
+    // Se o pai forneceu um callback onClose, chame-o para fechar o modal
+    if (typeof onClose === "function") {
+      try {
+        await onClose();
+        return;
+      } catch (e) {
+        // ignore and continue
+      }
+    }
+
+    // Fallback: recarregar para garantir sincronização (menos ideal)
+    window.setTimeout(() => window.location.reload(), 400);
+  };
+
   const {
     projectInfo: pi,
     orcamentoProjeto = {},
@@ -812,28 +871,41 @@ export default function ScrumProjectRegisterPage({
                   border: `1px solid ${theme.gold}`,
                 },
               },
-            ].map((btn) => (
-              <button
-                key={btn.label}
-                onClick={btn.fn}
-                style={{
-                  ...btn.style,
-                  minHeight: 42,
-                  padding: "10px 18px",
-                  borderRadius: 10,
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  letterSpacing: 0,
-                  boxShadow: "0 10px 22px rgba(225,29,72,0.18)",
-                  transition: theme.transitionBase,
-                }}
-                onMouseOver={(e) => (e.currentTarget.style.opacity = "0.85")}
-                onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
-              >
-                {btn.label}
-              </button>
-            ))}
+              registroInicial?.id
+                ? {
+                    label: "Excluir projeto",
+                    fn: async () => await handleDeleteProject(),
+                    style: {
+                      background: "#fff",
+                      color: "#991b1b",
+                      border: `1px solid #fee2e2`,
+                    },
+                  }
+                : null,
+            ]
+              .filter(Boolean)
+              .map((btn) => (
+                <button
+                  key={btn.label}
+                  onClick={btn.fn}
+                  style={{
+                    ...btn.style,
+                    minHeight: 42,
+                    padding: "10px 18px",
+                    borderRadius: 10,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    letterSpacing: 0,
+                    boxShadow: "0 10px 22px rgba(225,29,72,0.18)",
+                    transition: theme.transitionBase,
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.opacity = "0.85")}
+                  onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
+                >
+                  {btn.label}
+                </button>
+              ))}
           </div>
         </div>
       </div>
@@ -1875,7 +1947,7 @@ export default function ScrumProjectRegisterPage({
             >
               {aprovacaoCompleta(aprovacaoProjeto)
                 ? "✓ De Acordo registrado. Projeto liberado para avançar no fluxo técnico."
-                : "⚠ Projeto aguardando validação executiva. Para avançar, registre status aprovado, anexo De Acordo e aprovador."}
+                : "⚠ Projeto aguardando validação executiva. Para avançar, registre status aprovado e aprovador."}
             </div>
           </SubSection>
         </PhaseSection>
@@ -1974,7 +2046,7 @@ export default function ScrumProjectRegisterPage({
                 {phase1.stakeholders.map((row, i) => (
                   <tr
                     key={row.id}
-                    style={{ background: i % 2 === 0 ? "#fff" : "#f9fafb" }}
+                    style={{ background: i % 2 === 0 ? "#fff" : "#1e293b" }}
                   >
                     <Td>
                       <EditField
