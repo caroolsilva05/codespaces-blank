@@ -111,13 +111,7 @@ export default function ScrumProjectRegisterPage({
   }
 
   function setFaseAtualComValidacao(fase) {
-    if (faseRequerAprovacao(fase) && !aprovacaoCompleta()) {
-      notifyWarning(
-        "Para avançar o projeto, é necessário registrar o De Acordo com status aprovado e aprovador.",
-      );
-      return;
-    }
-
+    // Removida a obrigatoriedade do "De Acordo" para avançar de fase.
     setPI("faseAtual", fase);
   }
 
@@ -264,48 +258,8 @@ export default function ScrumProjectRegisterPage({
       return;
     }
 
-    const aprovacaoAtual = data.aprovacaoProjeto || {};
-    const fasePrecisaAprovacao = faseRequerAprovacao(
-      data.projectInfo.faseAtual || "Início",
-    );
-
-    if (fasePrecisaAprovacao && !aprovacaoCompleta(aprovacaoAtual)) {
-      const camposAprovacaoPendentes = getMissingFields([
-        {
-          label: "Status aprovado pela Diretoria",
-          value:
-            aprovacaoAtual.statusAprovacao === "Aprovado pela Diretoria"
-              ? "ok"
-              : "",
-        },
-        { label: "Anexo do De Acordo", value: aprovacaoAtual.evidenciaArquivo },
-        { label: "Aprovador", value: aprovacaoAtual.aprovador },
-      ]);
-
-      openPhase("A");
-      notifyWarning(
-        `Para salvar este projeto nesta fase, finalize a aprovação executiva. Campos pendentes: ${camposAprovacaoPendentes.join(", ")}.`,
-        "Aprovação executiva pendente",
-      );
-      return;
-    }
-
-    if (
-      aprovacaoAtual.statusAprovacao === "Aprovado pela Diretoria" &&
-      !aprovacaoCompleta(aprovacaoAtual)
-    ) {
-      const camposAprovacaoPendentes = getMissingFields([
-        { label: "Anexo do De Acordo", value: aprovacaoAtual.evidenciaArquivo },
-        { label: "Aprovador", value: aprovacaoAtual.aprovador },
-      ]);
-
-      openPhase("A");
-      notifyWarning(
-        `Para marcar como aprovado, preencha: ${camposAprovacaoPendentes.join(", ")}.`,
-        "Aprovação incompleta",
-      );
-      return;
-    }
+    // Removida validação que exigia aprovação executiva (De Acordo)
+    // A partir de agora é possível salvar e avançar de fase sem esse requisito.
 
     setSaving(true);
 
