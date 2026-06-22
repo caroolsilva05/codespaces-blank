@@ -4,6 +4,8 @@
   useContext,
   createContext,
   useCallback,
+  lazy,
+  Suspense,
 } from "react";
 import {
   AreaChart,
@@ -81,7 +83,10 @@ import {
   Download,
   RefreshCw,
   Eye,
+  ShieldAlert,
 } from "lucide-react";
+
+const ErrorBotDashboard = lazy(() => import("../../features/errorBot"));
 
 let databaseConfigWarningShown = false;
 
@@ -90,7 +95,7 @@ function notifyDatabaseConfigMissingOnce() {
 
   databaseConfigWarningShown = true;
   notifyWarning(
-    "O banco de dados ainda não está configurado neste ambiente. Crie um arquivo .env com VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para carregar projetos, POCs e fornecedores.",
+    "O banco de dados ainda não está configurado neste ambiente. Crie um arquivo .env.local com VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY para carregar projetos, POCs e fornecedores.",
     "Banco de dados não configurado",
   );
 }
@@ -8639,6 +8644,7 @@ const navItems = [
   { id: "poc", label: "POC", icon: FlaskConical },
   { id: "suppliers", label: "Fornecedores", icon: Globe },
   { id: "portals", label: "Portais", icon: FileSearch },
+  { id: "errorBot", label: "Bot de Erros", icon: ShieldAlert },
 ];
 
 function Sidebar({ active, setActive, C }) {
@@ -9677,6 +9683,7 @@ export default function DashboardPage() {
 
   const views = {
     indicators: IndicatorsView,
+    errorBot: ErrorBotDashboard,
     projects: ProjectsView,
     scrum: ScrumView,
     poc: PocView,
@@ -9731,7 +9738,15 @@ export default function DashboardPage() {
             onLogout={handleLogout}
           />
           <main className="app-main" style={{ flex: 1, padding: 26, overflowY: "auto" }}>
-            <View C={C} />
+            <Suspense
+              fallback={(
+                <div style={{ color: C.t3, padding: 24, textAlign: "center" }}>
+                  Carregando módulo...
+                </div>
+              )}
+            >
+              <View C={C} />
+            </Suspense>
           </main>
         </div>
       </div>
