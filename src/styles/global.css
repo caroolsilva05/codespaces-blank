@@ -298,8 +298,9 @@ table {
 
 @media (max-width: 1024px) {
   .login-panel {
-    max-width: 720px !important;
+    max-width: 600px !important;
     grid-template-columns: 1fr !important;
+    transform: none !important;
   }
 
   .login-panel > div:first-child,

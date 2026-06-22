@@ -9338,10 +9338,10 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
       style={{
         minHeight: "100vh",
         backgroundImage: dark
-          ? `linear-gradient(rgba(15,23,42,0.45), rgba(15,23,42,0.45)), url('/login-bp-relevo.png'), linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(135deg, ${C.bg0} 0%, ${C.bg2} 56%, ${C.bg3} 100%)`
-          : `linear-gradient(rgba(255,255,255,0.76), rgba(255,255,255,0.76)), url('/login-bp-relevo.png'), linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(135deg, ${C.bg0} 0%, ${C.bg2} 56%, ${C.bg3} 100%)`,
-        backgroundSize: "auto, cover, 32px 32px, 32px 32px, auto",
-        backgroundPosition: "center, center right, 0 0, 0 0, auto",
+          ? `linear-gradient(rgba(15,23,42,0.28), rgba(15,23,42,0.28)), url('/login-bp-relevo.png'), linear-gradient(135deg, ${C.bg0} 0%, ${C.bg2} 56%, ${C.bg3} 100%)`
+          : `linear-gradient(rgba(255,255,255,0.30), rgba(255,255,255,0.30)), url('/login-bp-relevo.png'), linear-gradient(135deg, ${C.bg0} 0%, ${C.bg2} 56%, ${C.bg3} 100%)`,
+        backgroundSize: "auto, cover, auto",
+        backgroundPosition: "center, center center, auto",
         backgroundRepeat: "no-repeat",
         display: "grid",
         placeItems: "center",
@@ -9352,29 +9352,28 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
     >
       <div
         className="login-panel"
-          style={{
+        style={{
           width: "100%",
-          maxWidth: 1120,
-          display: "grid",
-          gridTemplateColumns: "1.18fr 0.82fr",
-          gap: 20,
-          alignItems: "stretch",
+          maxWidth: 600,
           transform: "translateX(70px)",
         }}
       >
-        <div
+        <form
+          onSubmit={handleSubmit}
           style={{
             ...card(C),
-            padding: 32,
+            padding: 34,
             borderRadius: 12,
             position: "relative",
             overflow: "hidden",
-            background: C.card,
+            background: dark ? "rgba(15,23,42,0.94)" : "rgba(255,255,255,0.94)",
+            backdropFilter: "none",
             borderTop: `4px solid ${C.blue}`,
             minHeight: 540,
             display: "flex",
             flexDirection: "column",
-            justifyContent: "space-between",
+            justifyContent: "center",
+            boxShadow: "var(--app-shadow-lg)",
           }}
         >
           <div
@@ -9460,7 +9459,7 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
                 maxWidth: 520,
               }}
             >
-              Plataforma de Gestão - Transformação Digital
+              Plataforma de Gestão Transformação Digital
             </div>
 
             <div
@@ -9472,179 +9471,18 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
                 maxWidth: 560,
               }}
             >
-              Central de acompanhamento para projetos, Scrum, POC, fornecedores,
+              Central de acompanhamento para Projetos, POC, Fornecedores,
               riscos, indicadores e decisões executivas.
-            </div>
-
-            <div
-              style={{
-                marginTop: 28,
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                color: C.emerald,
-                fontSize: 12,
-                fontWeight: 650,
-                background: C.emeraldGlow,
-                border: `1px solid ${C.emerald}22`,
-                borderRadius: 999,
-                padding: "8px 12px",
-                width: "fit-content",
-              }}
-            >
-              <Shield size={15} />
-              Acesso demonstrativo para validação do MVP
-            </div>
-
-            <div
-              style={{
-                marginTop: 32,
-                display: "grid",
-                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                gap: 12,
-              }}
-            >
-              {[
-                { label: "Projetos", value: "Scrum" },
-                { label: "POCs", value: "Validação" },
-                { label: "Portais", value: "Monitoria" },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  style={{
-                    background: C.bg2,
-                    border: `1px solid ${C.border}`,
-                    borderRadius: 12,
-                    padding: "14px 12px",
-                  }}
-                >
-                  <div
-                    style={{
-                      color: C.t3,
-                      fontSize: 10,
-                      fontWeight: 600,
-                      letterSpacing: "0.06em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {item.label}
-                  </div>
-                  <div
-                    style={{
-                      color: C.t1,
-                      fontSize: 15,
-                      fontWeight: 650,
-                      marginTop: 6,
-                    }}
-                  >
-                    {item.value}
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
 
           <div
             style={{
-              marginTop: 28,
-              background: C.bg2,
-              border: `1px solid ${C.border}`,
-              borderRadius: 12,
-              padding: 16,
-              display: "grid",
-              gap: 12,
+              marginTop: 34,
+              paddingTop: 28,
+              borderTop: `1px solid ${C.border}`,
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 12,
-              }}
-            >
-              <div>
-                <div
-                  style={{
-                    color: C.t1,
-                    fontSize: 13,
-                    fontWeight: 650,
-                  }}
-                >
-                  Visão executiva
-                </div>
-                <div style={{ color: C.t3, fontSize: 12, marginTop: 2 }}>
-                  Indicadores consolidados em tempo real
-                </div>
-              </div>
-              <div
-                style={{
-                  color: C.blue,
-                  background: C.blueGlow,
-                  border: `1px solid ${C.blue}22`,
-                  borderRadius: 999,
-                  padding: "5px 9px",
-                  fontSize: 11,
-                  fontWeight: 600,
-                }}
-              >
-                Online
-              </div>
-            </div>
-
-            {[
-              { label: "Projetos em acompanhamento", value: "Centralizado", color: C.blue },
-              { label: "Riscos e aprovações", value: "Rastreável", color: C.amber },
-              { label: "Operação digital", value: "Monitorada", color: C.emerald },
-            ].map((item) => (
-              <div
-                key={item.label}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "10px 1fr auto",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 999,
-                    background: item.color,
-                  }}
-                />
-                <span style={{ color: C.t2, fontSize: 12, fontWeight: 500 }}>
-                  {item.label}
-                </span>
-                <strong style={{ color: C.t1, fontSize: 12, fontWeight: 650 }}>
-                  {item.value}
-                </strong>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            ...card(C),
-            padding: 34,
-            borderRadius: 12,
-            backgroundImage: dark
-              ? `linear-gradient(rgba(15,23,42,0.82), rgba(15,23,42,0.82)), url('/login-bp-relevo.jpg')`
-              : `linear-gradient(rgba(255,255,255,0.96), rgba(255,255,255,0.96)), url('/login-bp-relevo.jpg')`,
-            backgroundSize: "cover",
-            backgroundPosition: "center right",
-            backgroundRepeat: "no-repeat",
-            backdropFilter: "blur(6px)",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            minHeight: 540,
-            boxShadow: "var(--app-shadow-lg)",
-          }}
-        >
           <div
             style={{
               display: "flex",
@@ -9788,35 +9626,6 @@ function LoginScreen({ C, dark, toggleTheme, onLogin }) {
               {loading ? "Validando acesso..." : "Entrar"}
             </button>
           </div>
-
-          <div
-            style={{
-              marginTop: 20,
-              background: C.bg2,
-              border: `1px solid ${C.border}`,
-              borderLeft: `3px solid ${C.blue}`,
-              borderRadius: 12,
-              padding: 16,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 11,
-                color: C.t3,
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-                fontWeight: 600,
-                marginBottom: 8,
-              }}
-            >
-              Credencial de teste
-            </div>
-            <div style={{ fontSize: 13, color: C.t2, lineHeight: 1.7 }}>
-              Login:{" "}
-              <strong style={{ color: C.t1 }}>teste@digital.com.br</strong>
-              <br />
-              Senha: <strong style={{ color: C.t1 }}>Teste@2026</strong>
-            </div>
           </div>
         </form>
       </div>
