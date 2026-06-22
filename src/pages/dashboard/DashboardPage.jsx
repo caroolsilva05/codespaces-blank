@@ -8684,15 +8684,31 @@ const channelKpis = [
     icon: AlertTriangle,
     label: "Gargalo dos Portais",
     value: "Token 14,83%",
-    sub: "Taxa de envio de token",
+    sub: "Envio de token nos portais",
     colorKey: "rose",
   },
 ];
 
 const channelComparison = [
-  { metric: "Volume", whatsapp: 3920, portais: 26247 },
-  { metric: "Acordos", whatsapp: 2991, portais: 35 },
-  { metric: "Valor Gerado", whatsapp: 2782051, portais: 222745 },
+  {
+    metric: "Entradas no canal",
+    description: "Quantidade de contatos ou buscas que iniciaram a jornada.",
+    whatsapp: 3920,
+    portais: 26247,
+  },
+  {
+    metric: "Acordos concluídos",
+    description: "Negociações que avançaram até a geração de um acordo.",
+    whatsapp: 2991,
+    portais: 35,
+  },
+  {
+    metric: "Valor financeiro gerado",
+    description: "Soma dos valores associados aos resultados de cada canal.",
+    whatsapp: 2782051,
+    portais: 222745,
+    isMoney: true,
+  },
 ];
 
 const whatsappRows = [
@@ -8716,11 +8732,38 @@ const portalRows = [
 ];
 
 const portalFunnel = [
-  { label: "Busca cliente", value: "26.247", drop: "Entrada do funil", state: "neutral" },
-  { label: "Opção pagamento", value: "482", drop: "-25.765 | -98,16%", state: "neutral" },
-  { label: "Envio token", value: "14,83%", drop: "Gargalo principal", state: "warning" },
-  { label: "Validação token", value: "27,49%", drop: "Baixa validação", state: "warning" },
-  { label: "Acordo gerado", value: "35", drop: "Conversão final", state: "success" },
+  { step: 1, label: "Buscas iniciadas", value: "26.247", detail: "Clientes consultados nos portais", rate: "100% da entrada", state: "neutral" },
+  { step: 2, label: "Opções de pagamento", value: "482", detail: "Clientes que visualizaram uma opção", rate: "1,84% das buscas", state: "neutral" },
+  { step: 3, label: "Envio de token", value: "14,83%", detail: "Taxa de tokens enviados", rate: "Gargalo principal", state: "warning" },
+  { step: 4, label: "Validação do token", value: "27,49%", detail: "Taxa de tokens validados", rate: "Ponto de atenção", state: "warning" },
+  { step: 5, label: "Acordos gerados", value: "35", detail: "Jornadas concluídas com acordo", rate: "0,13% das buscas", state: "success" },
+];
+
+const channelExecutiveSummary = [
+  {
+    icon: MessageCircle,
+    label: "Canal com maior valor",
+    value: "WhatsApp",
+    metric: "R$ 2,78 mi",
+    detail: "1.031 pagamentos realizados",
+    colorKey: "emerald",
+  },
+  {
+    icon: Landmark,
+    label: "Potencial dos portais",
+    value: "26.247 buscas",
+    metric: "35 acordos",
+    detail: "Grande entrada, baixa conversão final",
+    colorKey: "blue",
+  },
+  {
+    icon: ShieldAlert,
+    label: "Atenção imediata",
+    value: "Envio de token",
+    metric: "14,83%",
+    detail: "Etapa prioritária para otimização",
+    colorKey: "rose",
+  },
 ];
 
 function ChannelKpiCard({ item, C }) {
@@ -8756,7 +8799,7 @@ function ChannelKpiCard({ item, C }) {
       >
         <Icon size={23} />
       </div>
-      <div style={{ minWidth: 0 }}>
+      <div style={{ minWidth: 0, position: "relative", zIndex: 1 }}>
         <div style={{ color: C.t2, fontSize: 12, fontWeight: 800 }}>
           {item.label}
         </div>
@@ -8943,8 +8986,63 @@ function PerformanceChannelsView({ C }) {
 
       <div
         style={{
+<<<<<<< HEAD
+=======
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: 14,
+          alignItems: "stretch",
+        }}
+      >
+        {executiveHighlights.map((item) => {
+          const Icon = item.icon;
+          const color = C[item.colorKey] || C.blue;
+          const glow = C[`${item.colorKey}Glow`] || C.blueGlow;
+          return (
+            <div
+              key={item.label}
+              style={{
+                padding: 16,
+                borderRadius: 12,
+                background: C.surface,
+                border: `1px solid ${C.border}`,
+                display: "flex",
+                alignItems: "center",
+                gap: 13,
+                minHeight: 96,
+              }}
+            >
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  background: glow,
+                  color,
+                  border: `1px solid ${color}24`,
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <Icon size={18} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ color: C.t3, fontSize: 11, fontWeight: 800 }}>{item.label}</div>
+                <div style={{ color: C.t1, fontSize: 20, fontWeight: 850, marginTop: 4 }}>
+                  {item.value}
+                </div>
+                <div style={{ color: C.t2, fontSize: 12, marginTop: 4 }}>{item.note}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div
+        style={{
+>>>>>>> 566d8e4bcebe0efae7c9e2148b213e8b70f05d22
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
           gap: 14,
         }}
       >
@@ -8956,30 +9054,64 @@ function PerformanceChannelsView({ C }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(280px, 0.9fr) minmax(360px, 1.35fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
           gap: 16,
         }}
       >
         <div style={{ ...card(C), padding: 18 }}>
           <ChannelSectionTitle icon={ClipboardList} title="Resumo executivo" C={C} />
-          <div style={{ color: C.t2, fontSize: 14, lineHeight: 1.8 }}>
-            <p style={{ margin: "0 0 12px" }}>
-              <strong style={{ color: C.t1 }}>WhatsApp</strong> é o principal canal de geração de valor,
-              responsável por <strong style={{ color: C.t1 }}>R$ 2,78 mi</strong> e{" "}
-              <strong style={{ color: C.t1 }}>1.031 pagamentos realizados</strong>.
-            </p>
-            <p style={{ margin: "0 0 12px" }}>
-              Os <strong style={{ color: C.t1 }}>Portais de Negociação</strong> concentram alto volume no topo do
-              funil com <strong style={{ color: C.t1 }}>26.247 buscas</strong>, porém apresentam baixa conversão até o acordo.
-            </p>
-            <p style={{ margin: 0 }}>
-              O principal gargalo está no <strong style={{ color: C.t1 }}>envio de token, com 14,83%</strong>, e na{" "}
-              <strong style={{ color: C.t1 }}>validação de token, com 27,49%</strong>.
-            </p>
+          <div style={{ display: "grid", gap: 10 }}>
+            {channelExecutiveSummary.map((item) => {
+              const Icon = item.icon;
+              const color = C[item.colorKey] || C.blue;
+              const glow = C[`${item.colorKey}Glow`] || C.blueGlow;
+              return (
+                <div
+                  key={item.label}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "38px minmax(0, 1fr) auto",
+                    alignItems: "center",
+                    gap: 11,
+                    padding: 12,
+                    borderRadius: 11,
+                    background: C.surface,
+                    border: `1px solid ${C.border}`,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 10,
+                      display: "grid",
+                      placeItems: "center",
+                      background: glow,
+                      color,
+                    }}
+                  >
+                    <Icon size={17} />
+                  </span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ color: C.t3, fontSize: 10, fontWeight: 800, textTransform: "uppercase" }}>
+                      {item.label}
+                    </div>
+                    <div style={{ color: C.t1, fontSize: 14, fontWeight: 850, marginTop: 3 }}>
+                      {item.value}
+                    </div>
+                    <div style={{ color: C.t2, fontSize: 11, marginTop: 2 }}>
+                      {item.detail}
+                    </div>
+                  </div>
+                  <strong style={{ color, fontSize: 14, textAlign: "right" }}>{item.metric}</strong>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         <div style={{ ...card(C), padding: 18, minHeight: 280 }}>
+<<<<<<< HEAD
           <ChannelSectionTitle
             title="Comparativo por canal"
             C={C}
@@ -9010,15 +9142,95 @@ function PerformanceChannelsView({ C }) {
                   ]}
                   contentStyle={{
                     background: C.bg1,
+=======
+          <ChannelSectionTitle title="Comparativo por canal" C={C} />
+          <p style={{ color: C.t3, fontSize: 11, lineHeight: 1.5, margin: "-7px 0 14px" }}>
+            Compare WhatsApp e Portais dentro da mesma métrica. As barras representam a proporção entre os dois canais.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {channelComparison.map((item) => {
+              const max = Math.max(item.whatsapp, item.portais);
+              const leader = item.whatsapp > item.portais ? "WhatsApp" : "Portais";
+              return (
+                <div
+                  key={item.metric}
+                  style={{
+                    padding: 14,
+                    borderRadius: 12,
+                    background: C.surface,
+>>>>>>> 566d8e4bcebe0efae7c9e2148b213e8b70f05d22
                     border: `1px solid ${C.border}`,
                     borderRadius: 12,
                     color: C.t1,
                   }}
+<<<<<<< HEAD
                 />
                 <Bar dataKey="whatsapp" fill={C.blue} radius={[8, 8, 0, 0]} />
                 <Bar dataKey="portais" fill={C.violet} radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+=======
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 13 }}>
+                    <div>
+                      <div style={{ color: C.t1, fontSize: 14, fontWeight: 850 }}>{item.metric}</div>
+                      <div style={{ color: C.t3, fontSize: 11, lineHeight: 1.45, marginTop: 4 }}>
+                        {item.description}
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        padding: "5px 8px",
+                        borderRadius: 999,
+                        color: leader === "WhatsApp" ? C.blue : C.violet,
+                        background: leader === "WhatsApp" ? C.blueGlow : C.violetGlow,
+                        fontSize: 10,
+                        fontWeight: 800,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Maior resultado: {leader}
+                    </span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+                    {[
+                      ["WhatsApp", item.whatsapp, C.blue, C.blueGlow],
+                      ["Portais", item.portais, C.violet, C.violetGlow],
+                    ].map(([label, value, color, glow]) => (
+                      <div
+                        key={label}
+                        style={{
+                          padding: 12,
+                          borderRadius: 10,
+                          background: C.card,
+                          border: `1px solid ${C.border}`,
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 7, color: C.t2, fontSize: 11, fontWeight: 800 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: 99, background: color }} />
+                          {label}
+                        </div>
+                        <strong style={{ display: "block", color: C.t1, fontSize: 20, marginTop: 8, letterSpacing: "-0.02em" }}>
+                          {item.isMoney ? chartMoneyFormatter(value) : value.toLocaleString("pt-BR")}
+                        </strong>
+                        <div style={{ height: 7, borderRadius: 99, background: C.bg3, overflow: "hidden", marginTop: 10 }}>
+                          <div
+                            style={{
+                              width: `${Math.max(4, (value / max) * 100)}%`,
+                              height: "100%",
+                              borderRadius: 99,
+                              background: color,
+                              boxShadow: `0 0 12px ${glow}`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+>>>>>>> 566d8e4bcebe0efae7c9e2148b213e8b70f05d22
           </div>
         </div>
 
@@ -9077,7 +9289,7 @@ function PerformanceChannelsView({ C }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(360px, 1.35fr) minmax(280px, 1fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
           gap: 16,
         }}
       >
@@ -9085,8 +9297,33 @@ function PerformanceChannelsView({ C }) {
           <ChannelSectionTitle icon={Filter} title="Funil dos Portais" C={C} />
           <div
             style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              padding: "10px 12px",
+              marginBottom: 14,
+              borderRadius: 10,
+              background: C.surface,
+              border: `1px solid ${C.border}`,
+            }}
+          >
+            <div>
+              <div style={{ color: C.t1, fontSize: 12, fontWeight: 850 }}>
+                Jornada da busca até o acordo
+              </div>
+              <div style={{ color: C.t3, fontSize: 10, marginTop: 3 }}>
+                Cada etapa mostra o volume ou a taxa disponível no relatório consolidado.
+              </div>
+            </div>
+            <span style={{ color: C.rose, background: C.roseGlow, padding: "6px 9px", borderRadius: 999, fontSize: 10, fontWeight: 850, whiteSpace: "nowrap" }}>
+              Conversão final: 0,13%
+            </span>
+          </div>
+          <div
+            style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(175px, 1fr))",
               gap: 10,
             }}
           >
@@ -9096,25 +9333,48 @@ function PerformanceChannelsView({ C }) {
               const accent = isSuccess ? C.emerald : isWarning ? C.amber : C.blue;
               const bg = isSuccess ? C.emeraldGlow : isWarning ? C.amberGlow : C.surface;
               return (
-                <div key={step.label}>
-                  <div
-                    style={{
-                      border: `1px solid ${accent}26`,
-                      background: bg,
-                      borderRadius: 12,
-                      padding: 14,
-                      minHeight: 94,
-                    }}
-                  >
-                    <div style={{ color: C.t2, fontSize: 11, fontWeight: 850, marginBottom: 10 }}>
-                      {step.label}
-                    </div>
-                    <div style={{ color: C.t1, fontSize: 22, fontWeight: 850 }}>
-                      {step.value}
-                    </div>
+                <div
+                  key={step.label}
+                  style={{
+                    border: `1px solid ${accent}30`,
+                    background: bg,
+                    borderRadius: 12,
+                    padding: 14,
+                    minHeight: 152,
+                    display: "flex",
+                    flexDirection: "column",
+                    gridColumn: isSuccess ? "1 / -1" : "auto",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                    <span
+                      style={{
+                        width: 25,
+                        height: 25,
+                        display: "grid",
+                        placeItems: "center",
+                        borderRadius: 8,
+                        color: accent,
+                        background: C.card,
+                        border: `1px solid ${accent}30`,
+                        fontSize: 10,
+                        fontWeight: 900,
+                      }}
+                    >
+                      {step.step}
+                    </span>
+                    <span style={{ color: accent, fontSize: 9, fontWeight: 850, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      {step.rate}
+                    </span>
                   </div>
-                  <div style={{ color: C.t3, fontSize: 11, fontWeight: 750, textAlign: "center", marginTop: 8 }}>
-                    {step.drop}
+                  <div style={{ color: C.t2, fontSize: 11, fontWeight: 850, marginTop: 13 }}>
+                    {step.label}
+                  </div>
+                  <div style={{ color: C.t1, fontSize: 24, fontWeight: 900, marginTop: 5, letterSpacing: "-0.03em" }}>
+                    {step.value}
+                  </div>
+                  <div style={{ color: C.t3, fontSize: 10, lineHeight: 1.4, marginTop: "auto", paddingTop: 8 }}>
+                    {step.detail}
                   </div>
                 </div>
               );
