@@ -84,6 +84,13 @@ import {
   RefreshCw,
   Eye,
   ShieldAlert,
+  ClipboardList,
+  CircleDollarSign,
+  CreditCard,
+  Handshake,
+  Landmark,
+  Lightbulb,
+  MessageCircle,
 } from "lucide-react";
 
 const ErrorBotDashboard = lazy(() => import("../../features/errorBot"));
@@ -8637,9 +8644,740 @@ function PocView({ C }) {
   );
 }
 
+const channelKpis = [
+  {
+    icon: ArrowUpRight,
+    label: "Retorno Total",
+    value: "30.167",
+    sub: "Total de contatos",
+    colorKey: "blue",
+  },
+  {
+    icon: Handshake,
+    label: "Acordos Gerados",
+    value: "3.026",
+    sub: "Total de acordos",
+    colorKey: "emerald",
+  },
+  {
+    icon: CreditCard,
+    label: "Pagamentos",
+    value: "1.031",
+    sub: "Pagamentos realizados",
+    colorKey: "violet",
+  },
+  {
+    icon: CircleDollarSign,
+    label: "Valor Total",
+    value: "R$ 3.004.796,76",
+    sub: "Valor financeiro gerado",
+    colorKey: "amber",
+  },
+  {
+    icon: Target,
+    label: "Efetividade Geral",
+    value: "34,47%",
+    sub: "Taxa de efetividade",
+    colorKey: "emerald",
+  },
+  {
+    icon: AlertTriangle,
+    label: "Gargalo dos Portais",
+    value: "Token 14,83%",
+    sub: "Taxa de envio de token",
+    colorKey: "rose",
+  },
+];
+
+const channelComparison = [
+  { metric: "Volume", whatsapp: 3920, portais: 26247 },
+  { metric: "Acordos", whatsapp: 2991, portais: 35 },
+  { metric: "Valor Gerado", whatsapp: 2782051, portais: 222745 },
+];
+
+const whatsappRows = [
+  ["ASC", "217", "200", "91", "R$ 83.114,07", "45,50%"],
+  ["CDA", "9", "9", "5", "R$ 2.262,81", "55,56%"],
+  ["OTIMA", "1.655", "1.276", "180", "R$ 1.225.123,42", "14,11%"],
+  ["PRIMACOM", "970", "773", "404", "R$ 431.402,87", "52,26%"],
+  ["SMARTNX", "1.068", "732", "350", "R$ 1.039.446,19", "47,81%"],
+  ["ZAP2GO", "1", "1", "1", "R$ 702,00", "100,00%"],
+  ["TOTAL", "3.920", "2.991", "1.031", "R$ 2.782.051,36", "34,47%"],
+];
+
+const portalRows = [
+  ["Bradesco", "1.290", "53", "1", "R$ 3.767,35", "92,95%", "27,44%"],
+  ["Genérico", "24.931", "302", "25", "R$ 206.716,74", "10,76%", "27,58%"],
+  ["Itaú", "5", "4", "0", "R$ 0,00", "80,00%", "25,00%"],
+  ["Itaú PF", "14", "81", "8", "R$ 10.162,56", "-", "-"],
+  ["Itaú PJ", "0", "42", "1", "R$ 2.098,75", "-", "-"],
+  ["PanRefin", "7", "0", "0", "R$ 0,00", "85,71%", "0,00%"],
+  ["Total Consolidado", "26.247", "482", "35", "R$ 222.745,40", "14,83%", "27,49%"],
+];
+
+const portalFunnel = [
+  { label: "Busca cliente", value: "26.247", drop: "Entrada do funil", state: "neutral" },
+  { label: "Opção pagamento", value: "482", drop: "-25.765 | -98,16%", state: "neutral" },
+  { label: "Envio token", value: "14,83%", drop: "Gargalo principal", state: "warning" },
+  { label: "Validação token", value: "27,49%", drop: "Baixa validação", state: "warning" },
+  { label: "Acordo gerado", value: "35", drop: "Conversão final", state: "success" },
+];
+
+const executiveHighlights = [
+  {
+    label: "Canal líder",
+    value: "WhatsApp",
+    note: "R$ 2,78 mi gerados",
+    icon: Award,
+    colorKey: "emerald",
+  },
+  {
+    label: "Ponto crítico",
+    value: "Token",
+    note: "14,83% de envio",
+    icon: ShieldAlert,
+    colorKey: "rose",
+  },
+  {
+    label: "Alavanca",
+    value: "Portais",
+    note: "26.247 buscas no topo",
+    icon: Target,
+    colorKey: "blue",
+  },
+];
+
+const executiveActions = [
+  {
+    title: "Revisar autenticação dos portais",
+    detail: "Priorizar envio e validação de token para reduzir perda no meio do funil.",
+    tone: "critical",
+  },
+  {
+    title: "Replicar práticas de Primacom e SmartNX",
+    detail: "Fornecedor com melhor equilíbrio entre escala, conversão e pagamento.",
+    tone: "success",
+  },
+  {
+    title: "Acompanhar eficiência da Ótima",
+    detail: "Maior valor pago, mas efetividade abaixo dos demais fornecedores.",
+    tone: "warning",
+  },
+];
+
+function ChannelKpiCard({ item, C }) {
+  const Icon = item.icon;
+  const color = C[item.colorKey] || C.blue;
+  const glow = C[`${item.colorKey}Glow`] || C.blueGlow;
+
+  return (
+    <div
+      style={{
+        ...card(C),
+        padding: 18,
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        minHeight: 112,
+        overflow: "hidden",
+        position: "relative",
+        borderTop: `3px solid ${color}`,
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: -34,
+          right: -26,
+          width: 110,
+          height: 110,
+          borderRadius: "50%",
+          background: glow,
+          filter: "blur(18px)",
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        style={{
+          width: 50,
+          height: 50,
+          borderRadius: 12,
+          background: glow,
+          color,
+          border: `1px solid ${color}26`,
+          display: "grid",
+          placeItems: "center",
+          flexShrink: 0,
+        }}
+      >
+        <Icon size={23} />
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ color: C.t2, fontSize: 12, fontWeight: 800 }}>
+          {item.label}
+        </div>
+        <div
+          style={{
+            color: C.t1,
+            fontSize: item.value.length > 12 ? 18 : 22,
+            fontWeight: 850,
+            lineHeight: 1.15,
+            marginTop: 5,
+            overflowWrap: "anywhere",
+          }}
+        >
+          {item.value}
+        </div>
+        <div style={{ color: C.t3, fontSize: 11, marginTop: 6 }}>
+          {item.sub}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChannelSectionTitle({ icon: Icon, title, C, right }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        marginBottom: 16,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+        {Icon && <Icon size={17} color={C.blue} />}
+        <h3 style={{ margin: 0, color: C.t1, fontSize: 16, fontWeight: 800 }}>
+          {title}
+        </h3>
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function ChannelTable({ headers, rows, C, highlightIndexes = [] }) {
+  return (
+    <div style={{ overflowX: "auto", borderRadius: 12, border: `1px solid ${C.border}` }}>
+      <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, fontSize: 12 }}>
+        <thead>
+          <tr>
+            {headers.map((header) => (
+              <th key={header} style={{ padding: "11px 10px", whiteSpace: "nowrap" }}>
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, rowIndex) => {
+            const isTotal = rowIndex === rows.length - 1;
+            return (
+              <tr key={row.join("-")}>
+                {row.map((cell, cellIndex) => {
+                  const isPositive =
+                    String(cell).includes("52,26") ||
+                    String(cell).includes("47,81") ||
+                    String(cell).includes("100,00");
+                  const isWarning =
+                    String(cell).includes("14,11") ||
+                    String(cell).includes("10,76") ||
+                    String(cell).includes("0,00%");
+
+                  return (
+                    <td
+                      key={`${cell}-${cellIndex}`}
+                      style={{
+                        padding: "10px",
+                        color: isPositive ? C.emerald : isWarning ? C.amber : C.t2,
+                        fontWeight: isTotal || isPositive || isWarning ? 800 : 600,
+                        background:
+                          isTotal
+                            ? C.bg3
+                            : highlightIndexes.includes(rowIndex) && cellIndex === 4
+                              ? C.amberGlow
+                              : "transparent",
+                        borderTop: rowIndex === 0 ? "none" : `1px solid ${C.border}`,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {cell}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function PerformanceChannelsView({ C }) {
+  const chartMoneyFormatter = (value) =>
+    value >= 1000000 ? `R$ ${(value / 1000000).toFixed(1).replace(".", ",")} mi` : value >= 1000 ? `R$ ${(value / 1000).toFixed(0)} mil` : value;
+  const comparisonMax = {
+    Volume: 26247,
+    Acordos: 2991,
+    "Valor Gerado": 2782051,
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: 16,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "5px 10px",
+              borderRadius: 999,
+              background: C.blueGlow,
+              color: C.blue,
+              border: `1px solid ${C.blue}22`,
+              fontSize: 11,
+              fontWeight: 800,
+              marginBottom: 10,
+            }}
+          >
+            <TrendingUp size={13} />
+            Canais digitais
+          </div>
+          <h1 style={{ margin: 0, color: C.t1, fontSize: 34, fontWeight: 750 }}>
+            Performance de Canais
+          </h1>
+          <p style={{ margin: "7px 0 0", color: C.t2, fontSize: 14 }}>
+            Visão executiva de geração de valor, conversão e gargalos dos canais digitais.
+          </p>
+        </div>
+
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button
+            style={{
+              border: `1px solid ${C.border}`,
+              background: C.card,
+              color: C.t2,
+              borderRadius: 12,
+              padding: "10px 13px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              cursor: "pointer",
+              boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
+            }}
+          >
+            <CalendarDays size={15} />
+            01/06/2026 - 21/06/2026
+          </button>
+          <button
+            style={{
+              border: `1px solid ${C.border}`,
+              background: C.card,
+              color: C.t2,
+              borderRadius: 12,
+              padding: "10px 13px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              cursor: "pointer",
+              boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
+            }}
+          >
+            <Filter size={15} />
+            Filtros
+          </button>
+        </div>
+      </div>
+
+      <div
+        style={{
+          ...card(C),
+          padding: 18,
+          display: "grid",
+          gridTemplateColumns: "minmax(280px, 1.25fr) repeat(3, minmax(160px, 0.8fr))",
+          gap: 14,
+          alignItems: "stretch",
+          overflow: "hidden",
+          position: "relative",
+        }}
+      >
+        <div
+          style={{
+            padding: 18,
+            borderRadius: 12,
+            background: `linear-gradient(135deg, ${C.blueGlow}, ${C.surface})`,
+            border: `1px solid ${C.blue}24`,
+          }}
+        >
+          <div style={{ color: C.t3, fontSize: 11, fontWeight: 850, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            Leitura executiva
+          </div>
+          <div style={{ marginTop: 10, color: C.t1, fontSize: 24, fontWeight: 850, lineHeight: 1.15 }}>
+            WhatsApp sustenta o resultado; portais pedem intervenção no token.
+          </div>
+          <div style={{ marginTop: 12, color: C.t2, fontSize: 13, lineHeight: 1.65, maxWidth: 720 }}>
+            O período combina alto volume no topo do funil com baixa conversão nos portais.
+            A prioridade executiva é destravar autenticação para converter busca em acordo.
+          </div>
+        </div>
+
+        {executiveHighlights.map((item) => {
+          const Icon = item.icon;
+          const color = C[item.colorKey] || C.blue;
+          const glow = C[`${item.colorKey}Glow`] || C.blueGlow;
+          return (
+            <div
+              key={item.label}
+              style={{
+                padding: 16,
+                borderRadius: 12,
+                background: C.surface,
+                border: `1px solid ${C.border}`,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                minHeight: 148,
+              }}
+            >
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  background: glow,
+                  color,
+                  border: `1px solid ${color}24`,
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <Icon size={18} />
+              </div>
+              <div>
+                <div style={{ color: C.t3, fontSize: 11, fontWeight: 800 }}>{item.label}</div>
+                <div style={{ color: C.t1, fontSize: 20, fontWeight: 850, marginTop: 4 }}>
+                  {item.value}
+                </div>
+                <div style={{ color: C.t2, fontSize: 12, marginTop: 4 }}>{item.note}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+          gap: 14,
+        }}
+      >
+        {channelKpis.map((item) => (
+          <ChannelKpiCard key={item.label} item={item} C={C} />
+        ))}
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(280px, 0.9fr) minmax(360px, 1.35fr)",
+          gap: 16,
+        }}
+      >
+        <div style={{ ...card(C), padding: 18 }}>
+          <ChannelSectionTitle icon={ClipboardList} title="Resumo executivo" C={C} />
+          <div style={{ color: C.t2, fontSize: 14, lineHeight: 1.8 }}>
+            <p style={{ margin: "0 0 12px" }}>
+              <strong style={{ color: C.t1 }}>WhatsApp</strong> é o principal canal de geração de valor,
+              responsável por <strong style={{ color: C.t1 }}>R$ 2,78 mi</strong> e{" "}
+              <strong style={{ color: C.t1 }}>1.031 pagamentos realizados</strong>.
+            </p>
+            <p style={{ margin: "0 0 12px" }}>
+              Os <strong style={{ color: C.t1 }}>Portais de Negociação</strong> concentram alto volume no topo do
+              funil com <strong style={{ color: C.t1 }}>26.247 buscas</strong>, porém apresentam baixa conversão até o acordo.
+            </p>
+            <p style={{ margin: 0 }}>
+              O principal gargalo está no <strong style={{ color: C.t1 }}>envio de token, com 14,83%</strong>, e na{" "}
+              <strong style={{ color: C.t1 }}>validação de token, com 27,49%</strong>.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ ...card(C), padding: 18, minHeight: 280 }}>
+          <ChannelSectionTitle
+            title="Comparativo por canal"
+            C={C}
+            right={
+              <div style={{ display: "flex", gap: 12, color: C.t3, fontSize: 12, fontWeight: 700 }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 99, background: C.blue }} />
+                  WhatsApp
+                </span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 99, background: C.violet }} />
+                  Portais
+                </span>
+              </div>
+            }
+          />
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {channelComparison.map((item) => {
+              const max = comparisonMax[item.metric];
+              const whatsappWidth = `${Math.max(4, (item.whatsapp / max) * 100)}%`;
+              const portaisWidth = `${Math.max(4, (item.portais / max) * 100)}%`;
+              const isMoney = item.metric === "Valor Gerado";
+              return (
+                <div
+                  key={item.metric}
+                  style={{
+                    padding: 14,
+                    borderRadius: 12,
+                    background: C.surface,
+                    border: `1px solid ${C.border}`,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
+                    <div style={{ color: C.t1, fontSize: 13, fontWeight: 850 }}>{item.metric}</div>
+                    <div style={{ color: C.t3, fontSize: 11, fontWeight: 750 }}>
+                      {item.whatsapp > item.portais ? "WhatsApp lidera" : "Portais lideram"}
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gap: 10 }}>
+                    {[
+                      ["WhatsApp", item.whatsapp, whatsappWidth, C.blue],
+                      ["Portais", item.portais, portaisWidth, C.violet],
+                    ].map(([label, value, width, color]) => (
+                      <div key={label} style={{ display: "grid", gridTemplateColumns: "84px 1fr auto", alignItems: "center", gap: 10 }}>
+                        <span style={{ color: C.t2, fontSize: 12, fontWeight: 750 }}>{label}</span>
+                        <div style={{ height: 9, borderRadius: 99, background: C.bg3, overflow: "hidden" }}>
+                          <div style={{ width, height: "100%", borderRadius: 99, background: color }} />
+                        </div>
+                        <strong style={{ color: C.t1, fontSize: 12, minWidth: 82, textAlign: "right" }}>
+                          {isMoney ? chartMoneyFormatter(value) : value.toLocaleString("pt-BR")}
+                        </strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ ...card(C), padding: 18, minWidth: 0 }}>
+          <ChannelSectionTitle icon={MessageCircle} title="WhatsApp por fornecedor" C={C} />
+          <ChannelTable
+            C={C}
+            headers={["Fornecedor", "Retorno", "Acordo", "Pagamento", "Valor Pago", "Efetividade"]}
+            rows={whatsappRows}
+            highlightIndexes={[2]}
+          />
+        </div>
+
+        <div style={{ ...card(C), padding: 18, minWidth: 0 }}>
+          <ChannelSectionTitle
+            icon={Landmark}
+            title="Portais de Negociação"
+            C={C}
+            right={
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "7px 10px",
+                  borderRadius: 999,
+                  background: C.roseGlow,
+                  border: `1px solid ${C.rose}28`,
+                  color: C.rose,
+                  fontSize: 11,
+                  fontWeight: 850,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <AlertTriangle size={13} />
+                Gargalo crítico: baixa conversão no token
+              </span>
+            }
+          />
+          <ChannelTable
+            C={C}
+            headers={[
+              "Portal",
+              "Busca cliente",
+              "Opção pagamento",
+              "Acordo gerado",
+              "Valor gerado",
+              "% Envio token",
+              "% Validação token",
+            ]}
+            rows={portalRows}
+          />
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(360px, 1.35fr) minmax(280px, 1fr)",
+          gap: 16,
+        }}
+      >
+        <div style={{ ...card(C), padding: 18 }}>
+          <ChannelSectionTitle icon={Filter} title="Funil dos Portais" C={C} />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+              gap: 10,
+            }}
+          >
+            {portalFunnel.map((step) => {
+              const isWarning = step.state === "warning";
+              const isSuccess = step.state === "success";
+              const accent = isSuccess ? C.emerald : isWarning ? C.amber : C.blue;
+              const bg = isSuccess ? C.emeraldGlow : isWarning ? C.amberGlow : C.surface;
+              return (
+                <div key={step.label}>
+                  <div
+                    style={{
+                      border: `1px solid ${accent}26`,
+                      background: bg,
+                      borderRadius: 12,
+                      padding: 14,
+                      minHeight: 94,
+                    }}
+                  >
+                    <div style={{ color: C.t2, fontSize: 11, fontWeight: 850, marginBottom: 10 }}>
+                      {step.label}
+                    </div>
+                    <div style={{ color: C.t1, fontSize: 22, fontWeight: 850 }}>
+                      {step.value}
+                    </div>
+                  </div>
+                  <div style={{ color: C.t3, fontSize: 11, fontWeight: 750, textAlign: "center", marginTop: 8 }}>
+                    {step.drop}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ ...card(C), padding: 18 }}>
+          <ChannelSectionTitle icon={Lightbulb} title="Insights do período" C={C} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {[
+              ["success", "WhatsApp lidera a geração de valor com R$ 2,78 mi."],
+              ["warning", "Ótima lidera em valor, mas apresenta menor efetividade."],
+              ["success", "Primacom e SmartNX têm melhor equilíbrio entre escala e conversão."],
+              ["warning", "Portais possuem potencial, mas precisam otimizar autenticação e token."],
+            ].map(([type, text]) => {
+              const success = type === "success";
+              return (
+                <div key={text} style={{ display: "flex", alignItems: "flex-start", gap: 10, color: C.t2, fontSize: 14, lineHeight: 1.55 }}>
+                  <span
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: "50%",
+                      flexShrink: 0,
+                      display: "grid",
+                      placeItems: "center",
+                      background: success ? C.emeraldGlow : C.amberGlow,
+                      color: success ? C.emerald : C.amber,
+                      border: `1px solid ${success ? C.emerald : C.amber}24`,
+                    }}
+                  >
+                    {success ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}
+                  </span>
+                  <span>{text}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ ...card(C), padding: 18 }}>
+        <ChannelSectionTitle icon={Shield} title="Prioridades executivas" C={C} />
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: 12,
+          }}
+        >
+          {executiveActions.map((action, index) => {
+            const tone =
+              action.tone === "success"
+                ? { color: C.emerald, bg: C.emeraldGlow }
+                : action.tone === "warning"
+                  ? { color: C.amber, bg: C.amberGlow }
+                  : { color: C.rose, bg: C.roseGlow };
+            return (
+              <div
+                key={action.title}
+                style={{
+                  padding: 16,
+                  borderRadius: 12,
+                  background: C.surface,
+                  border: `1px solid ${C.border}`,
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "flex-start",
+                }}
+              >
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 9,
+                    background: tone.bg,
+                    color: tone.color,
+                    display: "grid",
+                    placeItems: "center",
+                    border: `1px solid ${tone.color}24`,
+                    flexShrink: 0,
+                    fontSize: 12,
+                    fontWeight: 850,
+                  }}
+                >
+                  {index + 1}
+                </div>
+                <div>
+                  <div style={{ color: C.t1, fontSize: 13, fontWeight: 850 }}>
+                    {action.title}
+                  </div>
+                  <div style={{ color: C.t2, fontSize: 12, lineHeight: 1.55, marginTop: 5 }}>
+                    {action.detail}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---
 const navItems = [
   { id: "indicators", label: "Control Tower", icon: BarChart3 },
+  { id: "performanceChannels", label: "Performance de Canais", icon: TrendingUp },
   { id: "projects", label: "Projetos", icon: FolderKanban },
   { id: "poc", label: "POC", icon: FlaskConical },
   { id: "suppliers", label: "Fornecedores", icon: Globe },
@@ -9683,12 +10421,12 @@ export default function DashboardPage() {
 
   const views = {
     indicators: IndicatorsView,
+    performanceChannels: PerformanceChannelsView,
     errorBot: ErrorBotDashboard,
     projects: ProjectsView,
     scrum: ScrumView,
     poc: PocView,
     suppliers: SuppliersView,
-    
     portals: PortaisView,
   };
   const View = views[active] || IndicatorsView;
