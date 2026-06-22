@@ -8723,48 +8723,6 @@ const portalFunnel = [
   { label: "Acordo gerado", value: "35", drop: "Conversão final", state: "success" },
 ];
 
-const executiveHighlights = [
-  {
-    label: "Canal líder",
-    value: "WhatsApp",
-    note: "R$ 2,78 mi gerados",
-    icon: Award,
-    colorKey: "emerald",
-  },
-  {
-    label: "Ponto crítico",
-    value: "Token",
-    note: "14,83% de envio",
-    icon: ShieldAlert,
-    colorKey: "rose",
-  },
-  {
-    label: "Alavanca",
-    value: "Portais",
-    note: "26.247 buscas no topo",
-    icon: Target,
-    colorKey: "blue",
-  },
-];
-
-const executiveActions = [
-  {
-    title: "Revisar autenticação dos portais",
-    detail: "Priorizar envio e validação de token para reduzir perda no meio do funil.",
-    tone: "critical",
-  },
-  {
-    title: "Replicar práticas de Primacom e SmartNX",
-    detail: "Fornecedor com melhor equilíbrio entre escala, conversão e pagamento.",
-    tone: "success",
-  },
-  {
-    title: "Acompanhar eficiência da Ótima",
-    detail: "Maior valor pago, mas efetividade abaixo dos demais fornecedores.",
-    tone: "warning",
-  },
-];
-
 function ChannelKpiCard({ item, C }) {
   const Icon = item.icon;
   const color = C[item.colorKey] || C.blue;
@@ -8781,22 +8739,8 @@ function ChannelKpiCard({ item, C }) {
         minHeight: 112,
         overflow: "hidden",
         position: "relative",
-        borderTop: `3px solid ${color}`,
       }}
     >
-      <div
-        style={{
-          position: "absolute",
-          top: -34,
-          right: -26,
-          width: 110,
-          height: 110,
-          borderRadius: "50%",
-          background: glow,
-          filter: "blur(18px)",
-          pointerEvents: "none",
-        }}
-      />
       <div
         style={{
           width: 50,
@@ -8917,13 +8861,9 @@ function ChannelTable({ headers, rows, C, highlightIndexes = [] }) {
 }
 
 function PerformanceChannelsView({ C }) {
+  const chartTick = { fill: C.t3, fontSize: 11, fontWeight: 600 };
   const chartMoneyFormatter = (value) =>
     value >= 1000000 ? `R$ ${(value / 1000000).toFixed(1).replace(".", ",")} mi` : value >= 1000 ? `R$ ${(value / 1000).toFixed(0)} mil` : value;
-  const comparisonMax = {
-    Volume: 26247,
-    Acordos: 2991,
-    "Valor Gerado": 2782051,
-  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -8959,7 +8899,7 @@ function PerformanceChannelsView({ C }) {
             Performance de Canais
           </h1>
           <p style={{ margin: "7px 0 0", color: C.t2, fontSize: 14 }}>
-            Visão executiva de geração de valor, conversão e gargalos dos canais digitais.
+            Visão executiva da performance dos canais digitais.
           </p>
         </div>
 
@@ -8999,82 +8939,6 @@ function PerformanceChannelsView({ C }) {
             Filtros
           </button>
         </div>
-      </div>
-
-      <div
-        style={{
-          ...card(C),
-          padding: 18,
-          display: "grid",
-          gridTemplateColumns: "minmax(280px, 1.25fr) repeat(3, minmax(160px, 0.8fr))",
-          gap: 14,
-          alignItems: "stretch",
-          overflow: "hidden",
-          position: "relative",
-        }}
-      >
-        <div
-          style={{
-            padding: 18,
-            borderRadius: 12,
-            background: `linear-gradient(135deg, ${C.blueGlow}, ${C.surface})`,
-            border: `1px solid ${C.blue}24`,
-          }}
-        >
-          <div style={{ color: C.t3, fontSize: 11, fontWeight: 850, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            Leitura executiva
-          </div>
-          <div style={{ marginTop: 10, color: C.t1, fontSize: 24, fontWeight: 850, lineHeight: 1.15 }}>
-            WhatsApp sustenta o resultado; portais pedem intervenção no token.
-          </div>
-          <div style={{ marginTop: 12, color: C.t2, fontSize: 13, lineHeight: 1.65, maxWidth: 720 }}>
-            O período combina alto volume no topo do funil com baixa conversão nos portais.
-            A prioridade executiva é destravar autenticação para converter busca em acordo.
-          </div>
-        </div>
-
-        {executiveHighlights.map((item) => {
-          const Icon = item.icon;
-          const color = C[item.colorKey] || C.blue;
-          const glow = C[`${item.colorKey}Glow`] || C.blueGlow;
-          return (
-            <div
-              key={item.label}
-              style={{
-                padding: 16,
-                borderRadius: 12,
-                background: C.surface,
-                border: `1px solid ${C.border}`,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                minHeight: 148,
-              }}
-            >
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  background: glow,
-                  color,
-                  border: `1px solid ${color}24`,
-                  display: "grid",
-                  placeItems: "center",
-                }}
-              >
-                <Icon size={18} />
-              </div>
-              <div>
-                <div style={{ color: C.t3, fontSize: 11, fontWeight: 800 }}>{item.label}</div>
-                <div style={{ color: C.t1, fontSize: 20, fontWeight: 850, marginTop: 4 }}>
-                  {item.value}
-                </div>
-                <div style={{ color: C.t2, fontSize: 12, marginTop: 4 }}>{item.note}</div>
-              </div>
-            </div>
-          );
-        })}
       </div>
 
       <div
@@ -9132,47 +8996,29 @@ function PerformanceChannelsView({ C }) {
               </div>
             }
           />
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {channelComparison.map((item) => {
-              const max = comparisonMax[item.metric];
-              const whatsappWidth = `${Math.max(4, (item.whatsapp / max) * 100)}%`;
-              const portaisWidth = `${Math.max(4, (item.portais / max) * 100)}%`;
-              const isMoney = item.metric === "Valor Gerado";
-              return (
-                <div
-                  key={item.metric}
-                  style={{
-                    padding: 14,
-                    borderRadius: 12,
-                    background: C.surface,
+          <div style={{ width: "100%", height: 220 }}>
+            <ResponsiveContainer>
+              <BarChart data={channelComparison} margin={{ top: 12, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke={C.border} vertical={false} />
+                <XAxis dataKey="metric" tick={chartTick} axisLine={false} tickLine={false} />
+                <YAxis tick={chartTick} axisLine={false} tickLine={false} width={62} tickFormatter={chartMoneyFormatter} />
+                <Tooltip
+                  cursor={{ fill: C.blueGlow }}
+                  formatter={(value, name) => [
+                    name === "Valor Gerado" ? chartMoneyFormatter(value) : value.toLocaleString("pt-BR"),
+                    name === "whatsapp" ? "WhatsApp" : "Portais",
+                  ]}
+                  contentStyle={{
+                    background: C.bg1,
                     border: `1px solid ${C.border}`,
+                    borderRadius: 12,
+                    color: C.t1,
                   }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
-                    <div style={{ color: C.t1, fontSize: 13, fontWeight: 850 }}>{item.metric}</div>
-                    <div style={{ color: C.t3, fontSize: 11, fontWeight: 750 }}>
-                      {item.whatsapp > item.portais ? "WhatsApp lidera" : "Portais lideram"}
-                    </div>
-                  </div>
-                  <div style={{ display: "grid", gap: 10 }}>
-                    {[
-                      ["WhatsApp", item.whatsapp, whatsappWidth, C.blue],
-                      ["Portais", item.portais, portaisWidth, C.violet],
-                    ].map(([label, value, width, color]) => (
-                      <div key={label} style={{ display: "grid", gridTemplateColumns: "84px 1fr auto", alignItems: "center", gap: 10 }}>
-                        <span style={{ color: C.t2, fontSize: 12, fontWeight: 750 }}>{label}</span>
-                        <div style={{ height: 9, borderRadius: 99, background: C.bg3, overflow: "hidden" }}>
-                          <div style={{ width, height: "100%", borderRadius: 99, background: color }} />
-                        </div>
-                        <strong style={{ color: C.t1, fontSize: 12, minWidth: 82, textAlign: "right" }}>
-                          {isMoney ? chartMoneyFormatter(value) : value.toLocaleString("pt-BR")}
-                        </strong>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+                />
+                <Bar dataKey="whatsapp" fill={C.blue} radius={[8, 8, 0, 0]} />
+                <Bar dataKey="portais" fill={C.violet} radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
@@ -9308,66 +9154,6 @@ function PerformanceChannelsView({ C }) {
               );
             })}
           </div>
-        </div>
-      </div>
-
-      <div style={{ ...card(C), padding: 18 }}>
-        <ChannelSectionTitle icon={Shield} title="Prioridades executivas" C={C} />
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: 12,
-          }}
-        >
-          {executiveActions.map((action, index) => {
-            const tone =
-              action.tone === "success"
-                ? { color: C.emerald, bg: C.emeraldGlow }
-                : action.tone === "warning"
-                  ? { color: C.amber, bg: C.amberGlow }
-                  : { color: C.rose, bg: C.roseGlow };
-            return (
-              <div
-                key={action.title}
-                style={{
-                  padding: 16,
-                  borderRadius: 12,
-                  background: C.surface,
-                  border: `1px solid ${C.border}`,
-                  display: "flex",
-                  gap: 12,
-                  alignItems: "flex-start",
-                }}
-              >
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 9,
-                    background: tone.bg,
-                    color: tone.color,
-                    display: "grid",
-                    placeItems: "center",
-                    border: `1px solid ${tone.color}24`,
-                    flexShrink: 0,
-                    fontSize: 12,
-                    fontWeight: 850,
-                  }}
-                >
-                  {index + 1}
-                </div>
-                <div>
-                  <div style={{ color: C.t1, fontSize: 13, fontWeight: 850 }}>
-                    {action.title}
-                  </div>
-                  <div style={{ color: C.t2, fontSize: 12, lineHeight: 1.55, marginTop: 5 }}>
-                    {action.detail}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
         </div>
       </div>
     </div>
