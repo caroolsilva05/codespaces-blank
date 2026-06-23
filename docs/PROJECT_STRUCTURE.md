@@ -11,22 +11,25 @@ src/
     App.jsx
   assets/
   components/
-  config/
-    env.js
   database/
     README.md
+    mysql-schema.sql
   features/
-    marketing/
     pocs/
     portals/
     scrum/
-  layouts/
   pages/
     dashboard/
   services/
-    supabase/
+    internalApi.js
   styles/
     global.css
+server/
+  index.js
+  db.js
+  routes/
+scripts/
+  import-supabase-csv-to-mysql.js
 ```
 
 ## Camadas
@@ -37,10 +40,10 @@ src/
 - `components/`: componentes compartilhados entre varias areas.
 - `features/`: modulos de negocio com seus proprios `pages`, `components`, `services`, `utils`, `data` e `styles`.
 - `services/`: clientes e integracoes externas compartilhadas.
-- `config/`: leitura e normalizacao de configuracoes de ambiente.
 - `styles/`: CSS global. CSS especifico de tela/modulo deve ficar perto do modulo.
 - `assets/`: imagens, icones, fontes e arquivos estaticos.
 - `database/`: scripts SQL, migrations, seeds ou documentacao de banco.
+- `server/`: back-end Express, rotas REST, proxy Splunk e pool MySQL.
 
 ## POCs
 
@@ -61,7 +64,7 @@ src/features/pocs/
 
 - `PocRegisterPage.jsx`: tela principal da POC.
 - `emptyPoc.js`: estrutura inicial de uma POC.
-- `pocRecordService.js`: persistencia da POC no Supabase.
+- `pocRecordService.js`: persistencia da POC via API interna.
 - `pocUtils.js`: calculos, formatadores e helpers.
 
 ## Scrum
@@ -85,7 +88,7 @@ src/features/scrum/
 - `ScrumProjectRegisterPage.jsx`: tela principal do registro Scrum.
 - `ScrumFormComponents.jsx`: componentes menores do formulario.
 - `initialScrumProject.js`: dados iniciais.
-- `scrumProjectService.js`: persistencia no Supabase.
+- `scrumProjectService.js`: persistencia via API interna.
 - `scrumTheme.js`: tokens visuais usados pela tela.
 
 ## Marketing
@@ -123,19 +126,26 @@ src/features/portals/
 
 Este modulo separa CSS, dados, tipos e helpers da tela.
 
-## Supabase
+## Back-end Interno
 
 ```txt
-src/config/env.js
-src/services/supabase/client.js
-src/services/supabase/index.js
+server/index.js
+server/db.js
+server/routes/
+src/services/internalApi.js
 ```
 
-Use `.env` ou `.env.local` para dados reais:
+Use `.env` ou `.env.local` para dados reais de MySQL e Splunk:
 
 ```env
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-chave-publica
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=usuario
+MYSQL_PASSWORD=senha
+MYSQL_DATABASE=plataforma_bellinati
+
+SPLUNK_BASE_URL=https://splunk.interno.exemplo:8089
+SPLUNK_AUTH_TOKEN=token
 ```
 
 O `.env.example` deve continuar apenas como modelo.
@@ -146,11 +156,11 @@ O `.env.example` deve continuar apenas como modelo.
 Inicializacao do app:
   src/app/App.jsx
 
-Variaveis de ambiente:
-  src/config/env.js
+Cliente da API interna:
+  src/services/internalApi.js
 
-Cliente Supabase:
-  src/services/supabase/client.js
+Back-end Express:
+  server/
 
 Dashboard principal, login, menu e layout atual:
   src/pages/dashboard/

@@ -142,7 +142,7 @@ export async function fetchPortalDashboardData(period: PortalPeriod): Promise<Po
 
   if (!payload) {
     throw new Error(
-      'API local do Splunk indispon\u00edvel. Use a Vercel ou configure um backend local para /api/splunk-portals.',
+      'API local do Splunk indispon\u00edvel. Verifique se o backend Express esta ativo e se /api/splunk-portals responde.',
     );
   }
 
