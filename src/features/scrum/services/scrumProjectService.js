@@ -1,12 +1,23 @@
-import { supabase } from "../../../services/supabase";
+import {
+  createRecord,
+  deleteRecord,
+  listRecords,
+  updateRecord,
+} from "../../../services/internalApi";
+
+const SCRUM_RESOURCE = "scrum-projects";
+
+export function listScrumProjectRecords() {
+  return listRecords(SCRUM_RESOURCE);
+}
 
 export async function saveScrumProjectRecord({ id, payloads }) {
   let lastError = null;
 
   for (const payload of payloads) {
     const response = id
-      ? await supabase.from("registros_do_projeto_scrum").update(payload).eq("id", id)
-      : await supabase.from("registros_do_projeto_scrum").insert([payload]);
+      ? await updateRecord(SCRUM_RESOURCE, id, payload)
+      : await createRecord(SCRUM_RESOURCE, payload);
 
     if (!response.error) return null;
 
@@ -15,4 +26,8 @@ export async function saveScrumProjectRecord({ id, payloads }) {
   }
 
   return lastError;
+}
+
+export function deleteScrumProjectRecord(id) {
+  return deleteRecord(SCRUM_RESOURCE, id);
 }

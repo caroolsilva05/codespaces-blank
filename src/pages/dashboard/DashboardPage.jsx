@@ -27,10 +27,19 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { isSupabaseConfigured, supabase } from "../../services/supabase";
 import ScrumProjectRegister from "../../features/scrum";
+import {
+  deleteScrumProjectRecord,
+  listScrumProjectRecords,
+} from "../../features/scrum/services/scrumProjectService";
 import PocRegister from "../../features/pocs";
+import { listPocRecords } from "../../features/pocs/services/pocRecordService";
 import PortalDashboard from "../../features/portals";
+import {
+  createRecord,
+  listRecords,
+  updateRecord,
+} from "../../services/internalApi";
 import {
   notifyError,
   notifyInfo,
@@ -94,18 +103,6 @@ import {
 } from "lucide-react";
 
 const ErrorBotDashboard = lazy(() => import("../../features/errorBot"));
-
-let databaseConfigWarningShown = false;
-
-function notifyDatabaseConfigMissingOnce() {
-  if (databaseConfigWarningShown) return;
-
-  databaseConfigWarningShown = true;
-  notifyWarning(
-    "O banco de dados ainda não está configurado neste ambiente. Crie um arquivo .env.local com VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY para carregar projetos, POCs e fornecedores.",
-    "Banco de dados não configurado",
-  );
-}
 
 // ---
 const THEME_STORAGE_KEY = "bp-theme";
@@ -1111,18 +1108,12 @@ function Dashboard({ C }) {
   }
 
   async function carregarDashboard() {
-    if (!isSupabaseConfigured) {
-      setLoading(false);
-      notifyDatabaseConfigMissingOnce();
-      return;
-    }
-
     setLoading(true);
 
     const [projectsRes, pocsRes, suppliersRes] = await Promise.all([
-      supabase.from("registros_do_projeto_scrum").select("*"),
-      supabase.from("poc_records").select("*"),
-      supabase.from("fornecedores").select("*"),
+      listScrumProjectRecords(),
+      listPocRecords(),
+      listRecords("fornecedores"),
     ]);
 
     if (projectsRes.error) {
@@ -2296,17 +2287,9 @@ function ProjectsView({ C }) {
   }
 
   async function carregarProjetosDoScrum() {
-    if (!isSupabaseConfigured) {
-      setLoadingProjects(false);
-      notifyDatabaseConfigMissingOnce();
-      return;
-    }
-
     setLoadingProjects(true);
 
-    const { data, error } = await supabase
-      .from("registros_do_projeto_scrum")
-      .select("*");
+    const { data, error } = await listScrumProjectRecords();
 
     setLoadingProjects(false);
 
@@ -4063,17 +4046,9 @@ function ScrumView({ C, embedded = false, onProjectsChanged }) {
   })();
 
   async function carregarRegistrosScrum() {
-    if (!isSupabaseConfigured) {
-      setLoadingScrum(false);
-      notifyDatabaseConfigMissingOnce();
-      return;
-    }
-
     setLoadingScrum(true);
 
-    const { data, error } = await supabase
-      .from("registros_do_projeto_scrum")
-      .select("*");
+    const { data, error } = await listScrumProjectRecords();
 
     setLoadingScrum(false);
 
@@ -4159,11 +4134,7 @@ function ScrumView({ C, embedded = false, onProjectsChanged }) {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("registros_do_projeto_scrum")
-      .delete()
-      .eq("id", registro.id)
-      .select("id");
+    const { data, error } = await deleteScrumProjectRecord(registro.id);
 
     if (error) {
       console.log("Erro ao excluir registro Scrum:", error);
@@ -4714,18 +4685,9 @@ function SuppliersView({ C }) {
   }
 
   async function carregarFornecedores() {
-    if (!isSupabaseConfigured) {
-      setLoading(false);
-      notifyDatabaseConfigMissingOnce();
-      return;
-    }
-
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("fornecedores")
-      .select("*")
-      .order("updated_at", { ascending: false });
+    const { data, error } = await listRecords("fornecedores");
 
     setLoading(false);
 
@@ -4741,7 +4703,13 @@ function SuppliersView({ C }) {
       return;
     }
 
-    setFornecedores(data || []);
+    const fornecedoresOrdenados = [...(data || [])].sort((a, b) => {
+      const dataA = new Date(a.updated_at || a.created_at || 0).getTime();
+      const dataB = new Date(b.updated_at || b.created_at || 0).getTime();
+      return dataB - dataA;
+    });
+
+    setFornecedores(fornecedoresOrdenados);
   }
 
   useEffect(() => {
@@ -4810,11 +4778,8 @@ function SuppliersView({ C }) {
     };
 
     const response = editingFornecedorId
-      ? await supabase
-          .from("fornecedores")
-          .update(payload)
-          .eq("id", editingFornecedorId)
-      : await supabase.from("fornecedores").insert([payload]);
+      ? await updateRecord("fornecedores", editingFornecedorId, payload)
+      : await createRecord("fornecedores", payload);
 
     setSaving(false);
 
@@ -7310,18 +7275,12 @@ function IndicatorsView({ C }) {
   }
 
   async function carregarIndicadores() {
-    if (!isSupabaseConfigured) {
-      setLoading(false);
-      notifyDatabaseConfigMissingOnce();
-      return;
-    }
-
     setLoading(true);
 
     const [projectsRes, pocsRes, suppliersRes] = await Promise.all([
-      supabase.from("registros_do_projeto_scrum").select("*"),
-      supabase.from("poc_records").select("*"),
-      supabase.from("fornecedores").select("*"),
+      listScrumProjectRecords(),
+      listPocRecords(),
+      listRecords("fornecedores"),
     ]);
 
     if (projectsRes.error) {
@@ -8183,18 +8142,9 @@ function PocView({ C }) {
   }
 
   async function carregarPocs() {
-    if (!isSupabaseConfigured) {
-      setLoading(false);
-      notifyDatabaseConfigMissingOnce();
-      return;
-    }
-
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("poc_records")
-      .select("*")
-      .order("updated_at", { ascending: false });
+    const { data, error } = await listPocRecords();
 
     setLoading(false);
 
@@ -8210,7 +8160,13 @@ function PocView({ C }) {
       return;
     }
 
-    setRecords(data || []);
+    const registrosOrdenados = [...(data || [])].sort((a, b) => {
+      const dataA = new Date(a.updated_at || a.created_at || 0).getTime();
+      const dataB = new Date(b.updated_at || b.created_at || 0).getTime();
+      return dataB - dataA;
+    });
+
+    setRecords(registrosOrdenados);
   }
 
   useEffect(() => {

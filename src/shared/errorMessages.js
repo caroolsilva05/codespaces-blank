@@ -108,8 +108,13 @@ export function describeAppError(
   const technicalDetail = formatTechnicalDetail(error);
   const fieldLabel = fieldLabelFromError(error);
 
-  if (text.includes("supabase nao configurado")) {
-    return `Não foi possível ${action} este ${subject} porque o banco de dados ainda não está configurado neste ambiente. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.`;
+  if (
+    text.includes("mysql nao configurado") ||
+    text.includes("api interna") ||
+    text.includes("failed to fetch") ||
+    text.includes("falha ao conectar")
+  ) {
+    return `Não foi possível ${action} este ${subject} porque a API interna ou o banco MySQL não respondeu. Verifique as variáveis MYSQL_* no backend e se o servidor Express está ativo.`;
   }
 
   if (

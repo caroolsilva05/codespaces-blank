@@ -5,9 +5,11 @@ import React, { useState, useRef } from "react";
 // ============================================================
 import { initialData } from "../data/initialScrumProject";
 import { CheckItem, DateInput, DeleteBtn, EditField, FieldRow, GhostBtn, MonitoringConversionSection, PhaseSection, RiskBadge, SelectInput, StatusBadge, SubSection, TableWrap, Td, Th, THead } from "../components/ScrumFormComponents";
-import { saveScrumProjectRecord } from "../services/scrumProjectService";
+import {
+  deleteScrumProjectRecord,
+  saveScrumProjectRecord,
+} from "../services/scrumProjectService";
 import { theme } from "../styles/scrumTheme";
-import { supabase } from "../../../services/supabase";
 import {
   Activity,
   CalendarClock,
@@ -489,11 +491,9 @@ export default function ScrumProjectRegisterPage({
       return;
     }
 
-    const { data: delData, error } = await supabase
-      .from("registros_do_projeto_scrum")
-      .delete()
-      .eq("id", registroInicial.id)
-      .select("id");
+    const { data: delData, error } = await deleteScrumProjectRecord(
+      registroInicial.id,
+    );
 
     if (error) {
       console.error("Erro ao excluir projeto:", error);

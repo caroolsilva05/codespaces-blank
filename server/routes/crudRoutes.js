@@ -133,7 +133,10 @@ export function createCrudRouter() {
       );
 
       response.json({
-        data: [{ id: request.params.id }],
+        data:
+          result.affectedRows > 0
+            ? [{ id: request.params.id }]
+            : [],
         error: null,
         affectedRows: result.affectedRows,
       });
